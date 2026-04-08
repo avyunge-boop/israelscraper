@@ -14,7 +14,7 @@ import type {
   SourceScanResult,
 } from "../types";
 import { sendKavimTrafficEmail } from "../../email-notifier";
-import { resolveChromeExecutable } from "../puppeteer-helpers";
+import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -235,19 +235,14 @@ function effectiveDateFromList(datetime: string, displayDate: string): string | 
 
 export async function runScan(context?: ScraperRunContext): Promise<SourceScanResult> {
   const scrapedAt = new Date().toISOString();
-  const chromePath = resolveChromeExecutable();
   const suppressEmail = context?.suppressEmail === true;
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      ...(chromePath ? { executablePath: chromePath } : {}),
-      args: chromePath
-        ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
-    });
+    browser = await puppeteer.launch(
+      buildPuppeteerLaunchOptions(["--disable-gpu"])
+    );
 
     const listPage = await browser.newPage();
     await applyPageDefaults(listPage);
@@ -387,6 +382,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
       },
     };
   } catch (e) {
+    console.error("DETAILED_ERROR:", e);
     const msg = e instanceof Error ? e.message : String(e);
     if (browser) {
       try {

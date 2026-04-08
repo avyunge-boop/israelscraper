@@ -167,104 +167,109 @@ async function persistScanExport(results: SourceScanResult[]): Promise<void> {
 }
 
 async function main() {
-  const argv = process.argv.slice(2);
-  const { agency, all } = parseCli(argv);
+  try {
+    const argv = process.argv.slice(2);
+    const { agency, all } = parseCli(argv);
 
-  if (!all && !agency) {
-    console.error(`Usage: --agency=<id> | --agency <id> | --all\n`);
-    console.error(`Known agencies: ${ALL_AGENCY_IDS.join(", ")}\n`);
-    console.error(
-      `Example: pnpm --filter @workspace/scraper run scan -- --agency=egged`
-    );
-    process.exit(1);
-  }
-
-  if (!all && agency && !isKnownAgencyId(agency)) {
-    console.error(`Unknown agency id: ${agency}`);
-    console.error(`Known: ${ALL_AGENCY_IDS.join(", ")}`);
-    process.exit(1);
-  }
-
-  const ids: KnownAgencyId[] = all ? [...ALL_AGENCY_IDS] : [agency as KnownAgencyId];
-
-  /** סריקת --all: מייל מאוחד בסוף; סריקת סוכן יחיד: המייל יוצא מהסקרייפר (או מהאורקסטרטור עבור מקורות בלי מייל פנימי) */
-  const isFullRun = all;
-  /** כשמופעל (למשל מ־Next proxy-scan) — אין מיילים מהאורקסטרטור/סקרייפרים */
-  const skipAllEmails =
-    process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "1" ||
-    process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "true";
-
-  let failures = 0;
-  const results: SourceScanResult[] = [];
-
-  let agencyIndex = 0;
-  for (const id of ids) {
-    const scraper = getScraper(id);
-    if (!scraper) {
-      console.error(`Unknown agency id: ${id}`);
-      failures++;
-      continue;
+    if (!all && !agency) {
+      console.error(`Usage: --agency=<id> | --agency <id> | --all\n`);
+      console.error(`Known agencies: ${ALL_AGENCY_IDS.join(", ")}\n`);
+      console.error(
+        `Example: pnpm --filter @workspace/scraper run scan -- --agency=egged`
+      );
+      process.exit(1);
     }
 
-    agencyIndex++;
-    console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
-    const result = await scraper.runScan({
-      forwardArgv: argv.slice(),
-      suppressEmail: isFullRun || skipAllEmails,
-    });
-    results.push(result);
-    printSummary(result);
-    if (!result.success) failures++;
-    const status = result.success ? "OK" : "FAILED";
-    console.log(
-      `[Orchestrator] Finished ${scraper.displayName} (${scraper.sourceId}) — ${status}`
-    );
-    logScraperProgressLine({
-      agency: scraper.sourceId,
-      displayName: scraper.displayName,
-      current: agencyIndex,
-      total: ids.length,
-      alertsFound: result.alerts.length,
-    });
-  }
+    if (!all && agency && !isKnownAgencyId(agency)) {
+      console.error(`Unknown agency id: ${agency}`);
+      console.error(`Known: ${ALL_AGENCY_IDS.join(", ")}`);
+      process.exit(1);
+    }
 
-  await persistScanExport(results);
+    const ids: KnownAgencyId[] = all ? [...ALL_AGENCY_IDS] : [agency as KnownAgencyId];
 
-  if (!skipAllEmails) {
-    if (isFullRun) {
-      const mergedEmail = mergeScanResultsForEmail(results);
-      if (mergedEmail) {
-        await sendBusAlertsSummaryEmail(mergedEmail, { groupCatalogByProvider: true });
+    /** סריקת --all: מייל מאוחד בסוף; סריקת סוכן יחיד: המייל יוצא מהסקרייפר (או מהאורקסטרטור עבור מקורות בלי מייל פנימי) */
+    const isFullRun = all;
+    /** כשמופעל (למשל מ־Next proxy-scan) — אין מיילים מהאורקסטרטור/סקרייפרים */
+    const skipAllEmails =
+      process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "1" ||
+      process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "true";
+
+    let failures = 0;
+    const results: SourceScanResult[] = [];
+
+    let agencyIndex = 0;
+    for (const id of ids) {
+      const scraper = getScraper(id);
+      if (!scraper) {
+        console.error(`Unknown agency id: ${id}`);
+        failures++;
+        continue;
       }
-    } else {
-      const onlyId = ids[0];
-      if (onlyId === "busnearby") {
-        console.log(
-          "Orchestrator: single Bus Nearby run — the scraper sends the email (when SMTP is configured); orchestrator does not send a second message."
-        );
-      } else if (onlyId === "kavim") {
-        console.log(
-          "Orchestrator: single Kavim run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
-        );
-      } else if (onlyId === "dan") {
-        console.log(
-          "Orchestrator: single Dan run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
-        );
+
+      agencyIndex++;
+      console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
+      const result = await scraper.runScan({
+        forwardArgv: argv.slice(),
+        suppressEmail: isFullRun || skipAllEmails,
+      });
+      results.push(result);
+      printSummary(result);
+      if (!result.success) failures++;
+      const status = result.success ? "OK" : "FAILED";
+      console.log(
+        `[Orchestrator] Finished ${scraper.displayName} (${scraper.sourceId}) — ${status}`
+      );
+      logScraperProgressLine({
+        agency: scraper.sourceId,
+        displayName: scraper.displayName,
+        current: agencyIndex,
+        total: ids.length,
+        alertsFound: result.alerts.length,
+      });
+    }
+
+    await persistScanExport(results);
+
+    if (!skipAllEmails) {
+      if (isFullRun) {
+        const mergedEmail = mergeScanResultsForEmail(results);
+        if (mergedEmail) {
+          await sendBusAlertsSummaryEmail(mergedEmail, { groupCatalogByProvider: true });
+        }
       } else {
-        const singleEmail = mergeScanResultsForEmail(results);
-        if (singleEmail) {
-          await sendBusAlertsSummaryEmail(singleEmail, { groupCatalogByProvider: false });
+        const onlyId = ids[0];
+        if (onlyId === "busnearby") {
+          console.log(
+            "Orchestrator: single Bus Nearby run — the scraper sends the email (when SMTP is configured); orchestrator does not send a second message."
+          );
+        } else if (onlyId === "kavim") {
+          console.log(
+            "Orchestrator: single Kavim run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
+          );
+        } else if (onlyId === "dan") {
+          console.log(
+            "Orchestrator: single Dan run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
+          );
+        } else {
+          const singleEmail = mergeScanResultsForEmail(results);
+          if (singleEmail) {
+            await sendBusAlertsSummaryEmail(singleEmail, { groupCatalogByProvider: false });
+          }
         }
       }
     }
-  }
 
-  if (failures > 0) {
+    if (failures > 0) {
+      process.exit(1);
+    }
+  } catch (e) {
+    console.error("DETAILED_ERROR:", e);
     process.exit(1);
   }
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error("DETAILED_ERROR:", e);
   process.exit(1);
 });

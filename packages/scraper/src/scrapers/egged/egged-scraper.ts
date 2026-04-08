@@ -14,7 +14,7 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { resolveChromeExecutable } from "../puppeteer-helpers";
+import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -396,18 +396,15 @@ export async function runEggedScan(
   _context?: ScraperRunContext
 ): Promise<EggedScrapingResult> {
   const scrapedAt = new Date().toISOString();
-  const chromePath = resolveChromeExecutable();
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      ...(chromePath ? { executablePath: chromePath } : {}),
-      args: chromePath
-        ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
-    });
+    const launchOpts = buildPuppeteerLaunchOptions(["--disable-gpu"]);
+    console.log(
+      `Egged: puppeteer launch — executable=${launchOpts.executablePath ?? "(bundled)"}`
+    );
+    browser = await puppeteer.launch(launchOpts);
 
     const page = await browser.newPage();
     await applyPageDefaults(page);
@@ -484,6 +481,7 @@ export async function runEggedScan(
       },
     };
   } catch (e) {
+    console.error("DETAILED_ERROR:", e);
     const msg = e instanceof Error ? e.message : String(e);
     if (browser) {
       try {

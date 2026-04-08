@@ -12,7 +12,7 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { resolveChromeExecutable } from "../puppeteer-helpers";
+import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
 
 const LIST_URL =
   process.env.METROPOLINE_ALERTS_URL?.trim() || "https://www.metropoline.com/updates";
@@ -104,18 +104,13 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   void context?.suppressEmail;
 
   const scrapedAt = new Date().toISOString();
-  const chromePath = resolveChromeExecutable();
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      ...(chromePath ? { executablePath: chromePath } : {}),
-      args: chromePath
-        ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
-    });
+    browser = await puppeteer.launch(
+      buildPuppeteerLaunchOptions(["--disable-gpu"])
+    );
 
     const page = await browser.newPage();
     await applyPageDefaults(page);
@@ -165,6 +160,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
       meta: { listUrl: LIST_URL, extracted: alerts.length, rawBlocks: raw.length },
     };
   } catch (e) {
+    console.error("DETAILED_ERROR:", e);
     const msg = e instanceof Error ? e.message : String(e);
     if (browser) {
       try {

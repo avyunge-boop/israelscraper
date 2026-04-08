@@ -21,7 +21,6 @@
 import { createHash } from "node:crypto";
 import pLimit from "p-limit";
 import puppeteer, { type Browser, type Page } from "puppeteer";
-import { execSync } from "child_process";
 import { existsSync } from "fs";
 import fs from "fs/promises";
 
@@ -51,6 +50,7 @@ import {
   ROUTES_DATABASE_JSON,
 } from "../../repo-paths";
 import { logScraperProgressLine } from "../../scrape-progress";
+import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
 
 loadRootEnv();
 const OUTPUT_FILE = BUS_ALERTS_JSON;
@@ -378,33 +378,6 @@ async function saveRoutesDatabase(routesByPattern: Map<string, RouteRecord>) {
   );
   const payload: RoutesDatabaseFile = { schemaVersion: 1, routes };
   await fs.writeFile(ROUTES_DB_FILE, JSON.stringify(payload, null, 2), "utf-8");
-}
-
-// ── Chrome ──────────────────────────────────────────────────────────────────
-
-const MACOS_GOOGLE_CHROME =
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
-function findChromiumExecutable(): string | undefined {
-  for (const cmd of ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]) {
-    try {
-      return execSync(`which ${cmd} 2>/dev/null`, { encoding: "utf-8" }).trim() || undefined;
-    } catch {
-      /* continue */
-    }
-  }
-  return undefined;
-}
-
-function resolveChromeExecutable(): string | undefined {
-  const fromEnv =
-    process.env.PUPPETEER_EXECUTABLE_PATH?.trim() ||
-    process.env.CHROME_PATH?.trim();
-  if (fromEnv) return fromEnv;
-  if (process.platform === "darwin" && existsSync(MACOS_GOOGLE_CHROME)) {
-    return MACOS_GOOGLE_CHROME;
-  }
-  return findChromiumExecutable();
 }
 
 function toApiRouteId(patternId: string): string {
@@ -759,31 +732,21 @@ async function runBusnearbyInternal(
     discoveryMode = true;
   }
 
-  const chromePath = resolveChromeExecutable();
+  const launchOpts = buildPuppeteerLaunchOptions([
+    "--disable-gpu",
+    "--no-first-run",
+    "--no-zygote",
+  ]);
   console.log(
-    chromePath ? `Using Chrome/Chromium: ${chromePath}` : "Using bundled Chromium"
+    launchOpts.executablePath
+      ? `Using Chrome/Chromium: ${launchOpts.executablePath}`
+      : "Using bundled Chromium"
   );
   console.log(
     discoveryMode ? "Mode: REFRESH (discover + scan)" : "Mode: FAST (database routes only)"
   );
 
-  const launchArgs = chromePath
-    ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
-    : [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--no-sandbox", "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-zygote",
-        "--single-process",
-      ];
-
-  const browser: Browser = await puppeteer.launch({
-    headless: true,
-    ...(chromePath ? { executablePath: chromePath } : {}),
-    args: launchArgs,
-  });
+  const browser: Browser = await puppeteer.launch(launchOpts);
 
   const page = await browser.newPage();
   await applyPageDefaults(page);
@@ -1126,6 +1089,7 @@ export async function runScan(
   try {
     return await runBusnearbyInternal(context);
   } catch (err) {
+    console.error("DETAILED_ERROR:", err);
     const msg = err instanceof Error ? err.message : String(err);
     console.error("Scraper failed:", err);
     return {
