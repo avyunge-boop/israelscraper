@@ -66,9 +66,9 @@ function runOrchestrator(argv: string[]): Promise<{
       );
     } else {
       child = spawn(
-        process.execPath,
+         "tsx",
         [
-          path.join(SCRAPER_PKG_ROOT, "node_modules", "tsx", "dist", "cli.mjs"),
+          
           path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts"),
           ...argv,
         ],
