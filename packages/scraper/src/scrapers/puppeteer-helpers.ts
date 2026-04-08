@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync } from "fs";
+import puppeteer from "puppeteer";
 
 const MACOS_CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -16,7 +17,32 @@ export const PUPPETEER_LAUNCH_ARGS_DEFAULT = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--single-process",
+  "--user-data-dir=/tmp/puppeteer_user_data",
+  "--disable-gpu",
+  "--font-render-hinting=none",
+  "--disable-extensions",
 ] as const;
+
+function launchArgKey(flag: string): string {
+  const eq = flag.indexOf("=");
+  return eq === -1 ? flag : flag.slice(0, eq);
+}
+
+/** מונע כפילות כשהקריאה מוסיפה ארגומנטים שכבר בברירת המחדל */
+function mergeLaunchArgs(
+  defaults: readonly string[],
+  extra: string[]
+): string[] {
+  const seen = new Set(defaults.map(launchArgKey));
+  const out = [...defaults];
+  for (const a of extra) {
+    const k = launchArgKey(a);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(a);
+  }
+  return out;
+}
 
 export function findChromiumExecutable(): string | undefined {
   for (const cmd of [
@@ -58,7 +84,7 @@ export function resolveChromeExecutable(): string | undefined {
   return findChromiumExecutable();
 }
 
-/** אובייקט launch אחיד לכל הסקרייפרים; `extraArgs` מתווספים אחרי ברירת המחדל */
+/** אובייקט launch אחיד לכל הסקרייפרים; `extraArgs` מתווספים אחרי ברירת המחדל (ללא כפילות לפי שם דגל) */
 export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
   headless: boolean;
   executablePath?: string;
@@ -68,8 +94,20 @@ export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
   return {
     headless: true,
     ...(executablePath ? { executablePath } : {}),
-    args: [...PUPPETEER_LAUNCH_ARGS_DEFAULT, ...extraArgs],
+    args: mergeLaunchArgs(PUPPETEER_LAUNCH_ARGS_DEFAULT, extraArgs),
   };
+}
+
+/**
+ * בונה אפשרויות, מדפיס אותן ללוג, ממתין שנייה (הכנה לסביבת קונטיינר), ואז מפעיל את דפדפן Puppeteer.
+ */
+export async function launchPuppeteerBrowser(
+  extraArgs: string[] = []
+): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
+  const opts = buildPuppeteerLaunchOptions(extraArgs);
+  console.log("[puppeteer] full launch options:", JSON.stringify(opts, null, 2));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  return puppeteer.launch(opts);
 }
 
 export const DEFAULT_UA =

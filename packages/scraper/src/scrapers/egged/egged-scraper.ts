@@ -14,7 +14,7 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
+import { launchPuppeteerBrowser } from "../puppeteer-helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -400,11 +400,7 @@ export async function runEggedScan(
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    const launchOpts = buildPuppeteerLaunchOptions(["--disable-gpu"]);
-    console.log(
-      `Egged: puppeteer launch — executable=${launchOpts.executablePath ?? "(bundled)"}`
-    );
-    browser = await puppeteer.launch(launchOpts);
+    browser = await launchPuppeteerBrowser();
 
     const page = await browser.newPage();
     await applyPageDefaults(page);

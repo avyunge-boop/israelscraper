@@ -12,7 +12,7 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
+import { launchPuppeteerBrowser } from "../puppeteer-helpers";
 
 const LIST_URL =
   process.env.METROPOLINE_ALERTS_URL?.trim() || "https://www.metropoline.com/updates";
@@ -108,9 +108,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await puppeteer.launch(
-      buildPuppeteerLaunchOptions(["--disable-gpu"])
-    );
+    browser = await launchPuppeteerBrowser();
 
     const page = await browser.newPage();
     await applyPageDefaults(page);

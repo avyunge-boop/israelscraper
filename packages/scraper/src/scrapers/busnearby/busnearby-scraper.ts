@@ -50,7 +50,10 @@ import {
   ROUTES_DATABASE_JSON,
 } from "../../repo-paths";
 import { logScraperProgressLine } from "../../scrape-progress";
-import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
+import {
+  launchPuppeteerBrowser,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 loadRootEnv();
 const OUTPUT_FILE = BUS_ALERTS_JSON;
@@ -732,21 +735,18 @@ async function runBusnearbyInternal(
     discoveryMode = true;
   }
 
-  const launchOpts = buildPuppeteerLaunchOptions([
-    "--disable-gpu",
-    "--no-first-run",
-    "--no-zygote",
-  ]);
+  const chromePath = resolveChromeExecutable();
   console.log(
-    launchOpts.executablePath
-      ? `Using Chrome/Chromium: ${launchOpts.executablePath}`
-      : "Using bundled Chromium"
+    chromePath ? `Using Chrome/Chromium: ${chromePath}` : "Using bundled Chromium"
   );
   console.log(
     discoveryMode ? "Mode: REFRESH (discover + scan)" : "Mode: FAST (database routes only)"
   );
 
-  const browser: Browser = await puppeteer.launch(launchOpts);
+  const browser: Browser = await launchPuppeteerBrowser([
+    "--no-first-run",
+    "--no-zygote",
+  ]);
 
   const page = await browser.newPage();
   await applyPageDefaults(page);

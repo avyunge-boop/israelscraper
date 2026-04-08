@@ -14,7 +14,7 @@ import type {
   SourceScanResult,
 } from "../types";
 import { sendKavimTrafficEmail } from "../../email-notifier";
-import { buildPuppeteerLaunchOptions } from "../puppeteer-helpers";
+import { launchPuppeteerBrowser } from "../puppeteer-helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -240,9 +240,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await puppeteer.launch(
-      buildPuppeteerLaunchOptions(["--disable-gpu"])
-    );
+    browser = await launchPuppeteerBrowser();
 
     const listPage = await browser.newPage();
     await applyPageDefaults(listPage);
