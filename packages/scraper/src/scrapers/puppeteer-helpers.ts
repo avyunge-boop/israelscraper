@@ -14,9 +14,13 @@ export const LINUX_SYSTEM_CHROMIUM = "/usr/bin/chromium";
  */
 export const PUPPETEER_LAUNCH_ARGS_DEFAULT = [
   "--no-sandbox",
+  /** מפורש לקונטיינרים / Cloud Run — לצד `--no-sandbox` */
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
-  "--single-process",
+  /**
+   * ללא `--single-process`: במצב single-process Chromium על לינוקס/קונטיינר לעיתים לא מדפיס
+   * את שורת ה-remote debugging ל-stdout בזמן, ו-Puppeteer נתקע עד timeout.
+   */
   "--user-data-dir=/tmp/puppeteer_user_data",
   "--disable-gpu",
   "--font-render-hinting=none",
@@ -84,17 +88,34 @@ export function resolveChromeExecutable(): string | undefined {
   return findChromiumExecutable();
 }
 
+function launchTimeoutMs(): number {
+  const raw = process.env.PUPPETEER_LAUNCH_TIMEOUT_MS?.trim();
+  if (raw) {
+    const n = Number.parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 0) return n;
+  }
+  return 90_000;
+}
+
 /** אובייקט launch אחיד לכל הסקרייפרים; `extraArgs` מתווספים אחרי ברירת המחדל (ללא כפילות לפי שם דגל) */
 export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
   headless: boolean;
   executablePath?: string;
   args: string[];
+  timeout: number;
+  dumpio: boolean;
+  /** מחבר דרך pipe במקום לפרסר WebSocket מ-stdout — יציב יותר ב-Docker/Cloud Run */
+  pipe: boolean;
 } {
   const executablePath = resolveChromeExecutable();
   return {
     headless: true,
     ...(executablePath ? { executablePath } : {}),
     args: mergeLaunchArgs(PUPPETEER_LAUNCH_ARGS_DEFAULT, extraArgs),
+    timeout: launchTimeoutMs(),
+    /** stderr/stdout של תהליך Chromium — שימושי לדיבוג קריסות ב־Cloud Run */
+    dumpio: true,
+    pipe: true,
   };
 }
 
@@ -105,7 +126,12 @@ export async function launchPuppeteerBrowser(
   extraArgs: string[] = []
 ): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
   const opts = buildPuppeteerLaunchOptions(extraArgs);
-  console.log("[puppeteer] full launch options:", JSON.stringify(opts, null, 2));
+  console.log(
+    "[puppeteer] full launch options:",
+    JSON.stringify(opts, null, 2),
+    "| timeout ms (effective):",
+    opts.timeout
+  );
   await new Promise((resolve) => setTimeout(resolve, 1000));
   return puppeteer.launch(opts);
 }
