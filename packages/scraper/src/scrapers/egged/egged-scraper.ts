@@ -405,8 +405,8 @@ export async function runEggedScan(
       headless: true,
       ...(chromePath ? { executablePath: chromePath } : {}),
       args: chromePath
-        ? ["--no-sandbox", "--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+        ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
+        : ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     });
 
     const page = await browser.newPage();

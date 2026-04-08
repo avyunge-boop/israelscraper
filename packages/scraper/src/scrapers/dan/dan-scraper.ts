@@ -219,8 +219,8 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
       headless: true,
       ...(chromePath ? { executablePath: chromePath } : {}),
       args: chromePath
-        ? ["--no-sandbox", "--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+        ? ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage"]
+        : ["--no-sandbox", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     });
 
     const listPage = await browser.newPage();
