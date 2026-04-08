@@ -405,7 +405,7 @@ export async function runEggedScan(
       headless: true,
       ...(chromePath ? { executablePath: chromePath } : {}),
       args: chromePath
-        ? ["--disable-dev-shm-usage"]
+        ? ["--no-sandbox", "--disable-dev-shm-usage"]
         : ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     });
 

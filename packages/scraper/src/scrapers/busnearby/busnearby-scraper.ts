@@ -768,7 +768,7 @@ async function runBusnearbyInternal(
   );
 
   const launchArgs = chromePath
-    ? ["--disable-dev-shm-usage"]
+    ? ["--no-sandbox", "--disable-dev-shm-usage"]
     : [
         "--no-sandbox",
         "--disable-setuid-sandbox",

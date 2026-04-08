@@ -219,7 +219,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
       headless: true,
       ...(chromePath ? { executablePath: chromePath } : {}),
       args: chromePath
-        ? ["--disable-dev-shm-usage"]
+        ? ["--no-sandbox", "--disable-dev-shm-usage"]
         : ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
     });
 
