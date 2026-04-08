@@ -9,4 +9,4 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV=production
 EXPOSE 8080
-CMD ["tsx", "packages/scraper/src/server.ts"]
+CMD ["tsx", "src/server.ts"]
