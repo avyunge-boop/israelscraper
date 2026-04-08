@@ -1,5 +1,22 @@
 FROM node:20-slim
-RUN apt-get update && apt-get install -y chromium libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 dumb-init wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+  chromium \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdrm2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnss3 \
+  libpangocairo-1.0-0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxkbcommon0 \
+  libxrandr2 \
+  libxss1 \
+  dumb-init \
+  wget \
+  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm tsx
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
