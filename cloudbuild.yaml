@@ -1,6 +1,6 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'me-west1-docker.pkg.dev/$PROJECT_ID/scraper-repo/scraper-api:latest', '-f', 'packages/scraper/Dockerfile', '.']
+    args: ['build', '-t', 'me-west1-docker.pkg.dev/$PROJECT_ID/scraper-repo/scraper-api:latest', '.']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'me-west1-docker.pkg.dev/$PROJECT_ID/scraper-repo/scraper-api:latest']
 
