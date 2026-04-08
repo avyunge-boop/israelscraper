@@ -1,12 +1,21 @@
-import { spawn } from "child_process";
+/**
+ * HTTP API for Cloud Run: POST /run-scrape triggers the orchestrator (background).
+ * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME to upload data/*.json after a successful run.
+ */
+import { spawn, type ChildProcess } from "child_process";
 import express from "express";
+import { existsSync } from "fs";
 import path from "path";
+
 import { uploadDataArtifactsToGcs } from "./gcs-sync.js";
 import { loadRootEnv, REPO_ROOT } from "./repo-paths.js";
 
 loadRootEnv();
 
-const ORCHESTRATOR_TS = path.join(REPO_ROOT, "packages/scraper/src/orchestrator.ts");
+const ORCHESTRATOR_TS = path.resolve(
+  REPO_ROOT,
+  "packages/scraper/src/orchestrator.ts"
+);
 
 type RunScrapeBody = {
   agency?: string;
@@ -29,6 +38,67 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   return argv;
 }
 
+function spawnOrchestrator(orchArgv: string[]): ChildProcess {
+  const env = {
+    ...process.env,
+    SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1",
+  };
+
+  console.log("[run-scrape] spawning");
+  console.log("[run-scrape] executable: tsx");
+  console.log("[run-scrape] script:", ORCHESTRATOR_TS);
+  console.log("[run-scrape] args:", JSON.stringify(orchArgv));
+  console.log("[run-scrape] cwd:", REPO_ROOT);
+  console.log("[run-scrape] shell: true");
+
+  return spawn("tsx", [ORCHESTRATOR_TS, ...orchArgv], {
+    cwd: REPO_ROOT,
+    env,
+    shell: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+function runScrapeInBackground(orchArgv: string[]): void {
+  const child = spawnOrchestrator(orchArgv);
+
+  child.on("error", (err) => {
+    console.error("[run-scrape] failed to start child process:", err);
+  });
+
+  child.stdout?.on("data", (c: Buffer) => {
+    console.log("[run-scrape] stdout:", c.toString("utf-8"));
+  });
+
+  child.stderr?.on("data", (c: Buffer) => {
+    console.log("[run-scrape] stderr:", c.toString("utf-8"));
+  });
+
+  child.on("close", (code, signal) => {
+    const exitCode = code ?? 1;
+    if (exitCode !== 0) {
+      console.error("[run-scrape] process exited with error", {
+        exitCode,
+        signal: signal ?? null,
+      });
+    } else {
+      console.log("[run-scrape] process finished successfully (exit 0)");
+    }
+
+    if (exitCode === 0 && process.env.SCRAPER_STORAGE === "gcs") {
+      void (async () => {
+        try {
+          console.log("[run-scrape] GCS upload starting…");
+          const uploaded = await uploadDataArtifactsToGcs();
+          console.log("[run-scrape] GCS upload finished:", uploaded);
+        } catch (e) {
+          console.error("[run-scrape] GCS upload failed:", e);
+        }
+      })();
+    }
+  });
+}
+
 const app = express();
 app.use(express.json({ limit: "256kb" }));
 
@@ -37,38 +107,34 @@ app.get("/health", (_req, res) => {
 });
 
 app.post("/run-scrape", (req, res) => {
+  console.log("[run-scrape] HTTP request received");
   const body = (req.body ?? {}) as RunScrapeBody;
-  const argv = buildOrchestratorArgv(body);
+  const orchArgv = buildOrchestratorArgv(body);
 
-  console.log(`[server] Received run-scrape request. ARGV: ${argv.join(" ")}`);
+  if (!existsSync(ORCHESTRATOR_TS)) {
+    console.error(
+      "[run-scrape] orchestrator file missing; expected at:",
+      ORCHESTRATOR_TS
+    );
+    return res.status(503).json({
+      ok: false,
+      error: "orchestrator not found on filesystem",
+      lookedFor: ORCHESTRATOR_TS,
+      repoRoot: REPO_ROOT,
+    });
+  }
 
-  const env = { ...process.env, SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1" };
-  
-  console.log(`[server] Spawning: tsx ${ORCHESTRATOR_TS} ${argv.join(" ")}`);
-
-  const child = spawn("tsx", [ORCHESTRATOR_TS, ...argv], { 
-    cwd: REPO_ROOT, 
-    env,
-    shell: false 
-  });
-
-  child.stdout?.on("data", (data) => console.log(`[orchestrator]: ${data.toString().trim()}`));
-  child.stderr?.on("data", (data) => console.error(`[orchestrator-err]: ${data.toString().trim()}`));
-
-  child.on("close", async (code) => {
-    console.log(`[server] Scraper exited with code ${code}`);
-    if (code === 0 && process.env.SCRAPER_STORAGE === "gcs") {
-      try {
-        await uploadDataArtifactsToGcs();
-        console.log("[server] GCS upload success");
-      } catch (e) {
-        console.error("[server] GCS upload failed", e);
-      }
-    }
-  });
+  console.log("[run-scrape] enqueue background scrape, argv:", orchArgv);
+  runScrapeInBackground(orchArgv);
 
   return res.status(202).json({ ok: true, status: "started" });
 });
 
 const port = Number(process.env.PORT || "8080");
-app.listen(port, "0.0.0.0", () => console.log(`[server] running on port ${port}`));
+app.listen(port, "0.0.0.0", () => {
+  console.log(`[server] listening on 0.0.0.0:${port}`);
+});
+
+app.get("/", (_req, res) =>
+  res.send("Scraper API is running! Check /health for status.")
+);
