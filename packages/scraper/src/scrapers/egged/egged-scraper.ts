@@ -514,4 +514,4 @@ export const eggedScraper: AgencyScraper = {
   sourceId: "egged",
   displayName: DISPLAY_NAME,
   runScan,
-};
+};// trigger build 1
