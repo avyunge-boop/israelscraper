@@ -1,0 +1,24 @@
+# Cloud Run: Next.js dashboard (b_UUco9SpqaeI) standalone runtime.
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /app
+RUN corepack enable pnpm
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY b_UUco9SpqaeI ./b_UUco9SpqaeI
+COPY packages ./packages
+COPY lib ./lib
+
+RUN pnpm install --frozen-lockfile --filter ./b_UUco9SpqaeI... --ignore-scripts
+RUN pnpm --dir b_UUco9SpqaeI run build
+
+FROM node:22-bookworm-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production PORT=8080 HOSTNAME=0.0.0.0
+
+COPY --from=builder /app/b_UUco9SpqaeI/.next/standalone ./
+COPY --from=builder /app/b_UUco9SpqaeI/.next/static ./b_UUco9SpqaeI/.next/static
+COPY --from=builder /app/b_UUco9SpqaeI/public ./b_UUco9SpqaeI/public
+
+EXPOSE 8080
+CMD ["node", "b_UUco9SpqaeI/server.js"]

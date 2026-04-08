@@ -1,0 +1,50 @@
+{
+  "name": "@workspace/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "prepare-resources": "node ./scripts/prepare-resources.mjs",
+    "build:dmg": "electron-builder --mac dmg",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^35.1.5",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "il.co.israelscraper.desktop",
+    "productName": "Israel Scraper",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/next",
+        "to": "next",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/scraper",
+        "to": "scraper",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "identity": null
+    }
+  }
+}

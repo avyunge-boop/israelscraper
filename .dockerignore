@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/dist
+.git
+cloud_migration_backup
+*.log
+.env
+.env.*
+!.env.example
+**/.DS_Store
+coverage
+b_UUco9SpqaeI/data
+data/*.json
+!data/.gitkeep

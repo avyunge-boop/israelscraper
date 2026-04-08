@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>התראות קווי אוטובוס — busnearby.co.il</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "Noto Sans Hebrew", Arial, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      padding: 0 0 48px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a365d 0%, #2a4a7f 100%);
+      color: #fff;
+      padding: 28px 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.3px; }
+    header p  { font-size: .9rem; opacity: .8; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      font-size: .85rem;
+    }
+    .stat { display: flex; align-items: center; gap: 7px; }
+    .stat-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-active   { background: #38a169; }
+    .dot-upcoming { background: #3182ce; }
+    .dot-expired  { background: #a0aec0; }
+    .stat strong { font-weight: 600; color: #2d3748; }
+
+    /* ── Filter / search ── */
+    .toolbar {
+      padding: 16px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .toolbar input[type="search"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 14px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-family: inherit;
+      direction: rtl;
+      background: #f7fafc;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .toolbar input[type="search"]:focus { border-color: #3182ce; background: #fff; }
+    .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #cbd5e0;
+      background: #fff;
+      font-size: .8rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+      color: #4a5568;
+      white-space: nowrap;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: #2a4a7f;
+      border-color: #2a4a7f;
+      color: #fff;
+    }
+
+    /* ── Main layout ── */
+    main { padding: 24px 32px; max-width: 960px; margin: 0 auto; }
+
+    /* ── Section heading ── */
+    .section-heading {
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #718096;
+      margin: 28px 0 12px;
+    }
+    .section-heading:first-of-type { margin-top: 0; }
+
+    /* ── Alert card ── */
+    .alert-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: box-shadow .15s;
+    }
+    .alert-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+
+    .alert-card.status-active   { border-right: 4px solid #38a169; }
+    .alert-card.status-upcoming { border-right: 4px solid #3182ce; }
+    .alert-card.status-expired  { border-right: 4px solid #a0aec0; opacity: .75; }
+
+    /* ── Card header (always visible) ── */
+    .card-header {
+      padding: 16px 18px 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      user-select: none;
+    }
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: .72rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-active   { background: #c6f6d5; color: #22543d; }
+    .badge-upcoming { background: #bee3f8; color: #2a4365; }
+    .badge-expired  { background: #e2e8f0; color: #4a5568; }
+    .badge-detour      { background: #feebc8; color: #7b341e; }
+    .badge-stop-moved  { background: #e9d8fd; color: #44337a; }
+    .badge-default     { background: #e2e8f0; color: #4a5568; }
+
+    .agency-name {
+      font-size: .78rem;
+      color: #718096;
+      font-weight: 500;
+    }
+    .route-id {
+      font-size: .72rem;
+      color: #a0aec0;
+      font-family: monospace;
+    }
+
+    .card-title {
+      font-size: .97rem;
+      font-weight: 600;
+      line-height: 1.45;
+      color: #2d3748;
+    }
+
+    .card-dates {
+      font-size: .78rem;
+      color: #718096;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .card-dates span::before {
+      content: "📅 ";
+    }
+
+    /* ── Toggle chevron ── */
+    .toggle-row {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 6px;
+      font-size: .78rem;
+      color: #3182ce;
+      margin-top: 2px;
+    }
+    .chevron {
+      display: inline-block;
+      transition: transform .2s;
+      font-style: normal;
+    }
+    .alert-card.open .chevron { transform: rotate(180deg); }
+
+    /* ── Full content (collapsible) ── */
+    .card-body {
+      display: none;
+      padding: 0 18px 18px;
+      border-top: 1px solid #f0f4f8;
+    }
+    .alert-card.open .card-body { display: block; }
+    .full-content {
+      white-space: pre-wrap;
+      font-size: .85rem;
+      line-height: 1.7;
+      color: #4a5568;
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      border: 1px solid #e2e8f0;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .content-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #718096;
+      margin-top: 14px;
+    }
+
+    /* ── Empty / error states ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #718096;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state p { font-size: .95rem; }
+
+    .error-banner {
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      border-radius: 10px;
+      padding: 16px 20px;
+      color: #742a2a;
+      font-size: .88rem;
+      margin-bottom: 16px;
+    }
+
+    /* ── Loading ── */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 120px;
+      color: #718096;
+      font-size: .9rem;
+      gap: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #3182ce;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header, .stats-bar, .toolbar { padding-left: 16px; padding-right: 16px; }
+      main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚌 התראות קווי אוטובוס</h1>
+  <p id="subtitle">טוען נתונים…</p>
+</header>
+
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <div class="stat">
+    <span class="stat-dot dot-active"></span>
+    <span><strong id="cnt-active">0</strong> פעילות כעת</span>
+  </div>
+  <div class="stat">
+    <span class="stat-dot dot-upcoming"></span>
+    <span><strong id="cnt-upcoming">0</strong> עתידיות</span>
+  </div>
+  <div class="stat">
+    <span class="stat-dot dot-expired"></span>
+    <span><strong id="cnt-expired">0</strong> פגות תוקף</span>
+  </div>
+  <div class="stat" style="margin-right: auto; color:#a0aec0; font-size:.78rem">
+    <span id="scraped-at"></span>
+  </div>
+</div>
+
+<div class="toolbar" id="toolbar" style="display:none">
+  <input type="search" id="search-input" placeholder="חיפוש לפי כותרת, סוכנות, תוכן…" />
+  <div class="filter-btns">
+    <button class="filter-btn active" data-filter="all">הכל</button>
+    <button class="filter-btn" data-filter="active">פעילות</button>
+    <button class="filter-btn" data-filter="upcoming">עתידיות</button>
+    <button class="filter-btn" data-filter="expired">פגות תוקף</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="loading"><div class="spinner"></div> טוען התראות…</div>
+</main>
+
+<script>
+(function () {
+  const CONDITION_LABELS = {
+    DETOUR: "מסלול חלופי",
+    STOP_MOVED: "תחנה הועברה",
+    SKIPPED_STOP: "תחנה מבוטלת",
+    NO_SERVICE: "אין שירות",
+    REDUCED_SERVICE: "שירות מצומצם",
+    SIGNIFICANT_DELAYS: "עיכובים משמעותיים",
+  };
+
+  let allAlerts = [];
+  let currentFilter = "all";
+  let currentSearch = "";
+
+  function statusOf(a) {
+    if (a.activeNow) return "active";
+    if (a.expired)   return "expired";
+    return "upcoming";
+  }
+
+  function conditionBadge(cond) {
+    const label = CONDITION_LABELS[cond] || cond;
+    const cls = cond === "DETOUR" ? "badge-detour"
+              : cond === "STOP_MOVED" ? "badge-stop-moved"
+              : "badge-default";
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  function statusBadge(status) {
+    const labels = { active: "פעיל כעת", upcoming: "עתידי", expired: "פג תוקף" };
+    const cls = `badge-${status}`;
+    return `<span class="badge ${cls}">${labels[status] || status}</span>`;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.toLocaleString("he-IL", {
+      day: "numeric", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderCard(a, idx) {
+    const status = statusOf(a);
+    const condBadges = (a.stopConditions || []).map(conditionBadge).join("");
+    const startStr = formatDate(a.effectiveStart);
+    const endStr   = formatDate(a.effectiveEnd);
+    const dateHtml = [
+      startStr ? `<span>מ-${startStr}</span>` : "",
+      endStr   ? `<span>עד ${endStr}</span>`  : "",
+    ].filter(Boolean).join("");
+
+    const hasContent = a.fullContent && a.fullContent.trim().length > 0;
+    const contentPreview = hasContent
+      ? `<div class="toggle-row">
+           <i class="chevron">▾</i>
+           <span>הצג הוראות מפורטות</span>
+         </div>`
+      : "";
+
+    const bodyHtml = hasContent
+      ? `<div class="card-body">
+           <p class="content-label">הוראות מפורטות</p>
+           <div class="full-content">${escapeHtml(a.fullContent)}</div>
+         </div>`
+      : "";
+
+    return `
+    <div class="alert-card status-${status}" data-idx="${idx}">
+      <div class="card-header" onclick="toggleCard(this.parentElement)">
+        <div class="card-meta">
+          ${statusBadge(status)}
+          ${condBadges}
+          <span class="agency-name">${escapeHtml(a.agencyName)}</span>
+          <span class="route-id">${escapeHtml(a.apiRouteId)}</span>
+        </div>
+        <div class="card-title">${escapeHtml(a.title)}</div>
+        ${dateHtml ? `<div class="card-dates">${dateHtml}</div>` : ""}
+        ${contentPreview}
+      </div>
+      ${bodyHtml}
+    </div>`;
+  }
+
+  function filtered() {
+    const q = currentSearch.toLowerCase();
+    return allAlerts.filter(a => {
+      const status = statusOf(a);
+      if (currentFilter !== "all" && status !== currentFilter) return false;
+      if (!q) return true;
+      return (
+        a.title.toLowerCase().includes(q) ||
+        (a.agencyName || "").toLowerCase().includes(q) ||
+        (a.fullContent || "").toLowerCase().includes(q) ||
+        (a.apiRouteId || "").toLowerCase().includes(q)
+      );
+    });
+  }
+
+  function render() {
+    const main = document.getElementById("main");
+    const list = filtered();
+
+    if (list.length === 0) {
+      main.innerHTML = `<div class="empty-state">
+        <div class="icon">🔍</div>
+        <p>לא נמצאו התראות התואמות לחיפוש</p>
+      </div>`;
+      return;
+    }
+
+    const grouped = { active: [], upcoming: [], expired: [] };
+    for (const a of list) grouped[statusOf(a)].push(a);
+
+    const SECTION_LABELS = {
+      active:   "פעילות כעת",
+      upcoming: "עתידיות",
+      expired:  "פגות תוקף",
+    };
+
+    let html = "";
+    for (const status of ["active", "upcoming", "expired"]) {
+      const items = grouped[status];
+      if (!items.length) continue;
+      html += `<div class="section-heading">${SECTION_LABELS[status]} (${items.length})</div>`;
+      html += items.map((a, i) => renderCard(a, allAlerts.indexOf(a))).join("");
+    }
+
+    main.innerHTML = html;
+  }
+
+  window.toggleCard = function(card) {
+    card.classList.toggle("open");
+    const row = card.querySelector(".toggle-row span");
+    if (row) {
+      row.textContent = card.classList.contains("open")
+        ? "הסתר הוראות מפורטות"
+        : "הצג הוראות מפורטות";
+    }
+  };
+
+  function setStats(data) {
+    const active   = data.alerts.filter(a => a.activeNow).length;
+    const expired  = data.alerts.filter(a => a.expired).length;
+    const upcoming = data.alerts.length - active - expired;
+    document.getElementById("cnt-active").textContent   = active;
+    document.getElementById("cnt-upcoming").textContent = upcoming;
+    document.getElementById("cnt-expired").textContent  = expired;
+
+    if (data.scrapedAt) {
+      const d = new Date(data.scrapedAt);
+      document.getElementById("scraped-at").textContent =
+        "עודכן: " + d.toLocaleString("he-IL");
+    }
+
+    document.getElementById("subtitle").textContent =
+      `${data.count} התראות ב-${data.agenciesChecked} חברות — ${data.uniqueRoutesChecked} קווים נבדקו`;
+
+    document.getElementById("stats-bar").style.display = "";
+    document.getElementById("toolbar").style.display  = "";
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch("./bus-alerts");
+      if (!res.ok) throw new Error(`שגיאת שרת ${res.status}`);
+      const data = await res.json();
+      allAlerts = data.alerts || [];
+      setStats(data);
+      render();
+    } catch (err) {
+      document.getElementById("main").innerHTML = `
+        <div class="error-banner">
+          <strong>שגיאה בטעינת הנתונים:</strong> ${escapeHtml(err.message)}
+          <br><small>ודא שהסקריפט רץ לפחות פעם אחת כדי לייצר את קובץ ה-JSON.</small>
+        </div>`;
+      document.getElementById("subtitle").textContent = "שגיאה בטעינת נתונים";
+    }
+  }
+
+  document.getElementById("search-input").addEventListener("input", e => {
+    currentSearch = e.target.value;
+    render();
+  });
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentFilter = btn.dataset.filter;
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      render();
+    });
+  });
+
+  loadData();
+})();
+</script>
+</body>
+</html>

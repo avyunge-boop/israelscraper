@@ -1,0 +1,51 @@
+# === Dependencies & build outputs ===
+node_modules/
+.pnpm-store/
+**/.next/
+**/out/
+**/dist/
+**/build/
+*.tsbuildinfo
+
+# === Environment & secrets ===
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# === Logs & temp ===
+*.log
+*.crdownload
+.cache/
+
+# === OS & editors ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# === Electron / desktop packaging ===
+packages/desktop/release/
+packages/desktop/resources/next/
+packages/desktop/resources/scraper/
+
+# === Puppeteer / local browser cache (if under repo) ===
+**/.cache/puppeteer/
+**/chromium-cache/
+
+# === Large local archives & backups (optional — remove line if you want to track) ===
+*.tgz
+*.zip
+*.dmg
+project.tgz
+
+# === Optional: local data dumps at repo root (uncomment if you don't want them in git) ===
+# /scan-export.json
+# /bus-alerts*.json
+# /routes-database.json
+# /agencies-registry.json
+
+# === Optional: huge migration mirror (uncomment to ignore) ===
+# cloud_migration_backup/

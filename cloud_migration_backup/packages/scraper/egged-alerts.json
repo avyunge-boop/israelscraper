@@ -1,0 +1,188 @@
+{
+  "scrapedAt": "2026-04-06T10:24:46.843Z",
+  "alerts": {
+    "14017354034": {
+      "contentId": "14017354034",
+      "title": "פעילות משטרתית או ביטחונית",
+      "content": "06/04/26, 09:3606/04/26, 14:30כביש 1, חסימה משטרתית, מחלף גנות, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017354034",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "14017354041": {
+      "contentId": "14017354041",
+      "title": "פעילות משטרתית או ביטחונית",
+      "content": "06/04/26, 09:3606/04/26, 14:30כביש 1, חסימה משטרתית, מחלף גנות, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017354041",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "14017230197": {
+      "contentId": "14017230197",
+      "title": "עבודות בכביש",
+      "content": "06/04/26, 07:1806/04/26, 16:00נוף הגליל, עבודות בכביש, מנחם ארביב, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017230197",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "826"
+      ]
+    },
+    "14017207629": {
+      "contentId": "14017207629",
+      "title": "עבודות בכביש",
+      "content": "06/04/26, 07:0006/04/26, 16:00מגדל העמק, עבודות בכביש, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017207629",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "14017220646": {
+      "contentId": "14017220646",
+      "title": "עבודות בכביש",
+      "content": "06/04/26, 06:5206/04/26, 16:00מגדל העמק, עבודות תשתית, רחוב הרב עובדיה יוסף, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017220646",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "14017160793": {
+      "contentId": "14017160793",
+      "title": "פעילות משטרתית או ביטחונית",
+      "content": "06/04/26, 05:3006/04/26, 14:30חיפה, חסימה משטרתית, שמשון, 6.4.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017160793",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "5151"
+      ]
+    },
+    "14017157284": {
+      "contentId": "14017157284",
+      "title": "פעילות משטרתית או ביטחונית",
+      "content": "06/04/26, 05:0006/04/26, 22:30חיפה, חסימה משטרתית, שמשון, 06.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14017157284",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "5151"
+      ]
+    },
+    "14001512094": {
+      "contentId": "14001512094",
+      "title": "עבודות בכביש",
+      "content": "05/04/26, 04:0007/04/26, 17:00תל אביב-יפו - חסימה רציפה ברחוב שלום רוזנפלד (אוניברסיטת תל אביב). ימים ראשון, שני ושלישי 5-7/4/2026.",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14001512094",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "14013477424": {
+      "contentId": "14013477424",
+      "title": "עבודות בכביש",
+      "content": "01/04/26, 04:0015/04/26, 00:00ירושלים, עבודות תשתית, עמק רפאים, 1-14.4.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14013477424",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "34"
+      ]
+    },
+    "13997624940": {
+      "contentId": "13997624940",
+      "title": "עבודות בכביש",
+      "content": "29/03/26, 07:0015/04/26, 01:00טירת כרמל - חסימה ברחוב רזיאל.החל מיום ראשון 29/3/2026 ועד יום שלישי 14/4/2026.",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/13997624940",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "13997796469": {
+      "contentId": "13997796469",
+      "title": "עבודות בכביש",
+      "content": "29/03/26, 07:0015/04/26, 01:00טירת כרמל, עבודות בכביש, רחוב רזיאל, 29.03-14.04.2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/13997796469",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "cdb33495eab59a06": {
+      "contentId": "cdb33495eab59a06",
+      "title": "עדכון קבוע - שינוי מסלול",
+      "content": "29/03/26, 06:19שינוי קבועירושלים - שינוי מסלול קו 12 בשני הכיוונים (מיום שישי 27/3/2026)",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/קו-12-ירושלים-273",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "12"
+      ]
+    },
+    "14001678671": {
+      "contentId": "14001678671",
+      "title": "מצב חירום",
+      "content": "29/03/26, 04:0009/04/26, 04:00ירושלים - ביטול זמני של כניסת קווים 42, 42א לקמפוס אדמונד ספרא (גבעת רם) עקב סגירת השער הדרומי. החל מיום ראשון 29/3/2026 ועד יום רביעי 8/4/2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/14001678671",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "4242"
+      ]
+    },
+    "13997583858": {
+      "contentId": "13997583858",
+      "title": "מצב חירום",
+      "content": "26/03/26, 03:0012/04/26, 04:45חיפה - המשך סגירה זמנית של שער נשר בטכניון. עד יום ראשון 12/4/2026",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/13997583858",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "7677"
+      ]
+    },
+    "13994227930": {
+      "contentId": "13994227930",
+      "title": "מצב חירום",
+      "content": "25/03/26, 04:0014/04/26, 05:00חיפה - המשך ביטול כניסת קווים 37א, 54 דרך השער המזרחי של האוניברסיטה. החל מיום רביעי 25/3/2026 בשעה 06:00 ועד יום שלישי 14/4/2026.",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/13994227930",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "37",
+        "54"
+      ]
+    },
+    "212d7a0425128e9c": {
+      "contentId": "212d7a0425128e9c",
+      "title": "עבודות תשתית",
+      "content": "10/08/25, 16:00שינוי קבועשינוי מסלול בקו 20 - קו סיבובי בין קריית שמונה למטולה וחזרה (החל מיום חמישי 31/7/2025) לכמה חודשים",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/מטולה-שינוי-מסלול-בקו-20",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "20"
+      ]
+    },
+    "f46859fadb8bd7fb": {
+      "contentId": "f46859fadb8bd7fb",
+      "title": "עבודות תשתית",
+      "content": "10/08/25, 14:58שינוי קבועקו 4 (בשני הכיוונים) יחזור לעצור בתחנות רחוב המסילה ובדרך למרחב בתוספת תחנות חדשות (החל מיום ראשון 3/8/2025) לכמה חודשים",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/פרדס-חנה-כרכור-קו-4-38",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "4"
+      ]
+    },
+    "f3a03463a7827d15": {
+      "contentId": "f3a03463a7827d15",
+      "title": "עבודות תשתית",
+      "content": "10/08/25, 11:00שינוי קבועביטול מסלול הנת\"צ ברחוב קרן היסוד בירושלים. התחנות יועתקו אל נתיב הרכבים הפרטיים והקווים יעצרו בהן.",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/קרן-היסוד-ירושלים-108",
+      "effectiveStart": "",
+      "lineNumbers": []
+    },
+    "2abf5886e7719949": {
+      "contentId": "2abf5886e7719949",
+      "title": "תחנה מבוטלת לצמיתות",
+      "content": "24/07/25, 11:0005/09/25, 11:00חולון - ביטול תחנת בית ספר גולדה מאיר ברחוב ברקת (החל מיום ראשון 3/8/2025)‎",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/חולון-38",
+      "effectiveStart": "",
+      "lineNumbers": [
+        "524"
+      ]
+    },
+    "d6be080dc7f5545f": {
+      "contentId": "d6be080dc7f5545f",
+      "title": "תחנה מבוטלת לצמיתות",
+      "content": "16/07/25, 15:1819/08/25, 11:00דימונה - ביטול עצירת קווים בתחנה בשדרות אריאל שרון (החל מיום שישי 18/7/2025)‎",
+      "detailUrl": "https://www.egged.co.il/traffic-updates/דימונה-187",
+      "effectiveStart": "",
+      "lineNumbers": []
+    }
+  }
+}

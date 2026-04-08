@@ -1,0 +1,31 @@
+{
+  "name": "@workspace/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hello": "tsx ./src/hello.ts",
+    "scrape-bus-alerts": "tsx ./src/scrape-bus-alerts.ts",
+    "scrape-bus-alerts:refresh": "tsx ./src/scrape-bus-alerts.ts --refresh",
+    "scrape-bus-alerts:full": "tsx ./src/scrape-bus-alerts.ts --full-scan",
+    "scan": "tsx ./src/orchestrator.ts",
+    "scan:metropoline": "tsx ./src/orchestrator.ts -- --agency=metropoline",
+    "scan:kavim": "tsx ./src/orchestrator.ts -- --agency=kavim",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test-groq": "tsx ./src/test-groq.ts",
+    "consolidate-data": "tsx ./src/consolidate-nested-data.ts",
+    "postinstall": "puppeteer browsers install chrome"
+  },
+  "dependencies": {
+    "groq-sdk": "^0.15.0",
+    "dotenv": "^16.4.7",
+    "nodemailer": "^6.10.1",
+    "p-limit": "^6.2.0",
+    "puppeteer": "^23.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "catalog:"
+  }
+}
