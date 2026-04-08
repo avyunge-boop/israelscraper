@@ -132,3 +132,4 @@ const port = Number(process.env.PORT || "8080");
 app.listen(port, "0.0.0.0", () => {
   console.log(`[server] listening on 0.0.0.0:${port}`);
 });
+app.get("/", (req, res) => res.send("Scraper API is running! Check /health for status."));
