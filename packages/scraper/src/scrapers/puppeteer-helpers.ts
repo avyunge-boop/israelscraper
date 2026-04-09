@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync } from "fs";
-import puppeteer from "puppeteer";
+import puppeteer, { type LaunchOptions } from "puppeteer";
 
 const MACOS_CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -100,7 +100,15 @@ function launchTimeoutMs(): number {
     const n = Number.parseInt(raw, 10);
     if (Number.isFinite(n) && n >= 0) return n;
   }
-  return 90_000;
+  return 120_000;
+}
+
+/** ב-production כבוי כברירת מחדל — dumpio+socket גורם ל-stderr להילכד ול-timeout על WS; PUPPETEER_DUMP_IO=1 לדיבוג */
+function shouldDumpIo(): boolean {
+  const e = process.env.PUPPETEER_DUMP_IO?.trim().toLowerCase();
+  if (e === "1" || e === "true" || e === "yes") return true;
+  if (e === "0" || e === "false" || e === "no") return false;
+  return process.env.NODE_ENV !== "production";
 }
 
 /** אובייקט launch אחיד לכל הסקרייפרים; `extraArgs` מתווספים אחרי ברירת המחדל (ללא כפילות לפי שם דגל) */
@@ -114,10 +122,7 @@ export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
   pipe: boolean;
 } {
   const executablePath = resolveChromeExecutable();
-  const dumpio =
-    process.env.PUPPETEER_DUMP_IO === "0" || process.env.PUPPETEER_DUMP_IO === "false"
-      ? false
-      : true;
+  const dumpio = shouldDumpIo();
 
   return {
     headless: true,
@@ -126,7 +131,7 @@ export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
     timeout: launchTimeoutMs(),
     /**
      * עם `--remote-debugging-pipe` החיבור הוא דרך fd 3/4 — בטוח יחד עם dumpio.
-     * לכיבוי לוגי verbose של Chromium: PUPPETEER_DUMP_IO=0
+     * ב-production dumpio כבוי אלא אם PUPPETEER_DUMP_IO=1
      */
     dumpio,
     pipe: true,
@@ -141,17 +146,32 @@ export async function launchPuppeteerBrowser(
 ): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
   const opts = buildPuppeteerLaunchOptions(extraArgs);
   const hasPipeFlag = opts.args.some((a) => a.startsWith("--remote-debugging-pipe"));
+  if (!hasPipeFlag) {
+    throw new Error(
+      "[puppeteer] missing --remote-debugging-pipe in args (would fall back to WS on stderr and often time out in Docker)"
+    );
+  }
   console.error(
     "[puppeteer] launch:",
     "pipe flag=" + hasPipeFlag,
     "launch.pipe=" + opts.pipe,
     "timeoutMs=" + opts.timeout,
     "dumpio=" + opts.dumpio,
+    "NODE_ENV=" + (process.env.NODE_ENV ?? ""),
     "executable=" + (opts.executablePath ?? "(bundled)")
   );
   console.log("[puppeteer] full launch options:", JSON.stringify(opts, null, 2));
   await new Promise((resolve) => setTimeout(resolve, 1000));
-  return puppeteer.launch(opts);
+
+  const launchOptions: LaunchOptions = {
+    headless: opts.headless,
+    ...(opts.executablePath ? { executablePath: opts.executablePath } : {}),
+    args: opts.args,
+    timeout: opts.timeout,
+    dumpio: opts.dumpio,
+    pipe: opts.pipe,
+  };
+  return puppeteer.launch(launchOptions);
 }
 
 export const DEFAULT_UA =
