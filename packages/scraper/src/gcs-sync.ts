@@ -9,6 +9,7 @@ import { DATA_DIR } from "./repo-paths.js";
 
 const DEFAULT_BUCKET = "israelscraper";
 
+/** קבצים שמסנכרנים ל-GCS אחרי סריקה מוצלחת (אותה רשימה כמו ב-/data ב-server). */
 const SYNC_FILES = [
   "scan-export.json",
   "bus-alerts.json",
@@ -16,6 +17,10 @@ const SYNC_FILES = [
   "egged-alerts.json",
   "agencies-registry.json",
   "bus-alerts-prev.json",
+  "busnearby-agency-exclusions.json",
+  "ai-summaries.json",
+  "settings.json",
+  "alert-activity.json",
 ] as const;
 
 function normalizePrefix(p: string): string {

@@ -1,6 +1,9 @@
 /**
  * HTTP API for Cloud Run: POST /run-scrape triggers the orchestrator.
  * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME (default israelscraper) to upload data/*.json after a successful run.
+ *
+ * Email: by default SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=1 (no emails from orchestrator/scrapers).
+ * On Cloud Run, set SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=0 and BUS_ALERTS_SMTP_* + BUS_ALERTS_EMAIL_* to send reports.
  */
 import { spawn } from "child_process";
 import express from "express";
@@ -49,9 +52,12 @@ function runOrchestrator(argv: string[]): Promise<{
   stdout: string;
   stderr: string;
 }> {
+  /** ברירת מחדל: בלי מייל (כמו proxy מקומי). אם מגדירים SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL ב-Cloud Run — לא דורסים. */
   const env = {
     ...process.env,
-    SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1",
+    ...(process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === undefined
+      ? { SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1" }
+      : {}),
   };
 
   return new Promise((resolve, reject) => {
@@ -104,6 +110,13 @@ const DATA_FILE_NAMES = new Set([
   "busnearby-agency-exclusions.json",
 ]);
 
+/** כשאין קובץ ב-GCS ובדיסק — מחזירים JSON תקין כדי שהדשבורד לא יקבל 404 (אין קבצים אלה בקונטיינר). */
+const EMPTY_JSON_STUBS: Record<string, string> = {
+  "ai-summaries.json": '{"byId":{}}',
+  "settings.json": "{}",
+  "alert-activity.json": '{"byId":{}}',
+};
+
 const app = express();
 app.use(express.json({ limit: "256kb" }));
 
@@ -129,6 +142,13 @@ app.get("/data/:name", async (req, res) => {
     }
     const fp = path.join(DATA_DIR, name);
     if (!existsSync(fp)) {
+      const stub = EMPTY_JSON_STUBS[name];
+      if (stub !== undefined) {
+        return res
+          .status(200)
+          .type("application/json; charset=utf-8")
+          .send(stub);
+      }
       return res.status(404).json({ error: "not found" });
     }
     const raw = readFileSync(fp, "utf-8");

@@ -3,6 +3,11 @@ set -euo pipefail
 
 # Usage:
 #   GCP_PROJECT_ID=... GCP_REGION=... GCS_BUCKET_NAME=... ./scripts/gcp/deploy-scraper-cloud-run.sh
+#
+# Optional (email after scan): add to --set-env-vars or set in Cloud Run console:
+#   SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=0
+#   BUS_ALERTS_SMTP_HOST=... BUS_ALERTS_SMTP_PORT=587 BUS_ALERTS_SMTP_USER=... BUS_ALERTS_SMTP_PASS=...
+#   BUS_ALERTS_EMAIL_FROM=... BUS_ALERTS_EMAIL_TO=...
 
 PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID}"
 REGION="${GCP_REGION:-us-central1}"
