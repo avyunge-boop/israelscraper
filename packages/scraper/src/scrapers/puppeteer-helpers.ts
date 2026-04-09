@@ -18,6 +18,12 @@ export const PUPPETEER_LAUNCH_ARGS_DEFAULT = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   /**
+   * חובה לקונטיינרים: Puppeteer מסמן `pipe: true` רק אם הארגומנט הזה מופיע ב־args.
+   * בלי pipe, Node מחכה ל־WebSocket ב־stderr — ועם `dumpio` אותו stream כבר מנותב ל־process.stderr,
+   * כך ששורת `DevTools listening` לא מגיעה ל־readline ומתקבל TimeoutError אחרי 30s.
+   */
+  "--remote-debugging-pipe",
+  /**
    * ללא `--single-process`: במצב single-process Chromium על לינוקס/קונטיינר לעיתים לא מדפיס
    * את שורת ה-remote debugging ל-stdout בזמן, ו-Puppeteer נתקע עד timeout.
    */
@@ -108,13 +114,21 @@ export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
   pipe: boolean;
 } {
   const executablePath = resolveChromeExecutable();
+  const dumpio =
+    process.env.PUPPETEER_DUMP_IO === "0" || process.env.PUPPETEER_DUMP_IO === "false"
+      ? false
+      : true;
+
   return {
     headless: true,
     ...(executablePath ? { executablePath } : {}),
     args: mergeLaunchArgs(PUPPETEER_LAUNCH_ARGS_DEFAULT, extraArgs),
     timeout: launchTimeoutMs(),
-    /** stderr/stdout של תהליך Chromium — שימושי לדיבוג קריסות ב־Cloud Run */
-    dumpio: true,
+    /**
+     * עם `--remote-debugging-pipe` החיבור הוא דרך fd 3/4 — בטוח יחד עם dumpio.
+     * לכיבוי לוגי verbose של Chromium: PUPPETEER_DUMP_IO=0
+     */
+    dumpio,
     pipe: true,
   };
 }
@@ -126,12 +140,16 @@ export async function launchPuppeteerBrowser(
   extraArgs: string[] = []
 ): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
   const opts = buildPuppeteerLaunchOptions(extraArgs);
-  console.log(
-    "[puppeteer] full launch options:",
-    JSON.stringify(opts, null, 2),
-    "| timeout ms (effective):",
-    opts.timeout
+  const hasPipeFlag = opts.args.some((a) => a.startsWith("--remote-debugging-pipe"));
+  console.error(
+    "[puppeteer] launch:",
+    "pipe flag=" + hasPipeFlag,
+    "launch.pipe=" + opts.pipe,
+    "timeoutMs=" + opts.timeout,
+    "dumpio=" + opts.dumpio,
+    "executable=" + (opts.executablePath ?? "(bundled)")
   );
+  console.log("[puppeteer] full launch options:", JSON.stringify(opts, null, 2));
   await new Promise((resolve) => setTimeout(resolve, 1000));
   return puppeteer.launch(opts);
 }
