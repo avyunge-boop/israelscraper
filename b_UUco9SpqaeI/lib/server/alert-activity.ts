@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from "fs/promises"
 import path from "path"
 
 import type { TransportAlert } from "@/lib/transport-alert"
+import {
+  fetchScraperDataJson,
+  getScraperApiBaseUrl,
+} from "@/lib/server/scraper-api"
 import { resolveCanonicalDataDir } from "@/lib/server/workspace-paths"
 
 const FILE = () =>
@@ -12,6 +16,14 @@ type ActivityFile = {
 }
 
 async function readFileJson(): Promise<ActivityFile> {
+  if (getScraperApiBaseUrl()) {
+    const j = (await fetchScraperDataJson(
+      "alert-activity.json"
+    )) as ActivityFile | null
+    if (j?.byId && typeof j.byId === "object") {
+      return j
+    }
+  }
   try {
     const raw = await readFile(FILE(), "utf-8")
     const j = JSON.parse(raw) as ActivityFile

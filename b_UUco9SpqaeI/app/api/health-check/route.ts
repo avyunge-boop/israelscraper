@@ -3,78 +3,72 @@ import path from "path"
 import { NextResponse } from "next/server"
 
 import {
+  fetchScraperDataJson,
+  getScraperApiBaseUrl,
+} from "@/lib/server/scraper-api"
+import {
   resolveCanonicalDataDir,
   resolveOrchestratorRepoRoot,
 } from "@/lib/server/workspace-paths"
 
 export const dynamic = "force-dynamic"
 
-function hasBusAlertsJson(dataDir: string): boolean {
-  const p = path.join(dataDir, "bus-alerts.json")
-  if (!existsSync(p)) return false
+async function readDataJson(fileName: string): Promise<unknown | null> {
+  if (getScraperApiBaseUrl()) {
+    const j = await fetchScraperDataJson(fileName)
+    if (j !== null) return j
+  }
+  const p = path.join(resolveCanonicalDataDir(), fileName)
+  if (!existsSync(p)) return null
   try {
-    const raw = readFileSync(p, "utf-8").trim()
-    if (!raw) return false
-    const j = JSON.parse(raw) as { alerts?: unknown[] }
-    return Array.isArray(j.alerts) && j.alerts.length > 0
+    return JSON.parse(readFileSync(p, "utf-8")) as unknown
   } catch {
-    return false
+    return null
   }
 }
 
-function hasEggedAlertsJson(dataDir: string): boolean {
-  const p = path.join(dataDir, "egged-alerts.json")
-  if (!existsSync(p)) return false
-  try {
-    const raw = readFileSync(p, "utf-8").trim()
-    if (!raw) return false
-    const j = JSON.parse(raw) as { alerts?: Record<string, unknown> }
-    const bag = j.alerts
-    if (!bag || typeof bag !== "object") return false
-    return Object.keys(bag).length > 0
-  } catch {
-    return false
-  }
+function hasBusAlertsJson(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const alerts = (j as { alerts?: unknown[] }).alerts
+  return Array.isArray(alerts) && alerts.length > 0
 }
 
-function scanExportHasAlerts(dataDir: string): boolean {
-  const p = path.join(dataDir, "scan-export.json")
-  if (!existsSync(p)) return false
-  try {
-    const raw = JSON.parse(readFileSync(p, "utf-8")) as {
-      sources?: Array<{ alerts?: unknown[] }>
-    }
-    return (raw.sources ?? []).some(
-      (s) => Array.isArray(s.alerts) && s.alerts.length > 0
-    )
-  } catch {
-    return false
-  }
+function hasEggedAlertsJson(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const bag = (j as { alerts?: Record<string, unknown> }).alerts
+  if (!bag || typeof bag !== "object") return false
+  return Object.keys(bag).length > 0
+}
+
+function scanExportHasAlerts(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const sources = (j as { sources?: Array<{ alerts?: unknown[] }> }).sources
+  return (sources ?? []).some(
+    (s) => Array.isArray(s.alerts) && s.alerts.length > 0
+  )
+}
+
+function routesDatabaseOk(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const routes = (j as { routes?: unknown[] }).routes
+  return Array.isArray(routes) && routes.length > 0
 }
 
 export async function GET() {
   const repoRoot = resolveOrchestratorRepoRoot()
   const dataDir = resolveCanonicalDataDir()
-  const routesPath = path.join(dataDir, "routes-database.json")
-  const scanPath = path.join(dataDir, "scan-export.json")
 
-  const routesOk =
-    existsSync(routesPath) &&
-    (() => {
-      try {
-        const raw = readFileSync(routesPath, "utf-8").trim()
-        if (!raw) return false
-        const j = JSON.parse(raw) as { routes?: unknown[] }
-        return Array.isArray(j.routes) && j.routes.length > 0
-      } catch {
-        return false
-      }
-    })()
+  const routesJ = await readDataJson("routes-database.json")
+  const routesOk = routesDatabaseOk(routesJ)
+
+  const busJ = await readDataJson("bus-alerts.json")
+  const eggedJ = await readDataJson("egged-alerts.json")
+  const scanJ = await readDataJson("scan-export.json")
 
   const cachedAlertsOk =
-    hasBusAlertsJson(dataDir) ||
-    hasEggedAlertsJson(dataDir) ||
-    scanExportHasAlerts(dataDir)
+    hasBusAlertsJson(busJ) ||
+    hasEggedAlertsJson(eggedJ) ||
+    scanExportHasAlerts(scanJ)
 
   const canRecoverOrScrape = routesOk || cachedAlertsOk
   const routesDbNeedsInit = !canRecoverOrScrape
@@ -104,8 +98,8 @@ export async function GET() {
   const agencies: Record<string, { lastScrapedAt: string | null; ok: boolean }> =
     {}
   try {
-    if (existsSync(scanPath)) {
-      const raw = JSON.parse(readFileSync(scanPath, "utf-8")) as {
+    if (scanJ && typeof scanJ === "object") {
+      const raw = scanJ as {
         sources?: Array<{
           sourceId: string
           success?: boolean
@@ -123,6 +117,10 @@ export async function GET() {
     /* */
   }
 
+  const scanExportExists =
+    scanJ !== null ||
+    existsSync(path.join(dataDir, "scan-export.json"))
+
   const failures: string[] = []
   if (key && !groqOk) failures.push("Groq API unreachable or error")
   if (routesDbNeedsInit) {
@@ -137,7 +135,7 @@ export async function GET() {
       "routes-database.json missing or empty — run Bus Nearby refresh to rebuild routes list"
     )
   }
-  if (!existsSync(scanPath) && canRecoverOrScrape) {
+  if (!scanJ && canRecoverOrScrape) {
     warnings.push(
       "scan-export.json missing — optional; run full scan to create merged export"
     )
@@ -153,11 +151,12 @@ export async function GET() {
     routesDbNeedsInit,
     cachedAlertsOk,
     canRecoverOrScrape,
-    scanExportExists: existsSync(scanPath),
+    scanExportExists,
     agencies,
     failures,
     warnings,
     dataRoot: dataDir,
     repoRoot,
+    scraperApiUrl: getScraperApiBaseUrl() ?? null,
   })
 }

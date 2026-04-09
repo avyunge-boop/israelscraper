@@ -12,6 +12,10 @@ import {
   resolveOrchestratorRepoRoot,
   tryReadJsonFirstExisting,
 } from "@/lib/server/workspace-paths"
+import {
+  fetchScraperDataJson,
+  getScraperApiBaseUrl,
+} from "@/lib/server/scraper-api"
 
 export const FILE_SPECS = [
   { file: "bus-alerts.json", kind: "busnearby" as const },
@@ -19,6 +23,10 @@ export const FILE_SPECS = [
 ]
 
 async function resolveJsonFile(fileName: string): Promise<unknown | null> {
+  if (getScraperApiBaseUrl()) {
+    const remote = await fetchScraperDataJson(fileName)
+    if (remote !== null) return remote
+  }
   const canonical = path.join(resolveCanonicalDataDir(), fileName)
   const trails: string[][] = [
     ["data", fileName],
@@ -53,6 +61,24 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
     resolveCanonicalDataDir(),
     "scan-export.json"
   )
+  if (getScraperApiBaseUrl()) {
+    const rawRemote = await fetchScraperDataJson("scan-export.json")
+    if (rawRemote) {
+      const fromScan = alertsFromScanExportJson(rawRemote)
+      if (fromScan.length > 0) {
+        let lastUpdated = (rawRemote as { scrapedAt?: string }).scrapedAt ?? ""
+        for (const a of fromScan) {
+          if (a.sourceScrapedAt) lastUpdated = maxIso(lastUpdated, a.sourceScrapedAt)
+        }
+        if (!lastUpdated) lastUpdated = new Date().toISOString()
+        return {
+          alerts: fromScan,
+          lastUpdated,
+          sourcesUsed: ["scan-export.json (SCRAPER_API_URL)"],
+        }
+      }
+    }
+  }
   const scanPaths = [
     canonicalScanExport,
     ...new Set(

@@ -3,6 +3,7 @@ import { existsSync } from "fs"
 import path from "path"
 import { NextResponse } from "next/server"
 
+import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
 import {
   isBusnearbyRoutesDatabaseEmpty,
   resolveOrchestratorRepoRoot,
@@ -97,12 +98,69 @@ function buildCliArgs(body: ScanBody): string[] {
   return cliArgs
 }
 
+type RunOrchestratorOpts = {
+  onStdout?: (chunk: string) => void
+  onStderr?: (chunk: string) => void
+}
+
+/** Cloud Run: סריקה דרך שירות הסקרייפר (לא pnpm מקומי). */
+async function runOrchestratorViaScraperApi(
+  body: ScanBody,
+  opts?: RunOrchestratorOpts
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const base = getScraperApiBaseUrl()
+  if (!base) {
+    throw new Error("SCRAPER_API_URL is not set")
+  }
+  const { all, agency, forceRefresh } = parseScanBody(body)
+  const payload: Record<string, unknown> = {}
+  if (all) payload.all = true
+  else if (agency) payload.agency = agency
+  else payload.all = true
+  if (forceRefresh) payload.refresh = true
+
+  const res = await fetch(`${base}/run-scrape`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  })
+  const text = await res.text()
+  let data: {
+    ok?: boolean
+    exitCode?: number
+    stdout?: string
+    stderr?: string
+    error?: string
+  }
+  try {
+    data = JSON.parse(text) as typeof data
+  } catch {
+    throw new Error(
+      `Scraper API returned non-JSON (${res.status}): ${text.slice(0, 200)}`
+    )
+  }
+  const stdout = data.stdout ?? ""
+  const stderr = data.stderr ?? ""
+  opts?.onStdout?.(stdout)
+  opts?.onStderr?.(stderr)
+
+  if (typeof data.exitCode === "number") {
+    return { code: data.exitCode, stdout, stderr }
+  }
+  if (typeof data.error === "string" && data.error) {
+    throw new Error(data.error)
+  }
+  const code = data.ok === true ? 0 : 1
+  if (!res.ok && code === 0) {
+    throw new Error(`Scraper API HTTP ${res.status}`)
+  }
+  return { code, stdout, stderr }
+}
+
 function runOrchestrator(
   args: string[],
-  opts?: {
-    onStdout?: (chunk: string) => void
-    onStderr?: (chunk: string) => void
-  }
+  opts?: RunOrchestratorOpts
 ): Promise<{
   code: number
   stdout: string
@@ -129,7 +187,7 @@ function runOrchestrator(
         "cli.mjs"
       )
       const nodeBin = resolveNodeExecutable()
-      const spawnEnv = { ...env }
+      const spawnEnv = { ...env } as Record<string, string | undefined>
       delete spawnEnv.ELECTRON_RUN_AS_NODE
       child = spawn(nodeBin, [
         tsxCli,
@@ -137,7 +195,7 @@ function runOrchestrator(
         ...args,
       ], {
         cwd: packagedRoot,
-        env: spawnEnv,
+        env: spawnEnv as NodeJS.ProcessEnv,
       })
     } else {
       const pnpmArgs = [
@@ -215,7 +273,7 @@ export async function POST(request: Request) {
   if (
     touchesBusnearbyScan(cliArgs) &&
     !cliArgs.includes("--refresh") &&
-    isBusnearbyRoutesDatabaseEmpty()
+    (await isBusnearbyRoutesDatabaseEmpty())
   ) {
     return NextResponse.json(
       {
@@ -238,17 +296,29 @@ export async function POST(request: Request) {
           )
         }
         try {
-          const { code, stdout, stderr } = await runOrchestrator(cliArgs, {
-            onStdout: (text) => {
-              send({ type: "log", channel: "stdout", text })
-              for (const ev of parseProgressLines(text)) {
-                send({ type: "progress", payload: ev })
-              }
-            },
-            onStderr: (text) => {
-              send({ type: "log", channel: "stderr", text })
-            },
-          })
+          const { code, stdout, stderr } = getScraperApiBaseUrl()
+            ? await runOrchestratorViaScraperApi(body, {
+                onStdout: (text) => {
+                  send({ type: "log", channel: "stdout", text })
+                  for (const ev of parseProgressLines(text)) {
+                    send({ type: "progress", payload: ev })
+                  }
+                },
+                onStderr: (text) => {
+                  send({ type: "log", channel: "stderr", text })
+                },
+              })
+            : await runOrchestrator(cliArgs, {
+                onStdout: (text) => {
+                  send({ type: "log", channel: "stdout", text })
+                  for (const ev of parseProgressLines(text)) {
+                    send({ type: "progress", payload: ev })
+                  }
+                },
+                onStderr: (text) => {
+                  send({ type: "log", channel: "stderr", text })
+                },
+              })
           send({
             type: "done",
             ok: code === 0,
@@ -276,7 +346,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { code, stdout, stderr } = await runOrchestrator(cliArgs)
+    const { code, stdout, stderr } = getScraperApiBaseUrl()
+      ? await runOrchestratorViaScraperApi(body)
+      : await runOrchestrator(cliArgs)
     const tail = 80_000
 
     return NextResponse.json({
@@ -288,7 +360,11 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json(
-      { error: `לא ניתן להריץ pnpm/סריקה: ${msg}` },
+      {
+        error: getScraperApiBaseUrl()
+          ? `שגיאת Scraper API: ${msg}`
+          : `לא ניתן להריץ pnpm/סריקה: ${msg}`,
+      },
       { status: 500 }
     )
   }

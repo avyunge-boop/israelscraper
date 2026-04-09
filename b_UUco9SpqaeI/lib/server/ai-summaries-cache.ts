@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises"
 import path from "path"
 
+import { fetchScraperDataJson } from "@/lib/server/scraper-api"
 import {
   getWorkspaceRoots,
   resolveCanonicalDataDir,
@@ -65,6 +66,13 @@ function mergeById(
 /** קורא וממזג את כל קבצי המטמון שנמצאים — כדי שלא יאבדו סיכומים בגלל cwd שונה */
 export async function readAiSummariesCache(): Promise<AiSummariesFile> {
   const byId: Record<string, string> = {}
+  const remote = await fetchScraperDataJson("ai-summaries.json")
+  if (remote && typeof remote === "object" && remote !== null) {
+    const j = remote as { byId?: Record<string, unknown> }
+    if (j.byId && typeof j.byId === "object") {
+      mergeById(byId, j.byId)
+    }
+  }
   for (const file of collectReadPaths()) {
     try {
       const raw = await readFile(file, "utf-8")

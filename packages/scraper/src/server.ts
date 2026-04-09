@@ -4,12 +4,12 @@
  */
 import { spawn } from "child_process";
 import express from "express";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 import { uploadDataArtifactsToGcs } from "./gcs-sync.js";
-import { loadRootEnv, REPO_ROOT } from "./repo-paths.js";
+import { DATA_DIR, loadRootEnv, REPO_ROOT } from "./repo-paths.js";
 
 loadRootEnv();
 
@@ -89,11 +89,44 @@ function runOrchestrator(argv: string[]): Promise<{
   });
 }
 
+const DATA_FILE_NAMES = new Set([
+  "bus-alerts.json",
+  "scan-export.json",
+  "routes-database.json",
+  "egged-alerts.json",
+  "ai-summaries.json",
+  "settings.json",
+  "alert-activity.json",
+  "agencies-registry.json",
+  "busnearby-agency-exclusions.json",
+]);
+
 const app = express();
 app.use(express.json({ limit: "256kb" }));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
+});
+
+/** קריאת קבצי data/ לדשבורד כשאין גישה לדיסק מקומי */
+app.get("/data/:name", (req, res) => {
+  const name = String(req.params.name ?? "");
+  if (!DATA_FILE_NAMES.has(name)) {
+    return res.status(404).json({ error: "not found" });
+  }
+  const fp = path.join(DATA_DIR, name);
+  if (!existsSync(fp)) {
+    return res.status(404).json({ error: "not found" });
+  }
+  try {
+    const raw = readFileSync(fp, "utf-8");
+    return res
+      .status(200)
+      .type("application/json; charset=utf-8")
+      .send(raw);
+  } catch (e) {
+    return res.status(500).json({ error: String(e) });
+  }
 });
 
 app.post("/run-scrape", async (req, res) => {
