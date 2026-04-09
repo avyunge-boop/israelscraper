@@ -1,7 +1,8 @@
 # Build container and deploy to Cloud Run. Configure GitHub secrets:
 #   GCP_WORKLOAD_IDENTITY_PROVIDER  (for OIDC auth)
 #   GCP_SERVICE_ACCOUNT_EMAIL
-# Optional: GCP_REGION (default us-central1), CLOUD_RUN_SERVICE (default israel-scraper)
+# Optional overrides via env below. Must match the Cloud Run service you use in GCP
+# (logs showed scraper-api in me-west1).
 name: Deploy scraper to Cloud Run
 
 on:
@@ -12,8 +13,8 @@ on:
 env:
   GCP_PROJECT_ID: project-36c1b4ff-df0f-4c13-883
   GCS_BUCKET_NAME: israelscraper
-  GCP_REGION: us-central1
-  CLOUD_RUN_SERVICE: israel-scraper
+  GCP_REGION: me-west1
+  CLOUD_RUN_SERVICE: scraper-api
 
 jobs:
   deploy:
