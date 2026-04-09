@@ -106,6 +106,15 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
 });
 
+/** Root — מונע 404 בפתיחת ה-URL בדפדפן / בדיקות בסיסיות; לא מבלבל עם תשתית Cloud Run */
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "israel-scraper-api",
+    docs: "POST /run-scrape (JSON body: agency | all, optional refresh). See /health.",
+  });
+});
+
 app.post("/run-scrape", (req, res) => {
   console.log("[run-scrape] HTTP request received");
   const body = (req.body ?? {}) as RunScrapeBody;
@@ -134,7 +143,3 @@ const port = Number(process.env.PORT || "8080");
 app.listen(port, "0.0.0.0", () => {
   console.log(`[server] listening on 0.0.0.0:${port}`);
 });
-
-app.get("/", (_req, res) =>
-  res.send("Scraper API is running! Check /health for status.")
-);
