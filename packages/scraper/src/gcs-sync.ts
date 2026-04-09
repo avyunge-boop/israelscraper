@@ -54,3 +54,33 @@ export async function uploadDataArtifactsToGcs(): Promise<string[]> {
 
   return uploaded;
 }
+
+/**
+ * מוריד קובץ JSON מ-GCS באותו נתיב כמו ב-upload (bucket + GCS_OBJECT_PREFIX).
+ * מחזיר null אם האובייקט לא קיים או אם אינו במצב gcs.
+ */
+export async function readDataArtifactFromGcs(
+  fileName: string
+): Promise<string | null> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") {
+    return null;
+  }
+  const bucketName =
+    process.env.GCS_BUCKET_NAME?.trim() || DEFAULT_BUCKET;
+  const projectId = process.env.GCP_PROJECT_ID?.trim();
+  const prefix = normalizePrefix(process.env.GCS_OBJECT_PREFIX?.trim() ?? "");
+  const objectName = prefix ? `${prefix}/${fileName}` : fileName;
+
+  try {
+    const storage = projectId
+      ? new Storage({ projectId })
+      : new Storage();
+    const [buf] = await storage
+      .bucket(bucketName)
+      .file(objectName)
+      .download();
+    return buf.toString("utf-8");
+  } catch {
+    return null;
+  }
+}

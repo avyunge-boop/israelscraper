@@ -8,7 +8,10 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { uploadDataArtifactsToGcs } from "./gcs-sync.js";
+import {
+  readDataArtifactFromGcs,
+  uploadDataArtifactsToGcs,
+} from "./gcs-sync.js";
 import { DATA_DIR, loadRootEnv, REPO_ROOT } from "./repo-paths.js";
 
 loadRootEnv();
@@ -108,17 +111,26 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
 });
 
-/** קריאת קבצי data/ לדשבורד כשאין גישה לדיסק מקומי */
-app.get("/data/:name", (req, res) => {
+/** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
+app.get("/data/:name", async (req, res) => {
   const name = String(req.params.name ?? "");
   if (!DATA_FILE_NAMES.has(name)) {
     return res.status(404).json({ error: "not found" });
   }
-  const fp = path.join(DATA_DIR, name);
-  if (!existsSync(fp)) {
-    return res.status(404).json({ error: "not found" });
-  }
   try {
+    if (process.env.SCRAPER_STORAGE === "gcs") {
+      const fromGcs = await readDataArtifactFromGcs(name);
+      if (fromGcs !== null) {
+        return res
+          .status(200)
+          .type("application/json; charset=utf-8")
+          .send(fromGcs);
+      }
+    }
+    const fp = path.join(DATA_DIR, name);
+    if (!existsSync(fp)) {
+      return res.status(404).json({ error: "not found" });
+    }
     const raw = readFileSync(fp, "utf-8");
     return res
       .status(200)
