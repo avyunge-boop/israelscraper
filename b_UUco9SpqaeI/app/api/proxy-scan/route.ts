@@ -270,7 +270,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 400 })
   }
 
+  // בלי קבצים מקומיים (Cloud Run + SCRAPER_API_URL) אין routes-database בדיסק — הבדיקה תמיד "ריקה" ואסור לחסום.
   if (
+    !getScraperApiBaseUrl() &&
     touchesBusnearbyScan(cliArgs) &&
     !cliArgs.includes("--refresh") &&
     (await isBusnearbyRoutesDatabaseEmpty())
