@@ -2,10 +2,10 @@ import { mkdir, readFile, writeFile } from "fs/promises"
 import path from "path"
 
 import type { TransportAlert } from "@/lib/transport-alert"
-import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
+import { resolveCanonicalDataDir } from "@/lib/server/workspace-paths"
 
 const FILE = () =>
-  path.join(resolveOrchestratorRepoRoot(), "data", "alert-activity.json")
+  path.join(resolveCanonicalDataDir(), "alert-activity.json")
 
 type ActivityFile = {
   byId: Record<string, { firstSeenAt: string; lastSeenAt: string }>

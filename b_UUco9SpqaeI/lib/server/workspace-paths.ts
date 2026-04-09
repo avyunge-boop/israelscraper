@@ -83,7 +83,7 @@ export function resolveOrchestratorRepoRoot(): string {
  * (חסר, JSON שבור, {}, routes ריק, או רשומות בלי patternId).
  */
 export function isBusnearbyRoutesDatabaseEmpty(): boolean {
-  const p = path.join(resolveOrchestratorRepoRoot(), "data", "routes-database.json")
+  const p = path.join(resolveCanonicalDataDir(), "routes-database.json")
   if (!existsSync(p)) return true
   try {
     const raw = readFileSync(p, "utf-8").trim()

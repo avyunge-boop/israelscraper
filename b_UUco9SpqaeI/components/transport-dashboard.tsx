@@ -137,7 +137,9 @@ export function TransportDashboard() {
   } | null>(null)
   const [healthOk, setHealthOk] = useState<boolean | null>(null)
   const [healthFailures, setHealthFailures] = useState<string[]>([])
+  const [healthWarnings, setHealthWarnings] = useState<string[]>([])
   const [routesDatabaseOk, setRoutesDatabaseOk] = useState<boolean | null>(null)
+  const [routesDbNeedsInit, setRoutesDbNeedsInit] = useState<boolean | null>(null)
 
   useEffect(() => {
     const fetchHealth = () => {
@@ -147,19 +149,27 @@ export function TransportDashboard() {
           (d: {
             healthy?: boolean
             failures?: string[]
+            warnings?: string[]
             routesDatabaseOk?: boolean
+            routesDbNeedsInit?: boolean
           }) => {
             setHealthOk(d.healthy === true)
             setHealthFailures(Array.isArray(d.failures) ? d.failures : [])
+            setHealthWarnings(Array.isArray(d.warnings) ? d.warnings : [])
             setRoutesDatabaseOk(
               typeof d.routesDatabaseOk === "boolean" ? d.routesDatabaseOk : null
+            )
+            setRoutesDbNeedsInit(
+              typeof d.routesDbNeedsInit === "boolean" ? d.routesDbNeedsInit : null
             )
           }
         )
         .catch(() => {
           setHealthOk(false)
           setHealthFailures(["Health check failed"])
+          setHealthWarnings([])
           setRoutesDatabaseOk(false)
+          setRoutesDbNeedsInit(true)
         })
     }
     fetchHealth()
@@ -409,6 +419,7 @@ export function TransportDashboard() {
         onLanguageChange={setLang}
         healthOk={healthOk}
         healthFailures={healthFailures}
+        healthWarnings={healthWarnings}
       />
 
       <main className="container mx-auto px-4 md:px-8 py-6 space-y-6">
@@ -417,7 +428,7 @@ export function TransportDashboard() {
             {ui.loadErrorPrefix} {loadError}. {ui.loadErrorSuffix}
           </p>
         )}
-        {routesDatabaseOk === false && (
+        {routesDbNeedsInit === true && (
           <div className="flex justify-center">
             <Card className="w-full max-w-2xl border-amber-500/40 shadow-sm">
               <CardContent className="pt-6">

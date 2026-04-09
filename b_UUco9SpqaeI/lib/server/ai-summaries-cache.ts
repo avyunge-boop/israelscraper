@@ -27,6 +27,7 @@ function collectReadPaths(): string[] {
   const env = process.env.AI_SUMMARIES_JSON_PATH?.trim()
   if (env) add(env)
 
+  add(path.join(resolveCanonicalDataDir(), "ai-summaries.json"))
   add(path.join(resolveOrchestratorRepoRoot(), "data", "ai-summaries.json"))
 
   // מפורשות ליד cwd + כל שורשי workspace (data/ ו־b_UUco9SpqaeI/data/)

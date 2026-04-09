@@ -1,4 +1,5 @@
-import { spawn } from "child_process"
+import { execSync, spawn } from "child_process"
+import { existsSync } from "fs"
 import path from "path"
 import { NextResponse } from "next/server"
 
@@ -54,10 +55,39 @@ function withBusnearbyRefreshIfNeeded(
   if (args.includes("--refresh")) return args
   const touchesBusnearby = opts.all || opts.agency === "busnearby"
   if (!touchesBusnearby) return args
-  const needRefresh =
-    opts.forceRefresh || isBusnearbyRoutesDatabaseEmpty()
-  if (!needRefresh) return args
+  if (!opts.forceRefresh) return args
   return [...args, "--refresh"]
+}
+
+function touchesBusnearbyScan(args: string[]): boolean {
+  return (
+    args.includes("--all") ||
+    args.some((a) => /^--agency=busnearby$/i.test(a))
+  )
+}
+
+function resolveNodeExecutable(): string {
+  const fromEnv = process.env.NODE_BINARY?.trim()
+  if (fromEnv && existsSync(fromEnv)) return fromEnv
+  for (const p of [
+    "/opt/homebrew/bin/node",
+    "/usr/local/bin/node",
+    "/usr/bin/node",
+  ]) {
+    if (existsSync(p)) return p
+  }
+  try {
+    const out = execSync("command -v node", {
+      encoding: "utf-8",
+      env: process.env,
+    }).trim()
+    if (out && existsSync(out)) return out
+  } catch {
+    /* */
+  }
+  throw new Error(
+    "Node.js not found. Install Node 20+ or set NODE_BINARY to the full path to node."
+  )
 }
 
 function buildCliArgs(body: ScanBody): string[] {
@@ -98,11 +128,17 @@ function runOrchestrator(
         "dist",
         "cli.mjs"
       )
-      child = spawn(
-        process.execPath,
-        [tsxCli, path.join(packagedRoot, "src", "orchestrator.ts"), ...args],
-        { cwd: packagedRoot, env }
-      )
+      const nodeBin = resolveNodeExecutable()
+      const spawnEnv = { ...env }
+      delete spawnEnv.ELECTRON_RUN_AS_NODE
+      child = spawn(nodeBin, [
+        tsxCli,
+        path.join(packagedRoot, "src", "orchestrator.ts"),
+        ...args,
+      ], {
+        cwd: packagedRoot,
+        env: spawnEnv,
+      })
     } else {
       const pnpmArgs = [
         "--filter",
@@ -174,6 +210,21 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json({ error: msg }, { status: 400 })
+  }
+
+  if (
+    touchesBusnearbyScan(cliArgs) &&
+    !cliArgs.includes("--refresh") &&
+    isBusnearbyRoutesDatabaseEmpty()
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "אין מסלולי Bus Nearby בקובץ routes-database.json. מהטרמינל: pnpm run init-routes. או בדשבורד הפעל סריקה עם «רענון מסלולים» (שולח refresh).",
+        code: "BUSNEARBY_ROUTES_REQUIRED",
+      },
+      { status: 400 }
+    )
   }
 
   if (streamMode) {

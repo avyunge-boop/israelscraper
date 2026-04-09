@@ -1,10 +1,10 @@
 import { readFile } from "fs/promises"
 import path from "path"
 
-import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
+import { resolveCanonicalDataDir } from "@/lib/server/workspace-paths"
 
 const SCAN_EXPORT = () =>
-  path.join(resolveOrchestratorRepoRoot(), "data", "scan-export.json")
+  path.join(resolveCanonicalDataDir(), "scan-export.json")
 
 type SourceRow = {
   sourceId: string

@@ -8,6 +8,7 @@ import path from "path"
 
 import {
   expandWorkspacePaths,
+  resolveCanonicalDataDir,
   resolveOrchestratorRepoRoot,
   tryReadJsonFirstExisting,
 } from "@/lib/server/workspace-paths"
@@ -18,6 +19,7 @@ export const FILE_SPECS = [
 ]
 
 async function resolveJsonFile(fileName: string): Promise<unknown | null> {
+  const canonical = path.join(resolveCanonicalDataDir(), fileName)
   const trails: string[][] = [
     ["data", fileName],
     ["b_UUco9SpqaeI", "data", fileName],
@@ -29,7 +31,7 @@ async function resolveJsonFile(fileName: string): Promise<unknown | null> {
     trails.push(["scripts", "egged-alerts.json"])
     trails.push(["packages", "scraper", "egged-alerts.json"])
   }
-  return tryReadJsonFirstExisting(expandWorkspacePaths(trails))
+  return tryReadJsonFirstExisting([canonical, ...expandWorkspacePaths(trails)])
 }
 
 function maxIso(a: string, b: string): string {
@@ -46,10 +48,9 @@ export interface MergeTransportResult {
 }
 
 export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResult> {
-  /** קנון יחיד עם האורקסטרטור: repoRoot/data/scan-export.json */
+  /** קנון: SCRAPER_DATA_DIR או repo/data */
   const canonicalScanExport = path.join(
-    resolveOrchestratorRepoRoot(),
-    "data",
+    resolveCanonicalDataDir(),
     "scan-export.json"
   )
   const scanPaths = [
