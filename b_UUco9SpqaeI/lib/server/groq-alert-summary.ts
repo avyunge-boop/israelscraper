@@ -11,33 +11,7 @@ import type { StructuredAlertForAi } from "@/lib/server/alert-structured-extract
 const DEFAULT_MODEL = "llama-3.1-8b-instant"
 /** חלופה כבדה (דרך env GROQ_MODEL), למשל llama-3.3-70b-versatile */
 
-const DISPATCHER_SYSTEM_PROMPT = `Role: Professional Transport Dispatcher & Hebrew Editor.
-Task: Create a single-sentence public transport alert in Hebrew.
-Strict Constraints:
-
-Format: One continuous sentence. No periods anywhere. No line breaks. Do not use colons except inside clock times (e.g. 22:00, 05:00).
-
-Opening: Always start with "עקב" followed by the reason + "ברחוב [Street] ב[City],".
-
-Lines Logic:
-- 1-3 lines: "קיים שינוי במסלול הקווים [X], [Y] ו-[Z]"
-- 4+ lines: "קיים שינוי במסלול קווים נבחרים"
-
-Add direction ("לכיוון [X]") ONLY if explicitly mentioned.
-
-Exclusions: Never mention alternative routes, stops, or "reverting to normal route".
-
-DateTime: Use full day/month names (יום ראשון, 7 בדצמבר). Use "בין השעות [X] ועד [Y]".
-
-Tone: Formal, concise, and flowy.
-
-Few-Shot Examples for you to follow:
-
-Input: Reason: Infrastructure, Street: Herzl, City: Tel Aviv, Lines: 5, 17, Direction: North, Time: Daily 22:00-05:00, Dec 7-11.
-Output: עקב עבודות תשתית ברחוב הרצל בתל אביב, קיים שינוי במסלול הקווים 5 ו-17 לכיוון צפון מדי לילה מיום ראשון, 7 בדצמבר ועד יום חמישי, 11 בדצמבר בין השעות 22:00 ועד 05:00
-
-Input: Reason: Protest, Street: Jaffa, City: Jerusalem, Lines: 1, 2, 3, 4, Time: Monday, Jan 1, 10:00-14:00.
-Output: עקב הפגנה ברחוב יפו בירושלים, קיים שינוי במסלול קווים נבחרים ביום שני, 1 בינואר בין השעות 10:00 ועד 14:00`
+const DISPATCHER_SYSTEM_PROMPT = `אתה עוזר מקצועי לכתיבת הודעות שינוי מסלולי תחבורה ציבורית בעברית, במבנה קבוע, מדויק, זורם ומקצועי ביותר. כתוב תמיד הודעה אחת רציפה במשפט אחד בלבד (ללא שורות חדשות, ללא נקודותיים מיותרות וללא חזרות). כללים מחייבים: 1. פתח תמיד במילה "עקב" ומיד אחריה את סיבת ההפרעה. מיד לאחר הסיבה ציין את שם הרחוב והעיר בפורמט: ברחוב [שם הרחוב המלא] ב[שם העיר המלא], (פסיק אחרי שם העיר). אם שם העיר לא מופיע - אל תזכיר עיר כלל. 2. מיד אחרי הפסיק: אם יש 3 קווים או פחות: "קיים שינוי במסלול הקווים [מספר], [מספר] ו-[מספר]". אם יש 4 קווים או יותר: "קיים שינוי במסלול קווים נבחרים". אם השינוי לכיוון אחד בלבד - הוסף "לכיוון [צפון/דרום/מזרח/מערב]". 3. לעולם אל תציין רחובות חלופיים או תחנות חלופיות. 4. חבר פרטי תאריך ושעה: אם חוזר מדי לילה/יום - פתח ב"מדי לילה" או "מדי יום". תאריכים: "[יום בשבוע מלא], [מספר] [שם חודש מלא]". אם ההפרעה כבר התחילה - כתוב רק "עד [יום בשבוע], [מספר] [חודש]". שעות: "בין השעות [שעה] ועד [שעה]". 5. משפט אחד רציף וזורם בלבד, ללא נקודה באמצע. דוגמה לפלט: עקב עבודות תשתית ברחוב יפו בירושלים, קיים שינוי במסלול קווים נבחרים עד יום שישי, 11 באפריל בין השעות 22:00 ועד 05:00`
 
 function buildUserPayload(struct: StructuredAlertForAi): string {
   return `Structured data (JSON). Use with the raw snippet; do not invent streets, cities, or lines that contradict this data:
