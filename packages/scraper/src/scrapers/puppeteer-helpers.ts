@@ -4,6 +4,37 @@ import { existsSync } from "fs";
 const MACOS_CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
+/** Headless/server-safe Chromium flags (no `--single-process`; deprecated). */
+export const DEFAULT_PUPPETEER_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--no-first-run",
+  "--no-zygote",
+] as const;
+
+/** Cloud Run sets `K_SERVICE`; Docker often has `/.dockerenv`. */
+export function isContainerRuntime(): boolean {
+  return Boolean(process.env.K_SERVICE) || existsSync("/.dockerenv");
+}
+
+/**
+ * Args for `puppeteer.launch({ args })`.
+ * - Bundled Chromium: full server defaults.
+ * - System Chrome/Chromium in a container (e.g. Cloud Run with `PUPPETEER_EXECUTABLE_PATH`): same defaults.
+ * - Local desktop Chrome path: minimal flags (avoid unnecessary sandbox disable).
+ */
+export function getPuppeteerLaunchArgs(chromePath: string | undefined): string[] {
+  if (!chromePath) {
+    return [...DEFAULT_PUPPETEER_ARGS];
+  }
+  if (isContainerRuntime()) {
+    return [...DEFAULT_PUPPETEER_ARGS];
+  }
+  return ["--disable-dev-shm-usage"];
+}
+
 export function findChromiumExecutable(): string | undefined {
   for (const cmd of ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]) {
     try {

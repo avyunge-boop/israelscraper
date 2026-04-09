@@ -4,7 +4,9 @@
  * Persistent DB: data/routes-database.json (all routes ever seen, alertUrl per line).
  * Default: fast scan — one Chrome, up to ROUTE_SCAN_CONCURRENCY tabs. Only routes with missing
  *   or stale last_scanned_at (> SCAN_STALE_AFTER_H hours) are queued; fresh routes are skipped.
- * --refresh: rescan agencyFilter 0–50 (+ registry extras), merge new routes into DB.
+ * --refresh: discover links on searchRoute pages (skips agencyFilters listed in busnearby-agency-exclusions.json).
+ *   agencyFilters with 0 links are excluded until --restore-busnearby-agency-filters.
+ * No routes in DB without --refresh: error (run init-routes / --refresh once).
  * --full-scan: ignore staleness and scan every route in the database.
  * After each queued route, routes-database.json is saved (serialized) so interrupts keep progress.
  * Failed navigation (3 tries): last_scan_failed=true, keep last_known_alerts; never remove route.
@@ -21,7 +23,6 @@
 import { createHash } from "node:crypto";
 import pLimit from "p-limit";
 import puppeteer, { type Browser, type Page } from "puppeteer";
-import { execSync } from "child_process";
 import { existsSync } from "fs";
 import fs from "fs/promises";
 
@@ -39,6 +40,7 @@ import type {
 import { enrichBusnearbyAlertsWithGroq } from "../../groq-busnearby-enrich";
 import {
   AGENCIES_REGISTRY_JSON,
+  BUSNEARBY_AGENCY_EXCLUSIONS_JSON,
   BUS_ALERTS_JSON,
   BUS_ALERTS_PREV_JSON,
   ensureRepoDataDir,
@@ -51,6 +53,10 @@ import {
   ROUTES_DATABASE_JSON,
 } from "../../repo-paths";
 import { logScraperProgressLine } from "../../scrape-progress";
+import {
+  getPuppeteerLaunchArgs,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 loadRootEnv();
 const OUTPUT_FILE = BUS_ALERTS_JSON;
@@ -81,6 +87,7 @@ const PUPPETEER_UA =
 
 const REFRESH_ARG = "--refresh";
 const FULL_SCAN_ARG = "--full-scan";
+const RESTORE_AGENCY_FILTERS_ARG = "--restore-busnearby-agency-filters";
 
 /** Permanently excluded: Israel Railways — buses only */
 const ISRAEL_RAILWAYS_AGENCY_ID = "2";
@@ -207,12 +214,46 @@ interface BusAlertsSnapshot {
 
 // ── Registry & routes DB ────────────────────────────────────────────────────
 
-function buildAgencyScanList(registryById: Map<string, RegistryAgencyEntry>): Agency[] {
+async function loadAgencyFilterExclusions(): Promise<Set<string>> {
+  if (!existsSync(BUSNEARBY_AGENCY_EXCLUSIONS_JSON)) return new Set();
+  try {
+    const raw = JSON.parse(
+      await fs.readFile(BUSNEARBY_AGENCY_EXCLUSIONS_JSON, "utf-8")
+    ) as { excludedAgencyFilterIds?: unknown };
+    const arr = raw.excludedAgencyFilterIds;
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map((x) => String(x)));
+  } catch {
+    return new Set();
+  }
+}
+
+async function saveAgencyFilterExclusions(ids: Set<string>): Promise<void> {
+  await ensureRepoDataDir();
+  const list = [...ids].sort(
+    (a, b) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b)
+  );
+  await fs.writeFile(
+    BUSNEARBY_AGENCY_EXCLUSIONS_JSON,
+    JSON.stringify(
+      { schemaVersion: 1, excludedAgencyFilterIds: list },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+}
+
+function buildAgencyScanList(
+  registryById: Map<string, RegistryAgencyEntry>,
+  excludedFilterIds: Set<string>
+): Agency[] {
   const ids = new Set<string>();
   for (let n = AGENCY_FILTER_MIN; n <= AGENCY_FILTER_MAX; n++) ids.add(String(n));
   for (const id of registryById.keys()) ids.add(id);
   const sorted = [...ids]
     .filter((id) => !BLACKLISTED_AGENCY_FILTER_IDS.has(id))
+    .filter((id) => !excludedFilterIds.has(id))
     .sort((a, b) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b));
   return sorted.map((id) => {
     const reg = registryById.get(id);
@@ -378,33 +419,6 @@ async function saveRoutesDatabase(routesByPattern: Map<string, RouteRecord>) {
   );
   const payload: RoutesDatabaseFile = { schemaVersion: 1, routes };
   await fs.writeFile(ROUTES_DB_FILE, JSON.stringify(payload, null, 2), "utf-8");
-}
-
-// ── Chrome ──────────────────────────────────────────────────────────────────
-
-const MACOS_GOOGLE_CHROME =
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
-function findChromiumExecutable(): string | undefined {
-  for (const cmd of ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]) {
-    try {
-      return execSync(`which ${cmd} 2>/dev/null`, { encoding: "utf-8" }).trim() || undefined;
-    } catch {
-      /* continue */
-    }
-  }
-  return undefined;
-}
-
-function resolveChromeExecutable(): string | undefined {
-  const fromEnv =
-    process.env.PUPPETEER_EXECUTABLE_PATH?.trim() ||
-    process.env.CHROME_PATH?.trim();
-  if (fromEnv) return fromEnv;
-  if (process.platform === "darwin" && existsSync(MACOS_GOOGLE_CHROME)) {
-    return MACOS_GOOGLE_CHROME;
-  }
-  return findChromiumExecutable();
 }
 
 function toApiRouteId(patternId: string): string {
@@ -729,6 +743,7 @@ async function runBusnearbyInternal(
   const argv = cliArgv(context);
   const refreshFromCli = argv.includes(REFRESH_ARG);
   const fullScanMode = argv.includes(FULL_SCAN_ARG);
+  const restoreAgencyFilters = argv.includes(RESTORE_AGENCY_FILTERS_ARG);
   await ensureRepoDataDir();
   await migrateLegacyFileIfNeeded(LEGACY_ROUTES_DB, ROUTES_DB_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_ALERTS, OUTPUT_FILE, fs);
@@ -736,6 +751,24 @@ async function runBusnearbyInternal(
   await migrateLegacyFileIfNeeded(LEGACY_REGISTRY, REGISTRY_FILE, fs);
   const registryById = await loadAgenciesRegistry();
   const routesByPattern = await loadRoutesDatabase();
+
+  if (restoreAgencyFilters) {
+    await saveAgencyFilterExclusions(new Set());
+    console.log(
+      "[busnearby] Cleared agency-filter exclusions (empty search pages can be scanned again on the next --refresh)."
+    );
+    if (!refreshFromCli && !fullScanMode) {
+      const scrapedAt = new Date().toISOString();
+      return {
+        sourceId: "busnearby",
+        displayName: BUSNEARBY_DISPLAY,
+        success: true,
+        scrapedAt,
+        alerts: [],
+        meta: { restoredBusnearbyAgencyExclusions: true },
+      };
+    }
+  }
 
   console.log(
     "Policy: agencyFilter=2 (Israel Railways) is permanently excluded — buses only."
@@ -749,15 +782,15 @@ async function runBusnearbyInternal(
     );
   }
 
-  let discoveryMode = refreshFromCli;
-  if (routesByPattern.size === 0) {
-    if (!refreshFromCli) {
-      console.log(
-        "[busnearby] data/routes-database.json is missing or has no valid routes — enabling discovery (same as --refresh)."
-      );
-    }
-    discoveryMode = true;
+  if (routesByPattern.size === 0 && !refreshFromCli) {
+    throw new Error(
+      "[busnearby] routes-database.json has no routes. Run discovery once: pnpm run init-routes (or pnpm run scan -- --agency=busnearby --refresh), then use normal scans without --refresh."
+    );
   }
+
+  const discoveryMode = refreshFromCli;
+
+  let excludedFilterIds = await loadAgencyFilterExclusions();
 
   const chromePath = resolveChromeExecutable();
   console.log(
@@ -767,22 +800,10 @@ async function runBusnearbyInternal(
     discoveryMode ? "Mode: REFRESH (discover + scan)" : "Mode: FAST (database routes only)"
   );
 
-  const launchArgs = chromePath
-    ? ["--disable-dev-shm-usage"]
-    : [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-zygote",
-        "--single-process",
-      ];
-
   const browser: Browser = await puppeteer.launch({
     headless: true,
     ...(chromePath ? { executablePath: chromePath } : {}),
-    args: launchArgs,
+    args: getPuppeteerLaunchArgs(chromePath),
   });
 
   const page = await browser.newPage();
@@ -792,10 +813,12 @@ async function runBusnearbyInternal(
   const nowIso = () => new Date().toISOString();
 
   if (discoveryMode) {
-    const agencies = buildAgencyScanList(registryById);
+    const agencies = buildAgencyScanList(registryById, excludedFilterIds);
     console.log(
-      `\n═══ Refresh: discovering routes (${agencies.length} searchRoute pages) ═══\n`
+      `\n═══ Refresh: discovering routes (${agencies.length} searchRoute pages; ${excludedFilterIds.size} agencyFilter(s) skipped as “no links”) ═══\n`
     );
+
+    const newlyExcluded = new Set<string>();
 
     for (const agency of agencies) {
       process.stdout.write(`  [${agency.id}] ${agency.name} ... `);
@@ -824,15 +847,24 @@ async function runBusnearbyInternal(
           delete entry.lastError;
         }
         console.log(`${collected.items.length} link(s)`);
+        if (collected.items.length === 0) {
+          newlyExcluded.add(agency.id);
+          console.log(
+            `    → excluded agencyFilter=${agency.id} (no links); won’t search this page again until --restore-busnearby-agency-filters`
+          );
+        }
       } else {
         const entry = registryById.get(agency.id);
         if (entry) {
           entry.lastAttemptAt = attemptAt;
           entry.lastError = "timeout";
         }
-        console.log(`0 (timeout — registry entry kept if present)`);
+        console.log(`0 (timeout — registry entry kept if present; not excluded)`);
       }
     }
+
+    for (const id of newlyExcluded) excludedFilterIds.add(id);
+    await saveAgencyFilterExclusions(excludedFilterIds);
 
     await saveAgenciesRegistry(registryById);
     await saveRoutesDatabase(routesByPattern);
@@ -949,7 +981,7 @@ async function runBusnearbyInternal(
   });
 
   const agencies = discoveryMode
-    ? buildAgencyScanList(registryById)
+    ? buildAgencyScanList(registryById, excludedFilterIds)
     : [];
   const output = {
     schemaVersion: 1,

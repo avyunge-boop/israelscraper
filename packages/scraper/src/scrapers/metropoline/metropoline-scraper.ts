@@ -12,7 +12,10 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { resolveChromeExecutable } from "../puppeteer-helpers";
+import {
+  getPuppeteerLaunchArgs,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 const LIST_URL =
   process.env.METROPOLINE_ALERTS_URL?.trim() || "https://www.metropoline.com/updates";
@@ -112,9 +115,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
     browser = await puppeteer.launch({
       headless: true,
       ...(chromePath ? { executablePath: chromePath } : {}),
-      args: chromePath
-        ? ["--disable-dev-shm-usage"]
-        : ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      args: getPuppeteerLaunchArgs(chromePath),
     });
 
     const page = await browser.newPage();
