@@ -21,9 +21,10 @@ RUN npm install -g pnpm tsx
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/ ./packages/
-RUN pnpm install --no-frozen-lockfile
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+RUN pnpm install --no-frozen-lockfile
 ENV PUPPETEER_LAUNCH_TIMEOUT_MS=120000
 # dumpio כבוי ב-production — מונע race עם WebSocket על stderr; PUPPETEER_DUMP_IO=1 לדיבוג
 ENV PUPPETEER_DUMP_IO=0
