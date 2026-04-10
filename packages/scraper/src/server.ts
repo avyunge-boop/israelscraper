@@ -272,7 +272,7 @@ app.post("/run-scrape", (req, res) => {
   return res.status(200).json({ ok: true, started: true, agency: label });
 });
 
-const port = Number(process.env.PORT || "8080");
-app.listen(port, "0.0.0.0", () => {
-  console.log(`[server] listening on 0.0.0.0:${port}`);
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
