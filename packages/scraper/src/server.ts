@@ -1,28 +1,42 @@
 /**
  * HTTP API for Cloud Run: POST /run-scrape starts the orchestrator in the background (returns immediately;
  * use GET /status and GET /last-result to track completion — avoids HTTP request timeouts on long runs).
- * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME to upload data/*.json after a successful run.
+ * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME (default israelscraper) to upload data/*.json after a successful run.
+ *
+ * Email: by default SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=1 (no emails from orchestrator/scrapers).
+ * On Cloud Run, set SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=0 and BUS_ALERTS_SMTP_* + BUS_ALERTS_EMAIL_* to send reports.
  */
-import { spawn, type ChildProcess } from "child_process";
+import { spawn } from "child_process";
 import express from "express";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-import { uploadDataArtifactsToGcs } from "./gcs-sync.js";
-import { loadRootEnv, REPO_ROOT } from "./repo-paths.js";
+import {
+  readDataArtifactFromGcs,
+  uploadDataArtifactsToGcs,
+} from "./gcs-sync.js";
+import { DATA_DIR, loadRootEnv, REPO_ROOT } from "./repo-paths.js";
 
 loadRootEnv();
 
-const ORCHESTRATOR_TS = path.resolve(
-  REPO_ROOT,
-  "packages/scraper/src/orchestrator.ts"
-);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SCRAPER_PKG_ROOT = path.resolve(__dirname, "..");
+
+function isMonorepoWorkspace(): boolean {
+  return existsSync(path.join(REPO_ROOT, "pnpm-workspace.yaml"));
+}
 
 type RunScrapeBody = {
   agency?: string;
   all?: boolean;
   refresh?: boolean;
 };
+
+/** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
+function orchestratorHadAnySuccessfulAgent(stdout: string): boolean {
+  return /"ok"\s*:\s*true/.test(stdout);
+}
 
 function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   const argv: string[] = [];
@@ -37,11 +51,6 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
     argv.push("--refresh");
   }
   return argv;
-}
-
-/** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
-function orchestratorHadAnySuccessfulAgent(stdout: string): boolean {
-  return /"ok"\s*:\s*true/.test(stdout);
 }
 
 /** Label for /status and POST responses (human-readable scope). */
@@ -73,119 +82,75 @@ const scrapeJob = {
 
 let lastScrapeResult: LastScrapeResult | null = null;
 
-function spawnOrchestrator(orchArgv: string[]): ChildProcess {
+function runOrchestrator(argv: string[]): Promise<{
+  code: number;
+  stdout: string;
+  stderr: string;
+}> {
+  /** ברירת מחדל: בלי מייל (כמו proxy מקומי). אם מגדירים SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL ב-Cloud Run — לא דורסים. */
   const env = {
     ...process.env,
-    SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1",
+    ...(process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === undefined
+      ? { SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL: "1" }
+      : {}),
   };
 
-  console.log("[run-scrape] spawning");
-  console.log("[run-scrape] executable: tsx");
-  console.log("[run-scrape] script:", ORCHESTRATOR_TS);
-  console.log("[run-scrape] args:", JSON.stringify(orchArgv));
-  console.log("[run-scrape] cwd:", REPO_ROOT);
-  console.log("[run-scrape] shell: true");
+  return new Promise((resolve, reject) => {
+    const out: Buffer[] = [];
+    const err: Buffer[] = [];
 
-  return spawn("tsx", [ORCHESTRATOR_TS, ...orchArgv], {
-    cwd: REPO_ROOT,
-    env,
-    shell: true,
-    stdio: ["ignore", "pipe", "pipe"],
+    const shell = process.platform === "win32";
+    let child;
+
+    if (isMonorepoWorkspace()) {
+      child = spawn(
+        "pnpm",
+        ["--filter", "@workspace/scraper", "run", "scan", "--", ...argv],
+        { cwd: REPO_ROOT, env, shell }
+      );
+    } else {
+      child = spawn(
+        process.execPath,
+        [
+          path.join(SCRAPER_PKG_ROOT, "node_modules", "tsx", "dist", "cli.mjs"),
+          path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts"),
+          ...argv,
+        ],
+        { cwd: SCRAPER_PKG_ROOT, env }
+      );
+    }
+
+    child.stdout?.on("data", (c: Buffer) => out.push(Buffer.from(c)));
+    child.stderr?.on("data", (c: Buffer) => err.push(Buffer.from(c)));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      resolve({
+        code: code ?? 1,
+        stdout: Buffer.concat(out).toString("utf-8"),
+        stderr: Buffer.concat(err).toString("utf-8"),
+      });
+    });
   });
 }
 
-function clearScrapeJob(): void {
-  scrapeJob.running = false;
-  scrapeJob.startedAt = null;
-  scrapeJob.agency = "";
-}
+const DATA_FILE_NAMES = new Set([
+  "bus-alerts.json",
+  "scan-export.json",
+  "routes-database.json",
+  "egged-alerts.json",
+  "ai-summaries.json",
+  "settings.json",
+  "alert-activity.json",
+  "agencies-registry.json",
+  "busnearby-agency-exclusions.json",
+]);
 
-function runScrapeInBackground(orchArgv: string[]): void {
-  const child = spawnOrchestrator(orchArgv);
-  const out: Buffer[] = [];
-  const err: Buffer[] = [];
-
-  child.on("error", (spawnErr) => {
-    console.error("[run-scrape] failed to start child process:", spawnErr);
-    lastScrapeResult = {
-      exitCode: 1,
-      gcsUploaded: [],
-      stdout: "",
-      stderr: String(spawnErr),
-      completedAt: new Date().toISOString(),
-    };
-    clearScrapeJob();
-  });
-
-  child.stdout?.on("data", (c: Buffer) => {
-    out.push(Buffer.from(c));
-    console.log("[run-scrape] stdout:", c.toString("utf-8"));
-  });
-
-  child.stderr?.on("data", (c: Buffer) => {
-    err.push(Buffer.from(c));
-    console.log("[run-scrape] stderr:", c.toString("utf-8"));
-  });
-
-  child.on("close", (code, signal) => {
-    void (async () => {
-      try {
-        const exitCode = code ?? 1;
-        const stdout = Buffer.concat(out).toString("utf-8");
-        const stderr = Buffer.concat(err).toString("utf-8");
-
-        if (exitCode !== 0) {
-          console.error("[run-scrape] process exited with error", {
-            exitCode,
-            signal: signal ?? null,
-          });
-        } else {
-          console.log("[run-scrape] process finished successfully (exit 0)");
-        }
-
-        let uploaded: string[] = [];
-        let gcsError: string | undefined;
-        const shouldUploadGcs =
-          process.env.SCRAPER_STORAGE === "gcs" &&
-          (exitCode === 0 || orchestratorHadAnySuccessfulAgent(stdout));
-        if (shouldUploadGcs) {
-          try {
-            console.log("[run-scrape] GCS upload starting…");
-            uploaded = await uploadDataArtifactsToGcs();
-            console.log("[run-scrape] GCS upload finished:", uploaded);
-          } catch (e) {
-            gcsError = String(e);
-            console.error("[run-scrape] GCS upload failed:", e);
-          }
-        }
-
-        lastScrapeResult = {
-          exitCode,
-          gcsUploaded: uploaded,
-          stdout,
-          stderr,
-          completedAt: new Date().toISOString(),
-          ...(gcsError !== undefined ? { gcsError } : {}),
-        };
-        console.log(
-          `[server] scrape finished exit=${exitCode} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
-        );
-      } catch (e) {
-        const msg = String(e);
-        lastScrapeResult = {
-          exitCode: 1,
-          gcsUploaded: [],
-          stdout: "",
-          stderr: msg,
-          completedAt: new Date().toISOString(),
-        };
-        console.error(`[server] scrape finalize failed: ${msg}`);
-      } finally {
-        clearScrapeJob();
-      }
-    })();
-  });
-}
+/** כשאין קובץ ב-GCS ובדיסק — מחזירים JSON תקין כדי שהדשבורד לא יקבל 404 (אין קבצים אלה בקונטיינר). */
+const EMPTY_JSON_STUBS: Record<string, string> = {
+  "ai-summaries.json": '{"byId":{}}',
+  "settings.json": "{}",
+  "alert-activity.json": '{"byId":{}}',
+};
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
@@ -209,20 +174,45 @@ app.get("/last-result", (_req, res) => {
   return res.status(200).json(lastScrapeResult);
 });
 
-/** Root — מונע 404 בפתיחת ה-URL בדפדפן / בדיקות בסיסיות; לא מבלבל עם תשתית Cloud Run */
-app.get("/", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "israel-scraper-api",
-    docs: "POST /run-scrape (JSON body: agency | all, optional refresh). GET /status, GET /last-result. See /health.",
-  });
+/** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
+app.get("/data/:name", async (req, res) => {
+  const name = String(req.params.name ?? "");
+  if (!DATA_FILE_NAMES.has(name)) {
+    return res.status(404).json({ error: "not found" });
+  }
+  try {
+    if (process.env.SCRAPER_STORAGE === "gcs") {
+      const fromGcs = await readDataArtifactFromGcs(name);
+      if (fromGcs !== null) {
+        return res
+          .status(200)
+          .type("application/json; charset=utf-8")
+          .send(fromGcs);
+      }
+    }
+    const fp = path.join(DATA_DIR, name);
+    if (!existsSync(fp)) {
+      const stub = EMPTY_JSON_STUBS[name];
+      if (stub !== undefined) {
+        return res
+          .status(200)
+          .type("application/json; charset=utf-8")
+          .send(stub);
+      }
+      return res.status(404).json({ error: "not found" });
+    }
+    const raw = readFileSync(fp, "utf-8");
+    return res
+      .status(200)
+      .type("application/json; charset=utf-8")
+      .send(raw);
+  } catch (e) {
+    return res.status(500).json({ error: String(e) });
+  }
 });
 
 app.post("/run-scrape", (req, res) => {
-  console.log("[run-scrape] HTTP request received");
   const body = (req.body ?? {}) as RunScrapeBody;
-  const orchArgv = buildOrchestratorArgv(body);
-
   if (scrapeJob.running) {
     return res.status(409).json({
       ok: false,
@@ -230,27 +220,54 @@ app.post("/run-scrape", (req, res) => {
       agency: scrapeJob.agency,
     });
   }
-
-  if (!existsSync(ORCHESTRATOR_TS)) {
-    console.error(
-      "[run-scrape] orchestrator file missing; expected at:",
-      ORCHESTRATOR_TS
-    );
-    return res.status(503).json({
-      ok: false,
-      error: "orchestrator not found on filesystem",
-      lookedFor: ORCHESTRATOR_TS,
-      repoRoot: REPO_ROOT,
-    });
-  }
-
+  const argv = buildOrchestratorArgv(body);
   const label = scrapeLabel(body);
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();
 
-  console.log("[run-scrape] enqueue background scrape, argv:", orchArgv);
-  runScrapeInBackground(orchArgv);
+  void (async () => {
+    try {
+      const { code, stdout, stderr } = await runOrchestrator(argv);
+      let uploaded: string[] = [];
+      let gcsError: string | undefined;
+      const shouldUploadGcs =
+        process.env.SCRAPER_STORAGE === "gcs" &&
+        (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+      if (shouldUploadGcs) {
+        try {
+          uploaded = await uploadDataArtifactsToGcs();
+        } catch (e) {
+          gcsError = String(e);
+        }
+      }
+      lastScrapeResult = {
+        exitCode: code,
+        gcsUploaded: uploaded,
+        stdout,
+        stderr,
+        completedAt: new Date().toISOString(),
+        ...(gcsError !== undefined ? { gcsError } : {}),
+      };
+      console.log(
+        `[server] scrape finished exit=${code} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
+      );
+    } catch (e) {
+      const msg = String(e);
+      lastScrapeResult = {
+        exitCode: 1,
+        gcsUploaded: [],
+        stdout: "",
+        stderr: msg,
+        completedAt: new Date().toISOString(),
+      };
+      console.error(`[server] scrape failed: ${msg}`);
+    } finally {
+      scrapeJob.running = false;
+      scrapeJob.startedAt = null;
+      scrapeJob.agency = "";
+    }
+  })();
 
   return res.status(200).json({ ok: true, started: true, agency: label });
 });
