@@ -1,6 +1,6 @@
 "use client"
 
-import { Play, RefreshCw, Download, Clock, Mail, Save, Database } from "lucide-react"
+import { Play, Download, Clock, Mail, Save, Database } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,6 @@ export type ScanProgressPayload = {
 
 interface ControlPanelProps {
   onScanAgency: (agency: string) => void
-  onScanAll: () => void
   onInitBusnearbyRoutesDb: () => void
   isScanning: boolean
   scanningAgency: string | null
@@ -46,7 +45,6 @@ const agencies = [
 
 export function ControlPanel({
   onScanAgency,
-  onScanAll,
   onInitBusnearbyRoutesDb,
   isScanning,
   scanningAgency,
@@ -84,18 +82,14 @@ export function ControlPanel({
                   className={`absolute start-2 top-1/2 -translate-y-1/2 size-2 rounded-full shrink-0 ${agency.color}`}
                 />
                 <span className="me-1 truncate">{agency.name}</span>
-                {(scanningAgency === agency.id ||
-                  (scanningAgency === "all" &&
-                    scanProgress?.agency === agency.id)) && (
+                {scanningAgency === agency.id && (
                   <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
                     {scanProgress?.agency === agency.id
                       ? scanProgress.alertsFound
                       : "…"}
                   </span>
                 )}
-                {scanningAgency === agency.id ||
-                (scanningAgency === "all" &&
-                  scanProgress?.agency === agency.id) ? (
+                {scanningAgency === agency.id ? (
                   <Spinner className="size-4 shrink-0" />
                 ) : (
                   <Play className="size-4 fill-current shrink-0" />
@@ -128,26 +122,6 @@ export function ControlPanel({
               )}
               {scanningAgency === "initBnDb" ? ui.initRoutesDbRunning : ui.initRoutesDb}
             </Button>
-          </div>
-          <div className="flex w-full justify-center pt-0.5">
-            <Button
-            onClick={onScanAll}
-            disabled={isScanning}
-            aria-busy={isScanning}
-            className="w-full max-w-md mx-auto bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0"
-          >
-            {isScanning ? (
-              <>
-                <Spinner className="size-5 me-2 shrink-0" />
-                {scanningAgency === "all" ? ui.scanningAll : ui.scanningInProgress}
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-5 me-2 shrink-0" />
-                {ui.scanAll}
-              </>
-            )}
-          </Button>
           </div>
         </CardContent>
       </Card>

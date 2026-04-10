@@ -1,0 +1,117 @@
+/**
+ * Cloud Run: POST /run-scrape מחזיר מיד; polling ל-/status כל 3s; לוגים ליומן.
+ */
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+const POLL_MS = 3000
+
+type Handlers = {
+  onLog?: (text: string) => void
+  onProgress?: (p: Record<string, unknown>) => void
+}
+
+export async function runScrapeRemotePoll(
+  body: object,
+  handlers: Handlers
+): Promise<{ ok: boolean; exitCode: number }> {
+  const bodyStr = JSON.stringify(body)
+  handlers.onLog?.(`POST /run-scrape body: ${bodyStr}`)
+
+  const res = await fetch("/api/scraper-bridge/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: bodyStr,
+    cache: "no-store",
+  })
+  const text = await res.text()
+  let data: {
+    ok?: boolean
+    started?: boolean
+    error?: string
+    agency?: string
+  }
+  try {
+    data = JSON.parse(text) as typeof data
+  } catch {
+    throw new Error(
+      `scraper-bridge/run non-JSON (${res.status}): ${text.slice(0, 300)}`
+    )
+  }
+
+  if (res.status === 409) {
+    throw new Error(
+      (data.error ?? "scrape already running") +
+        (data.agency ? ` (${data.agency})` : "")
+    )
+  }
+  if (!res.ok) {
+    throw new Error(data.error ?? `scraper-bridge/run HTTP ${res.status}`)
+  }
+
+  handlers.onLog?.(
+    data.started
+      ? `הסריקה התחילה — agency: ${data.agency ?? "?"}. מעקב אחרי /status כל ${POLL_MS / 1000}s…`
+      : `תשובה: ${text.slice(0, 200)}`
+  )
+
+  for (;;) {
+    const stRes = await fetch("/api/scraper-bridge/status", { cache: "no-store" })
+    const stText = await stRes.text()
+    let st: { running?: boolean; agency?: string; startedAt?: string }
+    try {
+      st = JSON.parse(stText) as typeof st
+    } catch {
+      throw new Error(`scraper-bridge/status non-JSON: ${stText.slice(0, 200)}`)
+    }
+
+    const line = [
+      `[status] running=${String(st.running)}`,
+      st.agency ? `agency=${st.agency}` : "",
+      st.startedAt ? `startedAt=${st.startedAt}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ")
+    handlers.onLog?.(line)
+
+    handlers.onProgress?.({
+      agency: st.agency ?? "",
+      displayName: st.agency ?? "",
+      current: st.running ? 1 : 0,
+      total: 1,
+      alertsFound: 0,
+    })
+
+    if (!st.running) break
+    await sleep(POLL_MS)
+  }
+
+  const lrRes = await fetch("/api/scraper-bridge/last-result", { cache: "no-store" })
+  const lrText = await lrRes.text()
+  let lr: {
+    exitCode?: number
+    stdout?: string
+    stderr?: string
+    gcsError?: string
+    error?: string
+  }
+  try {
+    lr = JSON.parse(lrText) as typeof lr
+  } catch {
+    throw new Error(`scraper-bridge/last-result non-JSON: ${lrText.slice(0, 200)}`)
+  }
+  if (!lrRes.ok) {
+    throw new Error(lr.error ?? `last-result HTTP ${lrRes.status}`)
+  }
+  if (lr.stdout) {
+    const tail = lr.stdout.length > 12_000 ? lr.stdout.slice(-12_000) : lr.stdout
+    handlers.onLog?.(`— stdout (tail) —\n${tail}`)
+  }
+  if (lr.stderr) handlers.onLog?.(`stderr: ${lr.stderr}`)
+  if (lr.gcsError) handlers.onLog?.(`GCS: ${lr.gcsError}`)
+
+  const exitCode = typeof lr.exitCode === "number" ? lr.exitCode : 1
+  return { ok: exitCode === 0, exitCode }
+}
