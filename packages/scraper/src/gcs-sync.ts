@@ -54,3 +54,33 @@ export async function uploadDataArtifactsToGcs(): Promise<string[]> {
 
   return uploaded;
 }
+
+/**
+ * Reads a single object from the data bucket. Returns null if the object does not exist.
+ * Bucket: GCS_BUCKET_NAME or "israelscraper"; path respects GCS_OBJECT_PREFIX like uploads.
+ */
+export async function readDataArtifactFromGcs(
+  filename: string
+): Promise<string | null> {
+  if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+    return null;
+  }
+  const bucketName =
+    process.env.GCS_BUCKET_NAME?.trim() || DEFAULT_BUCKET;
+  const projectId = process.env.GCP_PROJECT_ID?.trim();
+  const prefix = normalizePrefix(process.env.GCS_OBJECT_PREFIX?.trim() ?? "");
+  const objectName = prefix ? `${prefix}/${filename}` : filename;
+
+  const storage = projectId
+    ? new Storage({ projectId })
+    : new Storage();
+  const bucket = storage.bucket(bucketName);
+  const file = bucket.file(objectName);
+
+  const [exists] = await file.exists();
+  if (!exists) {
+    return null;
+  }
+  const [buf] = await file.download();
+  return buf.toString("utf-8");
+}
