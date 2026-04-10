@@ -32,6 +32,11 @@ type RunScrapeBody = {
   refresh?: boolean;
 };
 
+/** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
+function orchestratorHadAnySuccessfulAgent(stdout: string): boolean {
+  return /"ok"\s*:\s*true/.test(stdout);
+}
+
 function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   const argv: string[] = [];
   if (body?.all === true) {
@@ -167,7 +172,10 @@ app.post("/run-scrape", async (req, res) => {
   try {
     const { code, stdout, stderr } = await runOrchestrator(argv);
     let uploaded: string[] = [];
-    if (code === 0 && process.env.SCRAPER_STORAGE === "gcs") {
+    const shouldUploadGcs =
+      process.env.SCRAPER_STORAGE === "gcs" &&
+      (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+    if (shouldUploadGcs) {
       try {
         uploaded = await uploadDataArtifactsToGcs();
       } catch (e) {
