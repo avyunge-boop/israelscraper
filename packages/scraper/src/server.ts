@@ -1,5 +1,6 @@
 /**
- * HTTP API for Cloud Run: POST /run-scrape triggers the orchestrator (background).
+ * HTTP API for Cloud Run: POST /run-scrape starts the orchestrator in the background (returns immediately;
+ * use GET /status and GET /last-result to track completion — avoids HTTP request timeouts on long runs).
  * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME to upload data/*.json after a successful run.
  */
 import { spawn, type ChildProcess } from "child_process";
@@ -38,6 +39,40 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   return argv;
 }
 
+/** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
+function orchestratorHadAnySuccessfulAgent(stdout: string): boolean {
+  return /"ok"\s*:\s*true/.test(stdout);
+}
+
+/** Label for /status and POST responses (human-readable scope). */
+function scrapeLabel(body: RunScrapeBody): string {
+  if (body?.all === true) {
+    return body?.refresh === true ? "all (refresh)" : "all";
+  }
+  if (typeof body?.agency === "string" && body.agency.trim()) {
+    const a = body.agency.trim();
+    return body?.refresh === true ? `${a} (refresh)` : a;
+  }
+  return body?.refresh === true ? "all (refresh)" : "all";
+}
+
+type LastScrapeResult = {
+  exitCode: number;
+  gcsUploaded: string[];
+  stdout: string;
+  stderr: string;
+  completedAt: string;
+  gcsError?: string;
+};
+
+const scrapeJob = {
+  running: false,
+  agency: "",
+  startedAt: null as string | null,
+};
+
+let lastScrapeResult: LastScrapeResult | null = null;
+
 function spawnOrchestrator(orchArgv: string[]): ChildProcess {
   const env = {
     ...process.env,
@@ -59,43 +94,96 @@ function spawnOrchestrator(orchArgv: string[]): ChildProcess {
   });
 }
 
+function clearScrapeJob(): void {
+  scrapeJob.running = false;
+  scrapeJob.startedAt = null;
+  scrapeJob.agency = "";
+}
+
 function runScrapeInBackground(orchArgv: string[]): void {
   const child = spawnOrchestrator(orchArgv);
+  const out: Buffer[] = [];
+  const err: Buffer[] = [];
 
-  child.on("error", (err) => {
-    console.error("[run-scrape] failed to start child process:", err);
+  child.on("error", (spawnErr) => {
+    console.error("[run-scrape] failed to start child process:", spawnErr);
+    lastScrapeResult = {
+      exitCode: 1,
+      gcsUploaded: [],
+      stdout: "",
+      stderr: String(spawnErr),
+      completedAt: new Date().toISOString(),
+    };
+    clearScrapeJob();
   });
 
   child.stdout?.on("data", (c: Buffer) => {
+    out.push(Buffer.from(c));
     console.log("[run-scrape] stdout:", c.toString("utf-8"));
   });
 
   child.stderr?.on("data", (c: Buffer) => {
+    err.push(Buffer.from(c));
     console.log("[run-scrape] stderr:", c.toString("utf-8"));
   });
 
   child.on("close", (code, signal) => {
-    const exitCode = code ?? 1;
-    if (exitCode !== 0) {
-      console.error("[run-scrape] process exited with error", {
-        exitCode,
-        signal: signal ?? null,
-      });
-    } else {
-      console.log("[run-scrape] process finished successfully (exit 0)");
-    }
+    void (async () => {
+      try {
+        const exitCode = code ?? 1;
+        const stdout = Buffer.concat(out).toString("utf-8");
+        const stderr = Buffer.concat(err).toString("utf-8");
 
-    if (exitCode === 0 && process.env.SCRAPER_STORAGE === "gcs") {
-      void (async () => {
-        try {
-          console.log("[run-scrape] GCS upload starting…");
-          const uploaded = await uploadDataArtifactsToGcs();
-          console.log("[run-scrape] GCS upload finished:", uploaded);
-        } catch (e) {
-          console.error("[run-scrape] GCS upload failed:", e);
+        if (exitCode !== 0) {
+          console.error("[run-scrape] process exited with error", {
+            exitCode,
+            signal: signal ?? null,
+          });
+        } else {
+          console.log("[run-scrape] process finished successfully (exit 0)");
         }
-      })();
-    }
+
+        let uploaded: string[] = [];
+        let gcsError: string | undefined;
+        const shouldUploadGcs =
+          process.env.SCRAPER_STORAGE === "gcs" &&
+          (exitCode === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+        if (shouldUploadGcs) {
+          try {
+            console.log("[run-scrape] GCS upload starting…");
+            uploaded = await uploadDataArtifactsToGcs();
+            console.log("[run-scrape] GCS upload finished:", uploaded);
+          } catch (e) {
+            gcsError = String(e);
+            console.error("[run-scrape] GCS upload failed:", e);
+          }
+        }
+
+        lastScrapeResult = {
+          exitCode,
+          gcsUploaded: uploaded,
+          stdout,
+          stderr,
+          completedAt: new Date().toISOString(),
+          ...(gcsError !== undefined ? { gcsError } : {}),
+        };
+        console.log(
+          `[server] scrape finished exit=${exitCode} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
+        );
+      } catch (e) {
+        const msg = String(e);
+        lastScrapeResult = {
+          exitCode: 1,
+          gcsUploaded: [],
+          stdout: "",
+          stderr: msg,
+          completedAt: new Date().toISOString(),
+        };
+        console.error(`[server] scrape finalize failed: ${msg}`);
+      } finally {
+        clearScrapeJob();
+      }
+    })();
   });
 }
 
@@ -106,12 +194,27 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
 });
 
+app.get("/status", (_req, res) => {
+  res.status(200).json({
+    running: scrapeJob.running,
+    agency: scrapeJob.running ? scrapeJob.agency : "",
+    startedAt: scrapeJob.startedAt ?? "",
+  });
+});
+
+app.get("/last-result", (_req, res) => {
+  if (lastScrapeResult === null) {
+    return res.status(404).json({ error: "no completed scrape yet" });
+  }
+  return res.status(200).json(lastScrapeResult);
+});
+
 /** Root — מונע 404 בפתיחת ה-URL בדפדפן / בדיקות בסיסיות; לא מבלבל עם תשתית Cloud Run */
 app.get("/", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "israel-scraper-api",
-    docs: "POST /run-scrape (JSON body: agency | all, optional refresh). See /health.",
+    docs: "POST /run-scrape (JSON body: agency | all, optional refresh). GET /status, GET /last-result. See /health.",
   });
 });
 
@@ -119,6 +222,14 @@ app.post("/run-scrape", (req, res) => {
   console.log("[run-scrape] HTTP request received");
   const body = (req.body ?? {}) as RunScrapeBody;
   const orchArgv = buildOrchestratorArgv(body);
+
+  if (scrapeJob.running) {
+    return res.status(409).json({
+      ok: false,
+      error: "scrape already running",
+      agency: scrapeJob.agency,
+    });
+  }
 
   if (!existsSync(ORCHESTRATOR_TS)) {
     console.error(
@@ -133,10 +244,15 @@ app.post("/run-scrape", (req, res) => {
     });
   }
 
+  const label = scrapeLabel(body);
+  scrapeJob.running = true;
+  scrapeJob.agency = label;
+  scrapeJob.startedAt = new Date().toISOString();
+
   console.log("[run-scrape] enqueue background scrape, argv:", orchArgv);
   runScrapeInBackground(orchArgv);
 
-  return res.status(202).json({ ok: true, status: "started" });
+  return res.status(200).json({ ok: true, started: true, agency: label });
 });
 
 const port = Number(process.env.PORT || "8080");
