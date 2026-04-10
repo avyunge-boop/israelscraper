@@ -176,6 +176,7 @@ export function TransportDashboard() {
       .catch(() => {})
   }, [])
 
+  /** טעינה ראשונית בלי סריקה: ה-API בצד השרת מושך את scan-export.json מ-GCS מ-GET /data/scan-export.json (Cloud Run). */
   const refetchAlerts = useCallback((): Promise<void> => {
     setLoading(true)
     setLoadError(null)
@@ -195,6 +196,7 @@ export function TransportDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
+  /** בעת טעינת הדף — טעינת התראות ממטמון (GCS) דרך /api/transport-alerts; לא מפעיל סריקה. */
   useEffect(() => {
     void refetchAlerts()
   }, [refetchAlerts])
