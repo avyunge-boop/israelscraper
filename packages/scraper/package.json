@@ -14,8 +14,7 @@
     "scan:kavim": "tsx ./src/orchestrator.ts -- --agency=kavim",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test-groq": "tsx ./src/test-groq.ts",
-    "consolidate-data": "tsx ./src/consolidate-nested-data.ts",
-    "postinstall": "puppeteer browsers install chrome"
+    "consolidate-data": "tsx ./src/consolidate-nested-data.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.3",
