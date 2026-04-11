@@ -91,6 +91,24 @@ const scrapeJob = {
 
 let lastScrapeResult: LastScrapeResult | null = null;
 
+/** Live orchestrator output for GET /status while scrapeJob.running (dashboard יומן סריקה). */
+let scrapeLiveLog = "";
+let scrapeLiveLogTruncated = false;
+const SCRAPE_LIVE_LOG_MAX = 120_000;
+
+function resetScrapeLiveLog(): void {
+  scrapeLiveLog = "";
+  scrapeLiveLogTruncated = false;
+}
+
+function appendScrapeLiveLog(chunk: string): void {
+  scrapeLiveLog += chunk;
+  if (scrapeLiveLog.length > SCRAPE_LIVE_LOG_MAX) {
+    scrapeLiveLog = scrapeLiveLog.slice(-(SCRAPE_LIVE_LOG_MAX - 24_000));
+    scrapeLiveLogTruncated = true;
+  }
+}
+
 function runOrchestrator(argv: string[]): Promise<{
   code: number;
   stdout: string;
@@ -143,8 +161,16 @@ function runOrchestrator(argv: string[]): Promise<{
       );
     }
 
-    child.stdout?.on("data", (c: Buffer) => out.push(Buffer.from(c)));
-    child.stderr?.on("data", (c: Buffer) => err.push(Buffer.from(c)));
+    child.stdout?.on("data", (c: Buffer) => {
+      const b = Buffer.from(c);
+      out.push(b);
+      appendScrapeLiveLog(b.toString("utf-8"));
+    });
+    child.stderr?.on("data", (c: Buffer) => {
+      const b = Buffer.from(c);
+      err.push(b);
+      appendScrapeLiveLog(`[stderr] ${b.toString("utf-8")}`);
+    });
     child.on("error", reject);
     child.on("close", (code) => {
       resolve({
@@ -187,6 +213,8 @@ app.get("/status", (_req, res) => {
     running: scrapeJob.running,
     agency: scrapeJob.running ? scrapeJob.agency : "",
     startedAt: scrapeJob.startedAt ?? "",
+    logSnapshot: scrapeJob.running ? scrapeLiveLog : "",
+    logTruncated: scrapeJob.running && scrapeLiveLogTruncated,
   });
 });
 
@@ -248,6 +276,7 @@ app.post("/run-scrape", (req, res) => {
   console.log(
     `[server] POST /run-scrape label=${JSON.stringify(label)} argv=${JSON.stringify(argv)} body=${JSON.stringify(body)} monorepo=${isMonorepoWorkspace()} cwd=${REPO_ROOT}`
   );
+  resetScrapeLiveLog();
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();

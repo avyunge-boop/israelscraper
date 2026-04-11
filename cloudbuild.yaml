@@ -45,6 +45,8 @@ steps:
       - --region=${_REGION}
       - --platform=managed
       - --project=${PROJECT_ID}
+      - --max-instances=1
+      - --min-instances=1
       - --quiet
     waitFor:
       - push

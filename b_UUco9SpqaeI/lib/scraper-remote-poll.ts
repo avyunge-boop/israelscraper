@@ -57,14 +57,50 @@ export async function runScrapeRemotePoll(
       : `תשובה: ${text.slice(0, 200)}`
   )
 
+  let prevLogSnapshot = ""
+
   for (;;) {
     const stRes = await fetch("/api/scraper-bridge/status", { cache: "no-store" })
     const stText = await stRes.text()
-    let st: { running?: boolean; agency?: string; startedAt?: string }
+    let st: {
+      running?: boolean
+      agency?: string
+      startedAt?: string
+      logSnapshot?: string
+      logTruncated?: boolean
+    }
     try {
       st = JSON.parse(stText) as typeof st
     } catch {
       throw new Error(`scraper-bridge/status non-JSON: ${stText.slice(0, 200)}`)
+    }
+
+    const running = st.running === true
+    const snap =
+      running && typeof st.logSnapshot === "string" ? st.logSnapshot : ""
+
+    if (running && st.logTruncated === true) {
+      if (snap.startsWith(prevLogSnapshot)) {
+        const delta = snap.slice(prevLogSnapshot.length)
+        if (delta) handlers.onLog?.(delta.trimEnd())
+      } else {
+        handlers.onLog?.(
+          "[יומן סריקה] (חיתוך לוג בשרת — מוצג סוף הזרם)\n" +
+            snap.slice(-16_000)
+        )
+      }
+      prevLogSnapshot = snap
+    } else if (
+      running &&
+      snap.length >= prevLogSnapshot.length &&
+      snap.startsWith(prevLogSnapshot)
+    ) {
+      const delta = snap.slice(prevLogSnapshot.length)
+      if (delta) handlers.onLog?.(delta.trimEnd())
+      prevLogSnapshot = snap
+    } else if (running && snap.length > 0) {
+      handlers.onLog?.(snap)
+      prevLogSnapshot = snap
     }
 
     const line = `[status] running=${String(st.running)} · agency=${String(st.agency ?? "")}`

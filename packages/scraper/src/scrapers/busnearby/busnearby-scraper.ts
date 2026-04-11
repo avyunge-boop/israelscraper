@@ -55,6 +55,10 @@ import {
   launchPuppeteerBrowser,
   resolveChromeExecutable,
 } from "../puppeteer-helpers";
+import {
+  hydrateRoutesDatabaseFromGcsIfConfigured,
+  uploadDataJsonFileToGcs,
+} from "../../gcs-sync.js";
 
 loadRootEnv();
 const OUTPUT_FILE = BUS_ALERTS_JSON;
@@ -671,11 +675,29 @@ function routeNeedsRescan(rec: RouteRecord, nowMs: number): boolean {
 }
 
 /** Serialize DB writes so concurrent workers never corrupt JSON */
+const GCS_UPLOAD_EVERY_N_ROUTES = 50;
+
 function createDbPersistQueue() {
   let chain: Promise<void> = Promise.resolve();
+  let savesSinceLastGcsUpload = 0;
   return {
     scheduleSave(routesByPattern: Map<string, RouteRecord>) {
-      chain = chain.then(() => saveRoutesDatabase(routesByPattern));
+      chain = chain.then(async () => {
+        await saveRoutesDatabase(routesByPattern);
+        if (process.env.SCRAPER_STORAGE !== "gcs") return;
+        savesSinceLastGcsUpload++;
+        if (savesSinceLastGcsUpload >= GCS_UPLOAD_EVERY_N_ROUTES) {
+          savesSinceLastGcsUpload = 0;
+          try {
+            await uploadDataJsonFileToGcs("routes-database.json");
+            console.log(
+              `[busnearby/gcs] incremental upload (every ${GCS_UPLOAD_EVERY_N_ROUTES} routes)`
+            );
+          } catch (e) {
+            console.error("[busnearby/gcs] incremental upload failed:", e);
+          }
+        }
+      });
       return chain;
     },
     flush() {
@@ -722,6 +744,12 @@ async function runBusnearbyInternal(
     `[busnearby:2] cli argv (${argv.length} tokens): refresh=${refreshFromCli} fullScan=${fullScanMode} sample=${JSON.stringify(argv.slice(0, 8))}`
   );
   await ensureRepoDataDir();
+  const hydratedFromGcs = await hydrateRoutesDatabaseFromGcsIfConfigured();
+  if (hydratedFromGcs) {
+    console.log(
+      "[busnearby:2b] loaded routes-database.json from GCS before local merge/migrate"
+    );
+  }
   await migrateLegacyFileIfNeeded(LEGACY_ROUTES_DB, ROUTES_DB_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_ALERTS, OUTPUT_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_PREV, PREV_OUTPUT_FILE, fs);
@@ -825,6 +853,14 @@ async function runBusnearbyInternal(
     await saveRoutesDatabase(routesByPattern);
     console.log(`\nRegistry saved: ${REGISTRY_FILE}`);
     console.log(`Routes DB saved: ${ROUTES_DB_FILE} (${routesByPattern.size} route(s))`);
+    if (process.env.SCRAPER_STORAGE === "gcs") {
+      try {
+        await uploadDataJsonFileToGcs("routes-database.json");
+        console.log("[busnearby/gcs] uploaded routes-database.json after discovery phase");
+      } catch (e) {
+        console.error("[busnearby/gcs] post-discovery upload failed:", e);
+      }
+    }
     console.log(
       `[busnearby:7] refresh discovery done: agency pages with links=${filtersWithRoutes} totalRoutesNow=${routesByPattern.size}`
     );
@@ -929,6 +965,14 @@ async function runBusnearbyInternal(
 
   await dbPersist.flush();
   await saveRoutesDatabase(routesByPattern);
+  if (process.env.SCRAPER_STORAGE === "gcs" && scanQueue.length > 0) {
+    try {
+      await uploadDataJsonFileToGcs("routes-database.json");
+      console.log("[busnearby/gcs] final upload after route queue (catch remainder < 50)");
+    } catch (e) {
+      console.error("[busnearby/gcs] final queue upload failed:", e);
+    }
+  }
   console.log(`\nRoutes DB updated: ${ROUTES_DB_FILE}`);
 
   const okCount = outcomes.filter(Boolean).length;

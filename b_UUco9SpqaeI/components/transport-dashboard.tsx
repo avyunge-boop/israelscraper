@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback, useEffect } from "react"
+import { flushSync } from "react-dom"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatsBar } from "@/components/stats-bar"
@@ -169,7 +170,9 @@ export function TransportDashboard() {
   const appendScanLog = useCallback((line: string) => {
     const t = line.trimEnd()
     if (!t) return
-    setScanLogs((prev) => [...prev.slice(-500), t])
+    flushSync(() => {
+      setScanLogs((prev) => [...prev.slice(-500), t])
+    })
   }, [])
 
   useEffect(() => {
@@ -302,7 +305,7 @@ export function TransportDashboard() {
   const runProxyScan = useCallback(
     async (
       body:
-        | { agency: string; refresh?: boolean }
+        | { agency: string; refresh?: boolean; maxRoutes?: number }
         | { all: true; refresh?: boolean }
     ) => {
       setDeskTab("ops")
@@ -417,7 +420,11 @@ export function TransportDashboard() {
       try {
         const runBody =
           agency === "busnearby"
-            ? { agency: "busnearby" as const, refresh: true as const }
+            ? {
+                agency: "busnearby" as const,
+                refresh: true as const,
+                maxRoutes: 200 as const,
+              }
             : { agency }
         await runProxyScan(runBody)
         appendScanLog("מעדכן התראות מהמטמון...")
@@ -471,7 +478,11 @@ export function TransportDashboard() {
   const handleInitBusnearbyRoutesDb = useCallback(async () => {
     setScanningAgency("initBnDb")
     try {
-      await runProxyScan({ agency: "busnearby", refresh: true })
+      await runProxyScan({
+        agency: "busnearby",
+        refresh: true,
+        maxRoutes: 200,
+      })
       appendScanLog("מעדכן התראות מהמטמון...")
       await reloadCachedScanExportOnly()
       appendScanLog("מתרגם התראות...")
