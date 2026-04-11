@@ -103,19 +103,33 @@ function runOrchestrator(argv: string[]): Promise<{
     let child;
 
     if (isMonorepoWorkspace()) {
-      child = spawn(
-        "pnpm",
-        ["--filter", "@workspace/scraper", "run", "scan", "--", ...argv],
-        { cwd: REPO_ROOT, env, shell }
+      const pnpmArgs = [
+        "--filter",
+        "@workspace/scraper",
+        "run",
+        "scan",
+        "--",
+        ...argv,
+      ];
+      console.log(
+        `[server] spawn monorepo: pnpm ${pnpmArgs.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")} cwd=${REPO_ROOT}`
       );
+      child = spawn("pnpm", pnpmArgs, { cwd: REPO_ROOT, env, shell });
     } else {
+      const tsxCli = path.join(
+        SCRAPER_PKG_ROOT,
+        "node_modules",
+        "tsx",
+        "dist",
+        "cli.mjs"
+      );
+      const orch = path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts");
+      console.log(
+        `[server] spawn standalone: node tsx ${orch} ${argv.join(" ")} cwd=${SCRAPER_PKG_ROOT}`
+      );
       child = spawn(
         process.execPath,
-        [
-          path.join(SCRAPER_PKG_ROOT, "node_modules", "tsx", "dist", "cli.mjs"),
-          path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts"),
-          ...argv,
-        ],
+        [tsxCli, orch, ...argv],
         { cwd: SCRAPER_PKG_ROOT, env }
       );
     }
@@ -222,6 +236,9 @@ app.post("/run-scrape", (req, res) => {
   }
   const argv = buildOrchestratorArgv(body);
   const label = scrapeLabel(body);
+  console.log(
+    `[server] POST /run-scrape label=${JSON.stringify(label)} argv=${JSON.stringify(argv)} body=${JSON.stringify(body)} monorepo=${isMonorepoWorkspace()} cwd=${REPO_ROOT}`
+  );
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();

@@ -702,9 +702,13 @@ function cliArgv(context?: ScraperRunContext): string[] {
 async function runBusnearbyInternal(
   context?: ScraperRunContext
 ): Promise<SourceScanResult> {
+  console.log("[busnearby:1] runBusnearbyInternal start");
   const argv = cliArgv(context);
   const refreshFromCli = argv.includes(REFRESH_ARG);
   const fullScanMode = argv.includes(FULL_SCAN_ARG);
+  console.log(
+    `[busnearby:2] cli argv (${argv.length} tokens): refresh=${refreshFromCli} fullScan=${fullScanMode} sample=${JSON.stringify(argv.slice(0, 8))}`
+  );
   await ensureRepoDataDir();
   await migrateLegacyFileIfNeeded(LEGACY_ROUTES_DB, ROUTES_DB_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_ALERTS, OUTPUT_FILE, fs);
@@ -712,6 +716,9 @@ async function runBusnearbyInternal(
   await migrateLegacyFileIfNeeded(LEGACY_REGISTRY, REGISTRY_FILE, fs);
   const registryById = await loadAgenciesRegistry();
   const routesByPattern = await loadRoutesDatabase();
+  console.log(
+    `[busnearby:3] loaded registry agencies=${registryById.size} routesInDb=${routesByPattern.size}`
+  );
 
   console.log(
     "Policy: agencyFilter=2 (Israel Railways) is permanently excluded — buses only."
@@ -734,6 +741,9 @@ async function runBusnearbyInternal(
     }
     discoveryMode = true;
   }
+  console.log(
+    `[busnearby:4] discoveryMode=${discoveryMode} (refresh flag or empty routes DB)`
+  );
 
   const chromePath = resolveChromeExecutable();
   console.log(
@@ -743,10 +753,12 @@ async function runBusnearbyInternal(
     discoveryMode ? "Mode: REFRESH (discover + scan)" : "Mode: FAST (database routes only)"
   );
 
+  console.log("[busnearby:5] launching Puppeteer browser…");
   const browser: Browser = await launchPuppeteerBrowser([
     "--no-first-run",
     "--no-zygote",
   ]);
+  console.log("[busnearby:6] browser ready, newPage for discovery/scan");
 
   const page = await browser.newPage();
   await applyPageDefaults(page);
@@ -801,6 +813,11 @@ async function runBusnearbyInternal(
     await saveRoutesDatabase(routesByPattern);
     console.log(`\nRegistry saved: ${REGISTRY_FILE}`);
     console.log(`Routes DB saved: ${ROUTES_DB_FILE} (${routesByPattern.size} route(s))`);
+    console.log(
+      `[busnearby:7] refresh discovery done: agency pages with links=${filtersWithRoutes} totalRoutesNow=${routesByPattern.size}`
+    );
+  } else {
+    console.log("[busnearby:7] skip discovery (fast mode, existing DB)");
   }
 
   const routeList = [...routesByPattern.values()].sort((a, b) =>
@@ -832,6 +849,13 @@ async function runBusnearbyInternal(
     );
   } else {
     console.log("");
+  }
+  if (scanQueue.length === 0) {
+    console.warn(
+      "[busnearby:8] WARNING: scan queue is EMPTY — no per-route Puppeteer scans this run (all routes fresh within stale window, or empty DB after discovery with zero links). bus-alerts.json will still be rebuilt from last_known_alerts."
+    );
+  } else {
+    console.log(`[busnearby:8] scan queue has ${scanQueue.length} route(s) to visit`);
   }
 
   const dbPersist = createDbPersistQueue();
@@ -892,7 +916,9 @@ async function runBusnearbyInternal(
     `  Queue finished: ${scanQueue.length} route(s) attempted, ok=${okCount}, fail=${failCount}`
   );
 
+  console.log("[busnearby:9] closing browser");
   await browser.close();
+  console.log("[busnearby:10] aggregating alerts from route records");
 
   const rawAlerts: RawScrapedAlert[] = [];
   for (const rec of routeList) {
@@ -1062,7 +1088,13 @@ async function runBusnearbyInternal(
   }
 
   let normalizedAlerts = dedupedToNormalized(deduped);
+  console.log(
+    `[busnearby:11] Groq enrich starting for ${normalizedAlerts.length} alert(s)`
+  );
   normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
+  console.log(
+    `[busnearby:12] Groq enrich done, returning success with ${normalizedAlerts.length} normalized alert(s)`
+  );
 
   return {
     sourceId: "busnearby",
@@ -1086,6 +1118,9 @@ async function runBusnearbyInternal(
 export async function runScan(
   context?: ScraperRunContext
 ): Promise<SourceScanResult> {
+  console.log(
+    `[busnearby:0] runScan invoked suppressEmail=${context?.suppressEmail === true}`
+  );
   try {
     return await runBusnearbyInternal(context);
   } catch (err) {

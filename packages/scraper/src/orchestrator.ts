@@ -209,6 +209,11 @@ async function main() {
 
       agencyIndex++;
       console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
+      if (scraper.sourceId === "busnearby") {
+        console.log(
+          `[Orchestrator] busnearby forwardArgv to scraper: ${JSON.stringify(argv.slice())}`
+        );
+      }
       const result = await scraper.runScan({
         forwardArgv: argv.slice(),
         suppressEmail: isFullRun || skipAllEmails,
