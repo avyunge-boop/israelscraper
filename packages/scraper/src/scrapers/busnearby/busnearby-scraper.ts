@@ -65,6 +65,7 @@ import {
 import {
   hydrateRoutesDatabaseFromGcsIfConfigured,
   uploadDataArtifactsToGcs,
+  uploadDataJsonFileToGcs,
 } from "../../gcs-sync.js";
 
 loadRootEnv();

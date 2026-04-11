@@ -65,6 +65,35 @@ export async function uploadDataArtifactsToGcs(): Promise<string[]> {
 }
 
 /**
+ * Upload one JSON file under DATA_DIR when SCRAPER_STORAGE=gcs (same object path as full sync).
+ * Skips if the file is missing locally. Returns gs:// URL or null.
+ */
+export async function uploadDataJsonFileToGcs(
+  fileName: string
+): Promise<string | null> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") {
+    return null;
+  }
+  const localPath = path.join(DATA_DIR, fileName);
+  try {
+    await access(localPath);
+  } catch {
+    return null;
+  }
+  const bucketName =
+    process.env.GCS_BUCKET_NAME?.trim() || DEFAULT_BUCKET;
+  const projectId = process.env.GCP_PROJECT_ID?.trim();
+  const storage = projectId ? new Storage({ projectId }) : new Storage();
+  const bucket = storage.bucket(bucketName);
+  const objectName = gcsObjectPath(fileName);
+  await bucket.upload(localPath, {
+    destination: objectName,
+    metadata: { contentType: "application/json" },
+  });
+  return `gs://${bucketName}/${objectName}`;
+}
+
+/**
  * מוריד קובץ JSON מ-GCS באותו נתיב כמו ב-upload (bucket + GCS_OBJECT_PREFIX).
  * מחזיר null אם האובייקט לא קיים או אם אינו במצב gcs.
  */
