@@ -50,6 +50,15 @@ const AGENCY_SCAN_MAP: Record<string, FilterType> = {
   metropoline: "מטרופולין",
 }
 
+/** תוויות ליומן מבצעי */
+const AGENCY_LOG_LABEL: Record<string, string> = {
+  busnearby: "Bus Nearby",
+  egged: "אגד",
+  dan: "דן",
+  kavim: "קווים",
+  metropoline: "מטרופולין",
+}
+
 function formatLastUpdated(iso: string, lang: DashboardLang): string {
   try {
     const d = new Date(iso)
@@ -156,6 +165,12 @@ export function TransportDashboard() {
     },
     []
   )
+
+  const appendScanLog = useCallback((line: string) => {
+    const t = line.trimEnd()
+    if (!t) return
+    setScanLogs((prev) => [...prev.slice(-500), t])
+  }, [])
 
   useEffect(() => {
     const fetchHealth = () => {
@@ -281,6 +296,8 @@ export function TransportDashboard() {
   /**
    * בפרודקשן (SCRAPER_API_URL / default): POST /run-scrape דרך bridge + polling /status.
    * מקומית: SSE מ־proxy-scan + pnpm orchestrator.
+   *
+   * לפני התיקון: עדכוני scanLogs רק דרך onLog של poll/SSE — ללא שורת פתיחה מקומית.
    */
   const runProxyScan = useCallback(
     async (
@@ -292,15 +309,23 @@ export function TransportDashboard() {
       setScanLogs([])
       setScanProgress(null)
 
+      const agencyKey = "agency" in body ? body.agency : "all"
+      const agencyLog =
+        agencyKey === "all"
+          ? "כל הסוכנויות"
+          : AGENCY_LOG_LABEL[agencyKey] ?? agencyKey
+      appendScanLog(`מתחיל סריקת ${agencyLog}...`)
+
       const cfgRes = await fetch("/api/scraper-bridge/config", { cache: "no-store" })
       const cfg = (await cfgRes.json().catch(() => ({}))) as {
         useRemoteScraper?: boolean
       }
 
+      const onLog = (text: string) => appendScanLog(text)
+
       if (cfg.useRemoteScraper === true) {
         const { ok, exitCode } = await runScrapeRemotePoll(body, {
-          onLog: (text) =>
-            setScanLogs((prev) => [...prev.slice(-500), text.trimEnd()]),
+          onLog,
           onProgress: (p) => {
             setScanProgress({
               agency: String(p.agency ?? ""),
@@ -318,9 +343,9 @@ export function TransportDashboard() {
         return
       }
 
+      appendScanLog("מצב מקומי: SSE מ־orchestrator…")
       await consumeProxyScanStream(body, {
-        onLog: (text) =>
-          setScanLogs((prev) => [...prev.slice(-500), text.trimEnd()]),
+        onLog,
         onProgress: (p) => {
           setScanProgress({
             agency: String(p.agency ?? ""),
@@ -333,11 +358,21 @@ export function TransportDashboard() {
       })
       setScanProgress(null)
     },
-    []
+    [appendScanLog]
   )
 
+  type SendEmailResult = {
+    sent: number
+    emailSkipped?: boolean
+    totalAlerts?: number
+  }
+
   const sendReportAfterScan = useCallback(
-    async (filter: FilterType) => {
+    async (
+      filter: FilterType,
+      log?: (line: string) => void
+    ): Promise<SendEmailResult> => {
+      log?.("שולח דוח במייל...")
       const to = recipientEmail.trim() || undefined
       const res = await fetch("/api/send-alerts-email", {
         method: "POST",
@@ -347,11 +382,30 @@ export function TransportDashboard() {
       const data = (await res.json().catch(() => ({}))) as {
         error?: string
         sent?: number
+        emailSkipped?: boolean
+        totalAlerts?: number
+        to?: string
       }
       if (!res.ok) {
-        throw new Error(data.error ?? res.statusText)
+        const err = data.error ?? res.statusText
+        log?.(`שגיאת שליחת מייל: ${err}`)
+        console.error("[dashboard] send-alerts-email failed:", res.status, err)
+        throw new Error(err)
       }
-      return data.sent ?? 0
+      if (data.emailSkipped) {
+        log?.(
+          `דילוג על מייל — אין התראות במסנן (${String(filter)}) · סה״כ במערכת: ${String(data.totalAlerts ?? "?")}`
+        )
+        return {
+          sent: 0,
+          emailSkipped: true,
+          totalAlerts: data.totalAlerts,
+        }
+      }
+      log?.(
+        `מייל נשלח: ${String(data.sent ?? 0)} התראות → ${String(data.to ?? "")}`
+      )
+      return { sent: data.sent ?? 0 }
     },
     [recipientEmail]
   )
@@ -366,10 +420,34 @@ export function TransportDashboard() {
             ? { agency: "busnearby" as const, refresh: true as const }
             : { agency }
         await runProxyScan(runBody)
+        appendScanLog("מעדכן התראות מהמטמון...")
         await reloadCachedScanExportOnly()
-        const n = await sendReportAfterScan(filter)
+        appendScanLog("מתרגם התראות...")
+        appendScanLog("מנסח סיכום AI לדוח מייל...")
+        const mail = await sendReportAfterScan(filter, appendScanLog)
+        appendScanLog("מעדכן תצוגת התראות...")
+        await refetchAlerts({ silent: true })
+        appendScanLog("סריקה הושלמה ✓")
+
         const scope = filterTabLabel(lang, filter)
-        showToast(scanCompleteMessage(lang, n, scope))
+        if (mail.emailSkipped) {
+          const total = mail.totalAlerts ?? 0
+          if (total > 0) {
+            showToast(
+              lang === "en"
+                ? `Scan finished. No email (no alerts for ${scope}).`
+                : `הסריקה הושלמה. לא נשלח מייל — אין התראות בטווח «${scope}».`
+            )
+          } else {
+            showToast(
+              lang === "en"
+                ? "Scan finished. No alerts in the system."
+                : "הסריקה הושלמה — אין התראות במערכת."
+            )
+          }
+        } else {
+          showToast(scanCompleteMessage(lang, mail.sent, scope))
+        }
       } catch (e) {
         showToast(
           e instanceof Error ? e.message : scanOrEmailError(lang),
@@ -381,6 +459,8 @@ export function TransportDashboard() {
     },
     [
       lang,
+      appendScanLog,
+      refetchAlerts,
       reloadCachedScanExportOnly,
       runProxyScan,
       sendReportAfterScan,
@@ -392,10 +472,34 @@ export function TransportDashboard() {
     setScanningAgency("initBnDb")
     try {
       await runProxyScan({ agency: "busnearby", refresh: true })
+      appendScanLog("מעדכן התראות מהמטמון...")
       await reloadCachedScanExportOnly()
-      const n = await sendReportAfterScan("busnearby")
+      appendScanLog("מתרגם התראות...")
+      appendScanLog("מנסח סיכום AI לדוח מייל...")
+      const mail = await sendReportAfterScan("busnearby", appendScanLog)
+      appendScanLog("מעדכן תצוגת התראות...")
+      await refetchAlerts({ silent: true })
+      appendScanLog("סריקה הושלמה ✓")
+
       const scope = filterTabLabel(lang, "busnearby")
-      showToast(scanCompleteMessage(lang, n, scope))
+      if (mail.emailSkipped) {
+        const total = mail.totalAlerts ?? 0
+        if (total > 0) {
+          showToast(
+            lang === "en"
+              ? `Scan finished. No email (no alerts for ${scope}).`
+              : `הסריקה הושלמה. לא נשלח מייל — אין התראות בטווח «${scope}».`
+          )
+        } else {
+          showToast(
+            lang === "en"
+              ? "Scan finished. No alerts in the system."
+              : "הסריקה הושלמה — אין התראות במערכת."
+          )
+        }
+      } else {
+        showToast(scanCompleteMessage(lang, mail.sent, scope))
+      }
     } catch (e) {
       showToast(
         e instanceof Error ? e.message : scanOrEmailError(lang),
@@ -406,6 +510,8 @@ export function TransportDashboard() {
     }
   }, [
     lang,
+    appendScanLog,
+    refetchAlerts,
     reloadCachedScanExportOnly,
     runProxyScan,
     sendReportAfterScan,

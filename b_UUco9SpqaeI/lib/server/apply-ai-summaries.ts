@@ -94,9 +94,16 @@ export async function attachAiSummariesToAlerts(
       continue
     }
 
-    const structured =
+    let structured =
       structuredById?.get(alert.id) ??
       extractStructuredFromTransportAlert(alert)
+    /** Groq 413 — קווים: קיצור הקשר לפני שליחה */
+    if (alert.scanSourceId === "kavim") {
+      structured = {
+        ...structured,
+        rawSanitizedSnippet: structured.rawSanitizedSnippet.slice(0, 500),
+      }
+    }
 
     console.log(
       `[AI] Generating summary for: ${(alert.title ?? "").slice(0, 120)}...`

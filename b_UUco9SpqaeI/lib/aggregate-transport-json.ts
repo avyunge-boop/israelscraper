@@ -202,11 +202,16 @@ export function alertsFromScanExportJson(data: unknown): TransportAlert[] {
         typeof n.meta?.summaryEn === "string"
           ? String(n.meta.summaryEn).trim()
           : ""
+      const rawContent = (n.content ?? "").trim()
+      const metaFull =
+        typeof n.meta?.fullDescription === "string"
+          ? String(n.meta.fullDescription).trim()
+          : ""
+      /** תוכן מלא לתצוגה: קודם שדה content מהסורק, אחר כך תיאור מלא, אז סיכום דיספצ'ר */
       const fullContent =
+        rawContent ||
+        metaFull ||
         dispatcherHe ||
-        (typeof n.meta?.fullDescription === "string" &&
-          String(n.meta.fullDescription).trim()) ||
-        (n.content ?? "").trim() ||
         title
       const rawLines = n.meta?.lineNumbers
       const lines = Array.isArray(rawLines)

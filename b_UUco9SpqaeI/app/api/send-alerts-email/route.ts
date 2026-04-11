@@ -198,10 +198,20 @@ export async function POST(request: Request) {
 
   const slice = filterAlerts(alerts, filter)
   if (slice.length === 0) {
-    return NextResponse.json(
-      { error: "אין התראות לשליחה עבור המסנן שנבחר", filter },
-      { status: 400 }
+    console.log(
+      "[send-alerts-email] skip send: no alerts for filter",
+      filter,
+      "totalAlerts=",
+      alerts.length
     )
+    return NextResponse.json({
+      ok: true,
+      sent: 0,
+      emailSkipped: true,
+      skipReason: "no_alerts_for_filter",
+      filter,
+      totalAlerts: alerts.length,
+    })
   }
 
   const port = Number(process.env.BUS_ALERTS_SMTP_PORT ?? "587")
@@ -225,13 +235,26 @@ export async function POST(request: Request) {
     })
     .join("\n---\n")
 
-  await transporter.sendMail({
-    from,
-    to: recipient,
-    subject: `[תחבורה] דוח התראות (${slice.length}) · ${filter} · ${lastUpdated.slice(0, 10)}`,
-    text,
-    html,
-  })
+  try {
+    await transporter.sendMail({
+      from,
+      to: recipient,
+      subject: `[תחבורה] דוח התראות (${slice.length}) · ${filter} · ${lastUpdated.slice(0, 10)}`,
+      text,
+      html,
+    })
+  } catch (e) {
+    console.error("[send-alerts-email] sendMail failed:", e)
+    return NextResponse.json(
+      {
+        error:
+          e instanceof Error
+            ? e.message
+            : "שליחת המייל נכשלה (SMTP). בדוק BUS_ALERTS_SMTP_* ו-BUS_ALERTS_EMAIL_FROM/TO.",
+      },
+      { status: 502 }
+    )
+  }
 
   return NextResponse.json({
     ok: true,

@@ -67,13 +67,7 @@ export async function runScrapeRemotePoll(
       throw new Error(`scraper-bridge/status non-JSON: ${stText.slice(0, 200)}`)
     }
 
-    const line = [
-      `[status] running=${String(st.running)}`,
-      st.agency ? `agency=${st.agency}` : "",
-      st.startedAt ? `startedAt=${st.startedAt}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ")
+    const line = `[status] running=${String(st.running)} · agency=${String(st.agency ?? "")}`
     handlers.onLog?.(line)
 
     handlers.onProgress?.({

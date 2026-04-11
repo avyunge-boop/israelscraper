@@ -56,7 +56,7 @@ ${JSON.stringify(
 )}
 
 Raw sanitized Hebrew text (reference only, max context):
-${struct.rawSanitizedSnippet.slice(0, 8000)}
+${struct.rawSanitizedSnippet.slice(0, 4000)}
 
 Return ONLY the single Hebrew sentence. No quotation marks around it. No prefix like "Output:" or "סיכום:".`
 }
