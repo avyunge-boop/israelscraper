@@ -1,12 +1,16 @@
 /**
  * Bus Route Alerts Scraper — busnearby.co.il
  *
- * Persistent DB: data/routes-database.json (all routes ever seen, alertUrl per line).
+ * Persistent DB: data/routes-database.json (all routes ever seen, alertUrl per line). Discovery
+ *   **merges** new links; normal runs never wipe the file. Train-only routes (agency 2) are removed
+ *   by blacklist policy only.
+ * First run / empty DB: route discovery runs automatically (same as --refresh) so Cloud/local need
+ *   no separate “init” step.
  * Default: fast scan — one Chrome, up to ROUTE_SCAN_CONCURRENCY tabs. Only routes with missing
- *   or stale last_scanned_at (> SCAN_STALE_AFTER_H hours) are queued; fresh routes are skipped.
+ *   or stale last_scanned_at (> BUSNEARBY_SCAN_STALE_AFTER_H hours) are queued for **alert** fetch;
+ *   that is not a “deep” link discovery — use --refresh only when you want to re-crawl searchRoute pages.
  * --refresh: discover links on searchRoute pages (skips agencyFilters listed in busnearby-agency-exclusions.json).
  *   agencyFilters with 0 links are excluded until --restore-busnearby-agency-filters.
- * No routes in DB without --refresh: error (run init-routes / --refresh once).
  * --full-scan: ignore staleness and scan every route in the database.
  * After each queued route, routes-database.json is saved (serialized) so interrupts keep progress.
  * Failed navigation (3 tries): last_scan_failed=true, keep last_known_alerts; never remove route.
@@ -57,8 +61,19 @@ import {
   getPuppeteerLaunchArgs,
   resolveChromeExecutable,
 } from "../puppeteer-helpers";
+import { uploadDataArtifactsToGcs } from "../../gcs-sync";
 
 loadRootEnv();
+
+/** Hours before re-fetching alerts for a route (not link discovery). Override via BUSNEARBY_SCAN_STALE_AFTER_H. */
+function readScanStaleAfterHours(): number {
+  const raw = process.env.BUSNEARBY_SCAN_STALE_AFTER_H?.trim();
+  if (!raw) return 24;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 24;
+  return Math.min(Math.floor(n), 24 * 30);
+}
+
 const OUTPUT_FILE = BUS_ALERTS_JSON;
 const PREV_OUTPUT_FILE = BUS_ALERTS_PREV_JSON;
 const REGISTRY_FILE = AGENCIES_REGISTRY_JSON;
@@ -75,8 +90,7 @@ const NAV_RETRY_DELAY_MS = 2000;
 /** Concurrent Puppeteer tabs for route scans (single shared browser) */
 const ROUTE_SCAN_CONCURRENCY = 10;
 
-/** Rescan a route if last_scanned_at is missing or older than this many hours */
-const SCAN_STALE_AFTER_H = 12;
+const SCAN_STALE_AFTER_H = readScanStaleAfterHours();
 const SCAN_STALE_AFTER_MS = SCAN_STALE_AFTER_H * 60 * 60 * 1000;
 
 /** Live terminal progress: log every N completed routes in the scan queue */
@@ -146,6 +160,12 @@ interface CachedAlert {
   expired: boolean;
   stopConditions: string[];
   affectedStop?: string;
+  /** Groq dispatcher sentence (Hebrew), persisted in routes-database.json */
+  dispatcherSummaryHe?: string;
+  /** English summary, persisted */
+  summaryEn?: string;
+  /** contentFingerprint(title, fullContent) when Groq fields are valid for this body */
+  groqFingerprint?: string;
 }
 
 interface RouteRecord {
@@ -183,6 +203,8 @@ interface RawScrapedAlert {
   expired: boolean;
   stopConditions: string[];
   affectedStop?: string;
+  cachedDispatcherHe?: string;
+  cachedSummaryEn?: string;
 }
 
 interface RouteRef {
@@ -205,6 +227,8 @@ interface DedupedAlert {
   sourceAlertIds: string[];
   routes: RouteRef[];
   routeCount: number;
+  cachedDispatcherHe?: string;
+  cachedSummaryEn?: string;
 }
 
 interface BusAlertsSnapshot {
@@ -408,8 +432,52 @@ function migrateRouteRecord(raw: Record<string, unknown>): RouteRecord {
           ? String(raw.lastScannedAt)
           : undefined,
     last_known_alerts: Array.isArray(legacyAlerts)
-      ? (legacyAlerts as CachedAlert[])
+      ? legacyAlerts.map((x) =>
+          normalizeCachedAlert(x as Record<string, unknown>)
+        )
       : [],
+  };
+}
+
+function normalizeCachedAlert(raw: Record<string, unknown>): CachedAlert {
+  const stopConds = raw.stopConditions ?? raw.stop_conditions;
+  return {
+    alertId: String(raw.alertId ?? raw.id ?? "").trim(),
+    title: String(raw.title ?? "").trim(),
+    fullContent: String(raw.fullContent ?? raw.full_content ?? "").trim(),
+    effectiveStart:
+      raw.effectiveStart != null
+        ? String(raw.effectiveStart)
+        : raw.effective_start != null
+          ? String(raw.effective_start)
+          : undefined,
+    effectiveEnd:
+      raw.effectiveEnd != null
+        ? String(raw.effectiveEnd)
+        : raw.effective_end != null
+          ? String(raw.effective_end)
+          : undefined,
+    activeNow: Boolean(raw.activeNow ?? raw.active_now),
+    expired: Boolean(raw.expired),
+    stopConditions: Array.isArray(stopConds)
+      ? [...stopConds].map(String).sort()
+      : [],
+    affectedStop:
+      raw.affectedStop != null
+        ? String(raw.affectedStop)
+        : raw.affected_stop != null
+          ? String(raw.affected_stop)
+          : undefined,
+    dispatcherSummaryHe:
+      typeof raw.dispatcherSummaryHe === "string"
+        ? raw.dispatcherSummaryHe
+        : undefined,
+    summaryEn:
+      typeof raw.summaryEn === "string" ? raw.summaryEn : undefined,
+    groqFingerprint:
+      typeof raw.groqFingerprint === "string"
+        ? raw.groqFingerprint
+        : undefined,
   };
 }
 
@@ -442,6 +510,62 @@ async function sleep(ms: number) {
 function contentFingerprint(title: string, fullContent: string): string {
   const payload = `${title.trim()}\n${fullContent.trim()}`;
   return createHash("sha256").update(payload, "utf8").digest("hex");
+}
+
+/** After a fresh API scan, re-attach Groq fields from the previous cache when alertId + body still match. */
+function mergeCachedGroqIntoFreshAlerts(
+  fresh: CachedAlert[],
+  previous: CachedAlert[]
+): CachedAlert[] {
+  const prevById = new Map(previous.map((c) => [c.alertId, c]));
+  return fresh.map((c) => {
+    const prev = prevById.get(c.alertId);
+    const he = prev?.dispatcherSummaryHe?.trim();
+    const en = prev?.summaryEn?.trim();
+    if (!prev || !he || !en) return c;
+    const fpNow = contentFingerprint(c.title, c.fullContent);
+    if (prev.groqFingerprint) {
+      if (prev.groqFingerprint !== fpNow) return c;
+    } else if (prev.title !== c.title || prev.fullContent !== c.fullContent) {
+      return c;
+    }
+    return {
+      ...c,
+      dispatcherSummaryHe: prev.dispatcherSummaryHe,
+      summaryEn: prev.summaryEn,
+      groqFingerprint: fpNow,
+    };
+  });
+}
+
+/** Persist Groq summaries onto per-route cached rows (same fingerprint as dedupe contentId). */
+function applyGroqEnrichmentToRouteRecords(
+  routesByPattern: Map<string, RouteRecord>,
+  enriched: NormalizedAlert[]
+): void {
+  const byContent = new Map<string, { he: string; en: string }>();
+  for (const a of enriched) {
+    const cid =
+      typeof a.meta?.contentId === "string" ? a.meta.contentId.trim() : "";
+    const he =
+      typeof a.meta?.dispatcherSummaryHe === "string"
+        ? a.meta.dispatcherSummaryHe.trim()
+        : "";
+    const en =
+      typeof a.meta?.summaryEn === "string" ? a.meta.summaryEn.trim() : "";
+    if (!cid || !he || !en) continue;
+    byContent.set(cid, { he, en });
+  }
+  for (const rec of routesByPattern.values()) {
+    for (const c of rec.last_known_alerts) {
+      const fp = contentFingerprint(c.title, c.fullContent);
+      const g = byContent.get(fp);
+      if (!g) continue;
+      c.dispatcherSummaryHe = g.he;
+      c.summaryEn = g.en;
+      c.groqFingerprint = fp;
+    }
+  }
 }
 
 function guessLineNumber(linkText: string): string {
@@ -496,6 +620,8 @@ function cachedRowsToRawAlerts(rec: RouteRecord): RawScrapedAlert[] {
     expired: c.expired,
     stopConditions: c.stopConditions,
     affectedStop: c.affectedStop,
+    cachedDispatcherHe: c.dispatcherSummaryHe?.trim() || undefined,
+    cachedSummaryEn: c.summaryEn?.trim() || undefined,
   }));
 }
 
@@ -540,6 +666,13 @@ function dedupeAlertsByContent(raw: RawScrapedAlert[]): DedupedAlert[] {
         a.patternUrl.localeCompare(b.patternUrl)
     );
 
+    const cachedDispatcherHe = rows
+      .map((r) => r.cachedDispatcherHe?.trim())
+      .find((x) => x);
+    const cachedSummaryEn = rows
+      .map((r) => r.cachedSummaryEn?.trim())
+      .find((x) => x);
+
     out.push({
       contentId,
       title: first.title,
@@ -553,6 +686,8 @@ function dedupeAlertsByContent(raw: RawScrapedAlert[]): DedupedAlert[] {
       sourceAlertIds,
       routes,
       routeCount: routes.length,
+      ...(cachedDispatcherHe ? { cachedDispatcherHe } : {}),
+      ...(cachedSummaryEn ? { cachedSummaryEn } : {}),
     });
   }
 
@@ -662,6 +797,7 @@ async function fetchAlertsInPage(page: Page, apiRouteId: string): Promise<AlertP
 }
 
 async function scanRouteWithRetries(page: Page, rec: RouteRecord): Promise<boolean> {
+  const previousAlerts = rec.last_known_alerts;
   for (let attempt = 1; attempt <= NAV_MAX_ATTEMPTS; attempt++) {
     try {
       await page.goto(rec.alertUrl, {
@@ -670,7 +806,11 @@ async function scanRouteWithRetries(page: Page, rec: RouteRecord): Promise<boole
       });
       await sleep(400);
       const patches = await fetchAlertsInPage(page, rec.apiRouteId);
-      rec.last_known_alerts = patchesToCached(patches);
+      const fresh = patchesToCached(patches);
+      rec.last_known_alerts = mergeCachedGroqIntoFreshAlerts(
+        fresh,
+        previousAlerts
+      );
       rec.last_scan_failed = false;
       rec.last_scanned_at = new Date().toISOString();
       return true;
@@ -725,6 +865,12 @@ function dedupedToNormalized(alerts: DedupedAlert[]): NormalizedAlert[] {
       routeCount: d.routeCount,
       activeNow: d.activeNow,
       expired: d.expired,
+      ...(d.cachedDispatcherHe?.trim()
+        ? { dispatcherSummaryHe: d.cachedDispatcherHe.trim() }
+        : {}),
+      ...(d.cachedSummaryEn?.trim()
+        ? { summaryEn: d.cachedSummaryEn.trim() }
+        : {}),
     },
   }));
 }
@@ -782,13 +928,15 @@ async function runBusnearbyInternal(
     );
   }
 
-  if (routesByPattern.size === 0 && !refreshFromCli) {
-    throw new Error(
-      "[busnearby] routes-database.json has no routes. Run discovery once: pnpm run init-routes (or pnpm run scan -- --agency=busnearby --refresh), then use normal scans without --refresh."
+  const needsInitialDiscovery = routesByPattern.size === 0;
+  const discoveryMode = refreshFromCli || needsInitialDiscovery;
+  if (needsInitialDiscovery && !refreshFromCli) {
+    console.log(
+      "[busnearby] routes-database.json is empty — running route discovery now (same as --refresh). " +
+        "Discovered links are saved and reused forever unless you run --refresh again."
     );
   }
 
-  const discoveryMode = refreshFromCli;
 
   let excludedFilterIds = await loadAgencyFilterExclusions();
 
@@ -796,9 +944,12 @@ async function runBusnearbyInternal(
   console.log(
     chromePath ? `Using Chrome/Chromium: ${chromePath}` : "Using bundled Chromium"
   );
-  console.log(
-    discoveryMode ? "Mode: REFRESH (discover + scan)" : "Mode: FAST (database routes only)"
-  );
+  const modeLabel = !discoveryMode
+    ? "Mode: FAST (database routes only — alert refresh by staleness)"
+    : needsInitialDiscovery && !refreshFromCli
+      ? "Mode: INITIAL DISCOVERY (empty routes DB — filling searchRoute links, then scan)"
+      : "Mode: REFRESH (--refresh — merge new links from searchRoute, then scan)";
+  console.log(modeLabel);
 
   const browser: Browser = await puppeteer.launch({
     headless: true,
@@ -1132,6 +1283,19 @@ async function runBusnearbyInternal(
 
   let normalizedAlerts = dedupedToNormalized(deduped);
   normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
+  applyGroqEnrichmentToRouteRecords(routesByPattern, normalizedAlerts);
+  await saveRoutesDatabase(routesByPattern);
+  if (process.env.SCRAPER_STORAGE === "gcs") {
+    try {
+      const uploaded = await uploadDataArtifactsToGcs();
+      const routesUpload = uploaded.find((u) => u.includes("routes-database.json"));
+      if (routesUpload) {
+        console.log(`[busnearby/gcs] ${routesUpload} (after Groq enrich)`);
+      }
+    } catch (e) {
+      console.error("[busnearby/gcs] upload after Groq enrich failed:", e);
+    }
+  }
 
   return {
     sourceId: "busnearby",

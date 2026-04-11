@@ -36,8 +36,19 @@ async function groqText(
   return String(completion.choices[0]?.message?.content ?? "").trim();
 }
 
+function hasCompleteGroqMeta(a: NormalizedAlert): boolean {
+  const he =
+    typeof a.meta?.dispatcherSummaryHe === "string"
+      ? a.meta.dispatcherSummaryHe.trim()
+      : "";
+  const en =
+    typeof a.meta?.summaryEn === "string" ? a.meta.summaryEn.trim() : "";
+  return he.length > 0 && en.length > 0;
+}
+
 /**
- * מעשיר כל התראה ב-meta.dispatcherSummaryHe ו-meta.summaryEn (ו-meta.fullDescription לתצוגה).
+ * מעשיר התראות ב-meta.dispatcherSummaryHe ו-meta.summaryEn.
+ * מדלג על התראות שכבר נשמרו (למשל מ־routes-database.json) — חוסך קריאות Groq.
  */
 export async function enrichBusnearbyAlertsWithGroq(
   alerts: NormalizedAlert[]
@@ -47,8 +58,24 @@ export async function enrichBusnearbyAlertsWithGroq(
   if (!key || alerts.length === 0) return alerts;
 
   const out: NormalizedAlert[] = [];
+  let skipped = 0;
   for (let i = 0; i < alerts.length; i++) {
     const a = alerts[i]!;
+    if (hasCompleteGroqMeta(a)) {
+      const he = String(a.meta?.dispatcherSummaryHe ?? "").trim();
+      out.push({
+        ...a,
+        meta: {
+          ...a.meta,
+          dispatcherSummaryHe: he,
+          summaryEn: String(a.meta?.summaryEn ?? "").trim(),
+          fullDescription: he || a.content,
+        },
+      });
+      skipped++;
+      continue;
+    }
+
     const raw = `${a.title}\n\n${a.content}`.trim();
     try {
       const he = await groqText(key, DISPATCHER_SYSTEM, `Raw alert:\n${raw}`);
@@ -70,6 +97,11 @@ export async function enrichBusnearbyAlertsWithGroq(
       out.push(a);
     }
     await sleep(200);
+  }
+  if (skipped > 0) {
+    console.log(
+      `[groq-busnearby] skipped ${skipped}/${alerts.length} (already had HE+EN); Groq for ${alerts.length - skipped}`
+    );
   }
   return out;
 }
