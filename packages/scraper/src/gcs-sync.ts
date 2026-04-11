@@ -2,7 +2,7 @@
  * Uploads canonical JSON under DATA_DIR to GCS when SCRAPER_STORAGE=gcs.
  */
 import { Storage } from "@google-cloud/storage";
-import { access, writeFile } from "fs/promises";
+import { access, mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 
 import { DATA_DIR } from "./repo-paths.js";
@@ -92,4 +92,46 @@ export async function readDataArtifactFromGcs(
   } catch {
     return null;
   }
+}
+
+const ROUTES_DATABASE_FILE = "routes-database.json";
+
+async function localRoutesDatabaseNeedsHydration(
+  localPath: string
+): Promise<boolean> {
+  try {
+    await access(localPath);
+  } catch {
+    return true;
+  }
+  try {
+    const raw = (await readFile(localPath, "utf-8")).trim();
+    if (!raw) return true;
+    const parsed = JSON.parse(raw) as { routes?: unknown };
+    return !Array.isArray(parsed.routes) || parsed.routes.length === 0;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * When SCRAPER_STORAGE=gcs, if routes-database.json is missing or empty on disk,
+ * download it from GCS so busnearby can run without a full --refresh on a cold volume.
+ */
+export async function hydrateRoutesDatabaseFromGcsIfConfigured(): Promise<boolean> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") {
+    return false;
+  }
+  const localPath = path.join(DATA_DIR, ROUTES_DATABASE_FILE);
+  if (!(await localRoutesDatabaseNeedsHydration(localPath))) {
+    return false;
+  }
+  const json = await readDataArtifactFromGcs(ROUTES_DATABASE_FILE);
+  if (json === null || !json.trim()) {
+    return false;
+  }
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(localPath, json, "utf-8");
+  console.log(`[gcs-sync] Hydrated ${ROUTES_DATABASE_FILE} from GCS`);
+  return true;
 }
