@@ -61,7 +61,10 @@ import {
   getPuppeteerLaunchArgs,
   resolveChromeExecutable,
 } from "../puppeteer-helpers";
-import { uploadDataArtifactsToGcs } from "../../gcs-sync";
+import {
+  hydrateRoutesDatabaseFromGcsIfConfigured,
+  uploadDataArtifactsToGcs,
+} from "../../gcs-sync.js";
 
 loadRootEnv();
 
@@ -895,6 +898,7 @@ async function runBusnearbyInternal(
   await migrateLegacyFileIfNeeded(LEGACY_BUS_ALERTS, OUTPUT_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_PREV, PREV_OUTPUT_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_REGISTRY, REGISTRY_FILE, fs);
+  await hydrateRoutesDatabaseFromGcsIfConfigured();
   const registryById = await loadAgenciesRegistry();
   const routesByPattern = await loadRoutesDatabase();
 
