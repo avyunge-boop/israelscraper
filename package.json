@@ -12,6 +12,7 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./packages/scraper\" --if-present run typecheck",
     "scan": "pnpm --filter @workspace/scraper run scan --",
     "init-routes": "pnpm --filter @workspace/scraper run scan -- --agency=busnearby --refresh",
+    "restore-busnearby-agencies": "pnpm --filter @workspace/scraper run scan -- --agency=busnearby --restore-busnearby-agency-filters",
     "desktop:prepare": "pnpm --filter @workspace/desktop run prepare-resources",
     "desktop:build": "pnpm run desktop:prepare && pnpm --filter @workspace/desktop run build:dmg"
   },

@@ -19,7 +19,10 @@ function mergeEnvFromFile(filePath) {
     ) {
       val = val.slice(1, -1)
     }
-    if (process.env[key] === undefined) process.env[key] = val
+    const cur = process.env[key]
+    const hasValue = cur !== undefined && String(cur).trim() !== ''
+    if (hasValue) continue
+    process.env[key] = val
   }
 }
 

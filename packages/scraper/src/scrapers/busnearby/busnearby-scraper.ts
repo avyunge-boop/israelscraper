@@ -65,6 +65,7 @@ import {
 import {
   hydrateRoutesDatabaseFromGcsIfConfigured,
   uploadDataArtifactsToGcs,
+  uploadDataJsonFileToGcs,
 } from "../../gcs-sync.js";
 
 loadRootEnv();
@@ -82,6 +83,8 @@ const OUTPUT_FILE = BUS_ALERTS_JSON;
 const PREV_OUTPUT_FILE = BUS_ALERTS_PREV_JSON;
 const REGISTRY_FILE = AGENCIES_REGISTRY_JSON;
 const ROUTES_DB_FILE = ROUTES_DATABASE_JSON;
+/** Basename for GCS single-file uploads (must match repo data layout). */
+const ROUTES_DB_BASENAME = "routes-database.json";
 const BASE_URL = "https://www.busnearby.co.il";
 
 const AGENCY_FILTER_MIN = 0;
@@ -840,12 +843,56 @@ function routeNeedsRescan(rec: RouteRecord, nowMs: number): boolean {
   return nowMs - t > SCAN_STALE_AFTER_MS;
 }
 
+async function tryUploadJsonToGcs(
+  fileName: string,
+  label: string
+): Promise<void> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") return;
+  try {
+    const url = await uploadDataJsonFileToGcs(fileName);
+    if (url) console.log(`[busnearby/gcs] ${label}: ${url}`);
+  } catch (e) {
+    console.error(`[busnearby/gcs] ${label} (${fileName}) failed:`, e);
+  }
+}
+
+async function tryUploadAllArtifactsToGcs(label: string): Promise<void> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") return;
+  try {
+    const uploaded = await uploadDataArtifactsToGcs();
+    if (uploaded.length) {
+      console.log(`[busnearby/gcs] ${label}: ${uploaded.length} object(s)`);
+    }
+  } catch (e) {
+    console.error(`[busnearby/gcs] ${label} failed:`, e);
+  }
+}
+
 /** Serialize DB writes so concurrent workers never corrupt JSON */
+const GCS_UPLOAD_EVERY_N_ROUTES = 50;
+
 function createDbPersistQueue() {
   let chain: Promise<void> = Promise.resolve();
+  let savesSinceLastGcsUpload = 0;
   return {
     scheduleSave(routesByPattern: Map<string, RouteRecord>) {
-      chain = chain.then(() => saveRoutesDatabase(routesByPattern));
+      chain = chain.then(async () => {
+        await saveRoutesDatabase(routesByPattern);
+        if (process.env.SCRAPER_STORAGE !== "gcs") return;
+        savesSinceLastGcsUpload++;
+        if (savesSinceLastGcsUpload < GCS_UPLOAD_EVERY_N_ROUTES) return;
+        savesSinceLastGcsUpload = 0;
+        try {
+          const url = await uploadDataJsonFileToGcs(ROUTES_DB_BASENAME);
+          if (url) {
+            console.log(
+              `[busnearby/gcs] incremental routes DB (every ${GCS_UPLOAD_EVERY_N_ROUTES} saves): ${url}`
+            );
+          }
+        } catch (e) {
+          console.error("[busnearby/gcs] incremental routes DB upload failed:", e);
+        }
+      });
       return chain;
     },
     flush() {
@@ -1045,6 +1092,7 @@ async function runBusnearbyInternal(
     await saveRoutesDatabase(routesByPattern);
     console.log(`\nRegistry saved: ${REGISTRY_FILE}`);
     console.log(`Routes DB saved: ${ROUTES_DB_FILE} (${routesByPattern.size} route(s))`);
+    await tryUploadJsonToGcs(ROUTES_DB_BASENAME, "after discovery");
   }
 
   const routeList = [...routesByPattern.values()].sort((a, b) =>
@@ -1137,6 +1185,12 @@ async function runBusnearbyInternal(
 
   await dbPersist.flush();
   await saveRoutesDatabase(routesByPattern);
+  if (scanQueue.length > 0) {
+    await tryUploadJsonToGcs(
+      ROUTES_DB_BASENAME,
+      "after route queue (remainder < incremental batch)"
+    );
+  }
   console.log(`\nRoutes DB updated: ${ROUTES_DB_FILE}`);
 
   const okCount = outcomes.filter(Boolean).length;
@@ -1204,6 +1258,7 @@ async function runBusnearbyInternal(
   }
 
   await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), "utf-8");
+  await tryUploadAllArtifactsToGcs("checkpoint after bus-alerts.json (pre-Groq)");
 
   const prevIds = Array.isArray(previousSnapshot?.contentIds)
     ? previousSnapshot!.contentIds!
@@ -1281,56 +1336,26 @@ async function runBusnearbyInternal(
   console.log(`Deduped alerts         : ${deduped.length}`);
   console.log(`Saved to               : ${OUTPUT_FILE}`);
 
-  console.log(`\n═══ Resume from where you stopped ═══`);
   console.log(
-    `  routes-database.json stores last_scanned_at; the next run only queues stale/missing routes (<${SCAN_STALE_AFTER_H}h), unless you use --full-scan.`
+    `\n═══ Next run ═══ stale window ${SCAN_STALE_AFTER_H}h; use --full-scan or --refresh as needed (see package scripts).`
   );
-  console.log(`  npm run --prefix scripts scrape-bus-alerts`);
-  console.log(
-    `  pnpm --filter @workspace/scraper run scrape-bus-alerts   (from repo root)`
-  );
-  console.log(
-    `  npm run --prefix scripts scrape-bus-alerts:refresh   (re-discover agencies + same queue rules)`
-  );
-  console.log(
-    `  npm run --prefix scripts scrape-bus-alerts:full   (scan every route in DB, ignore freshness)`
-  );
-
-  if (deduped.length > 0) {
-    console.log("\nSample deduped alerts:");
-    for (const s of deduped.slice(0, 3)) {
-      console.log(`\n  contentId : ${s.contentId.slice(0, 16)}…`);
-      console.log(
-        `  Routes    : ${s.routeCount} (e.g. ${s.routes.slice(0, 3).map((r) => r.apiRouteId).join(", ")}${s.routeCount > 3 ? ", …" : ""})`
-      );
-      console.log(`  Title     : ${s.title}`);
-      if (s.effectiveStart) console.log(`  From      : ${s.effectiveStart}`);
-      if (s.effectiveEnd) console.log(`  To        : ${s.effectiveEnd}`);
-      console.log(
-        `  Status    : ${s.activeNow ? "Active now" : s.expired ? "Expired" : "Upcoming"}`
-      );
-      if (s.stopConditions.length) console.log(`  Type      : ${s.stopConditions.join(", ")}`);
-      console.log(
-        `  Content   : ${s.fullContent.slice(0, 200)}${s.fullContent.length > 200 ? "…" : ""}`
-      );
-    }
-  }
 
   let normalizedAlerts = dedupedToNormalized(deduped);
-  normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
-  applyGroqEnrichmentToRouteRecords(routesByPattern, normalizedAlerts);
-  await saveRoutesDatabase(routesByPattern);
-  if (process.env.SCRAPER_STORAGE === "gcs") {
-    try {
-      const uploaded = await uploadDataArtifactsToGcs();
-      const routesUpload = uploaded.find((u) => u.includes("routes-database.json"));
-      if (routesUpload) {
-        console.log(`[busnearby/gcs] ${routesUpload} (after Groq enrich)`);
-      }
-    } catch (e) {
-      console.error("[busnearby/gcs] upload after Groq enrich failed:", e);
-    }
+  try {
+    normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
+  } catch (e) {
+    console.error(
+      "[busnearby/groq] enrichment failed; continuing with alerts as-is:",
+      e
+    );
   }
+  try {
+    applyGroqEnrichmentToRouteRecords(routesByPattern, normalizedAlerts);
+    await saveRoutesDatabase(routesByPattern);
+  } catch (e) {
+    console.error("[busnearby] failed to persist Groq fields to routes DB:", e);
+  }
+  await tryUploadAllArtifactsToGcs("after Groq (routes DB + all sync files)");
 
   return {
     sourceId: "busnearby",

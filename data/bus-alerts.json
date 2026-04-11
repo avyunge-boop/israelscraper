@@ -2,81 +2,439 @@
   "schemaVersion": 1,
   "format": "busnearby-alerts-deduped",
   "source": "https://www.busnearby.co.il",
-  "scrapedAt": "2026-04-06T10:19:59.917Z",
+  "scrapedAt": "2026-04-09T20:56:21.924Z",
   "scanMode": "fast",
-  "routesDatabase": "/Users/avi/Desktop/Scraper Israel/data/routes-database.json",
+  "routesDatabase": "/Users/avi/Scraper_Israel_Backup/data/routes-database.json",
   "agencyFilterRange": {
     "min": 0,
     "max": 50
   },
   "agencyFiltersScanned": 0,
   "agencyFiltersWithRoutes": 0,
-  "uniqueRoutesInDatabase": 4907,
-  "routesScannedThisRun": 939,
-  "routesSkippedFresh": 3968,
+  "uniqueRoutesInDatabase": 4913,
+  "routesScannedThisRun": 0,
+  "routesSkippedFresh": 4913,
   "scanStaleAfterHours": 12,
   "fullScan": false,
-  "rawAlertRowCount": 95,
-  "dedupedAlertCount": 27,
+  "rawAlertRowCount": 324,
+  "dedupedAlertCount": 71,
   "contentIds": [
-    "0e02742a061058003924e16f098ba9cf4be00389cb15a992a93f50082e99113b",
+    "01f59311a794f473c513009ecac31f43c7a3f4d75eb8f486d4f1c44ff602c83f",
+    "021f9193af5da8de37bf400bb6c39155c2a480de3d80218a58519cdefcaf5f93",
+    "0393a0a67186d2cb2dc49ebc04d28f9c4514b673e4dd15a9b1ddeda5dc6a2255",
+    "0a3473aaa7afe177b0a73599f31a5dbb66a6909a5cc3b1875a637e2d61417cd4",
+    "0b88c75f0584c04ec0d75a96729f5e3c413cf7f6ff81cf28bdb4322dab0eb87d",
+    "0d8127e17041900f6e2a88e6c878717f21be68e94a08f00fa2eba45782937e22",
     "108be88b92bd76847b36bda701fa08ccf6c609012a27d6f670e857b2d0da2501",
+    "114a2f7fb6da4363b985252ae0e771ac7922eb78745e8bdbde7ee563605cda6f",
     "11b5dfe087173c01b869638aa33bae56cc1bfc4b95ce8aec993a51c4e44de4cf",
-    "11db069f34e38e5ac6adf799e333f72c732e0088e0bcbdafb62c9caeae49acf9",
-    "17ff7e05318d6f2ea4c1452aa3662535940ea2ea3427e3c46626dba4840da0cc",
-    "2c56ae248296e391c22185e6b31bc9bc9a4dc44f46b152f3a86d3365cbf45744",
-    "2c80ce4959c88e3584cc503008719e1f1e94a5ca25fb4427cd71ba7b64b87686",
-    "3031793af106dfc03390d0efa78c3583b3b7c78cce412bc556b6edde8c25eadc",
+    "11e2e46a897bfd605874fc243e999b0ca59495948090a4a58e1f4dd651ff50e8",
+    "1c54db6116996f513d63239afa3b23c22904e884603e3dbb0b287120207d096f",
+    "297667d5ac29649732bd57d99e7c693396aab572df7c41844ff93b8c1f686f9c",
+    "2b4b74ae67b3126d67186261d51865bf8cd067f88a2475cb87bcfb106e8188ba",
+    "2db88b489452d8c05778dbba7c30f0da6cb7fae1d56c25106be270b4e5851f9d",
+    "2fd9e296584fe3294ff1607c694f4261ad6cb49e0770f408bc1c3cd8695b18a9",
+    "2fe53ccb0e6053cb6b9eb4b6a4d298be25384db10204065691a09fd36dc41e14",
+    "300c12677ad894671034400cecb562704a943e76b3b8a633cb8d7a7deaea47a3",
     "3119f8b31880ab867714153df87fc4f185b960bcfbf8842b7da879581b493a4a",
+    "31a974875b049a52eb166520d672621887dc421b713c90ece664051c593a0dcf",
     "38439aed6464ce3822583df03d58f010156138013456817cdf1fc7a81db394ac",
-    "47ac9e0c2ac0df32938d3fa12bffaa172071cfa7950db1e14e3d2ce7415e4b4d",
-    "587ed8adf91ef697b0429bdc97f6b8e8612b0ca695ca36242b55c2224930f2f6",
-    "5994f260101fa003e81bc851a358cac2b2c191235b3c12ccdc98ffc0156e7e95",
-    "739f691a634ac1b3cb9ce85e157c0cf1e0a54db31f4961722bfa6d16e325672a",
-    "76b02a1b40928f17fb1c314848250af8f4c1bb7c5083e88e4a0a80672ce22cc1",
-    "7f77e99cc1fbf75edbe98e6a6fec7d16d3abfdaa9ae7a6528fa6fdf58dc87f49",
-    "7fa434807dd9e6d5777954ef4f8d8e7249560fea82417e612470a8bed83bb27a",
-    "82ea225ed16aa357cd2c16f1b344adf0937c60422bb1d3870370416247507a4a",
+    "386aabcfd6adef422b56085cf7a22c7d44106d31bbea3b1e5aacd88e20d67728",
+    "3b7531a88457451432327a59b05e24ede8c63d5cd8623ff3e8ddada9e4a69a80",
+    "3df7b9d5916d62447f1e4cc64a6c375c41e6e1605290ff8c6b64f9c1656d6b82",
+    "438941b8d704c82d5d76d7d5fed397f01ee01143222b5b2d87ea407d8739f04d",
+    "4b539228544e7e091e1d143e76d17517027d52907f9403ead13a0bf1d8179c73",
+    "4e7b623729587e6444afc2afc124194b0578ec6f3343135a6aa526f098004d29",
+    "517f658bd2827c217247e3c43dbf54a49beaf6818eadef3618bda7a14146da41",
+    "57759558d307a31d967684c6f49e88eb922aa8cb9304483b24140f9722689638",
+    "5875fed72523d45f7ab8b6fbdf0bb7fb363c372bc53776ef615d178a626b975a",
+    "5fc6748817285567ee73b30525cc5d29fb184b7ca835fad6a0ac9c84fdd9e2b8",
+    "71882b04cdb650a852b580460e094231bb6543873dd390d74b2bc293e3d12fba",
+    "71bf04672a45e0ce2d8a6b4a068aca7c31801a333d62d887287f7e1cffdda0c4",
+    "76558167166955b0c882721654be1411432a33d93dc89e222c64fd82919c4f81",
+    "79ea38b429570faef2ab4de102e4b8fe36f8e9f27a17f77be8a9b6933856cfe2",
+    "83e8bbf03783a5fcd98b460f1025b874163798ce0adea5f28f1f98ec059bc000",
     "848e77d9b338b565bb06fe5cfbc08112c5ed93ecd10deca493c7514ea79a35d2",
-    "9bef420cfa545871c11748b376209429ae9ecf63ad6fd0aedfc3a57d75ed26eb",
-    "9c5e0a6892dd9f5199da9b861f62a916441940f43292b102b952dd1a613b5cee",
+    "8a6b8d09ed25040ebef1f2b314b5e4ff8ffd1a562ada3797eb761aa5b4dad963",
+    "8f6d4ea5374fee297a1bb7469db83d2a4e5297a871fdcd9855d10cac92e94180",
+    "932ecda3e69e35e26f4f0123759ee6dfd99df4f4012409651506be0115d812c9",
+    "934b9f05692ba1f00e93a1397cf1d806b648294d6df189dc21e5395798c35549",
+    "9632adfaf99edeec383c53d256123898be2dbad860387b7d0d22c782b13ff479",
+    "97dc1fff4bdfefce85dddf04055fa6b000ac4eb8565de1763be0cab7b1bc8b30",
+    "a02bb5a44a40cf9d45bccd08c16ea577d6fa0a22f032228e0d1d7a9e694d5202",
+    "a2fbc42c5376780403a23ce0c2780bdd5e235b302f0c466e7813258ceb9daca4",
+    "a622c1e5690dd78075c9b701eafd00c59e1b35de1fa9a7934f6f525583533404",
     "af007903bc2cf2944f761d4c0a642604c37dc891b9fdd7d47364673197db609f",
-    "b7f64b9997e1fd885792287f72a76e65733c5b3b78c0172f97f55f3ea769e91a",
+    "b5fac9d704a233f0be4636632828ced52646eca928381f8de2ec9656a3bdb24a",
+    "b6d780ae99f48977e146e309654b6d9ce782452644f315ee2e04ba8f2a50d69c",
+    "b748279068ea13fb62a4f229c26c8eb11a4af540b4664c04ec373a05e74ffaec",
     "b9a97b9a3c0afc83923f4bc97c33963015c1c1a52d925e6d7b69fbe619be7e7b",
-    "c20f2ae22efbdcd666d4fb46f3e8dd7eb257f4a5010fca7c2a53edf02a7b379a",
-    "e1d5a9571d7b31023c0a288bf6f6b990fc03b70b81f44e101b6cf5d3f7b89e2a",
-    "f1f8458e1e2bda7fa603b941c50c3a6123160791c4821a3ac5e299219c52c320"
+    "bb6f22e372cf5d5e86550c319f2f368accb684673239bba5f6b32f908eeea8fe",
+    "bfdb3a2dac3f72995c6414383533fc526f76115930dd56c34bcedab258415b63",
+    "c1fe397624f5098dcbd537ab5407cfdaf1d2e97ed927043d2e9d501b16d2907f",
+    "c39cd37f8a3dd72ee61ae769c18533acc620c3490260435d3afd2cd1ec5cb0f8",
+    "c640bf52a222d242d82e1c55df07ad53d4da3b4516a5ccf61181dfd1c4700d85",
+    "c919606cd36d1155aa8d17bf434e8aa6bef29e77cc467849d46c431fa002f7f4",
+    "ce5ef80cab46f2e918dcba8284271e52d5d0fc690fafaf1e7156efc8ddc70dc9",
+    "ce7c190350644c7621cfec6ec49f9e44aeb39493ad2b61dd65357645fbc09949",
+    "cf49a91f5bd2e6fafe389be5919bd9337ab1659935f4ce4365cd334b67157409",
+    "d0e0944a402634485e9cf0462d236ce3d5fa5443cdad5a6013f3ee15ea827a77",
+    "d739e0a39cdacb2987837aa1d9704c4fccf5d98fb63f4a86ca3a6280730525d2",
+    "db327b99b507f8180239b13c606c3f1c630656b83d5ccbe637ece6842a5bf90f",
+    "dce14dcd76bd42b58ae006ee1e4ce662184735d77db10ba1bac66f9bf217d0b2",
+    "dfba97b11fcd4c0ed162250cde5ca8fdf3abb1067391ca84c50aa00a8aa0e4e7",
+    "e2b1533e755f77752af22f0ff48d9221a958308091fed5eb3376cb338724063f",
+    "e8eb367d166275440c7d537b7bee89f105ce14d8521196f9949fc58a99f79994",
+    "ebeff057059d24104f6acbb9959776f8da309fd423a7f185e681b696bda9567e",
+    "f130276895161b4cb09848817e1740e2fa80dae92e446981731c6a947aa9794b",
+    "f6698999c751ddbc94293628289c75465d21bdd70a114485f989b4cf2f4738a2",
+    "fd6f69ea5979239026e3c137fcd17649d8fb47898c1ce18a92bd16cfc40251ab",
+    "ff753eb59194a8286ef3adeb99a4a7c57c3abd20492dc419e734dac8e81bef4e"
   ],
   "alerts": [
     {
-      "contentId": "0e02742a061058003924e16f098ba9cf4be00389cb15a992a93f50082e99113b",
-      "title": "עפולה, עבודות בכביש, התעשייה, 6.4.2026",
-      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n56743 - התעשיה/חיטה,\n56073 - התעשייה/העמל,\n56074 - התעשייה/החרט,\n56742 - התעשייה/ההגנה",
-      "effectiveStart": "2026-04-06T07:00:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
+      "contentId": "01f59311a794f473c513009ecac31f43c7a3f4d75eb8f486d4f1c44ff602c83f",
+      "title": "ג'יש,עבודות תשתית,ל' 09.04.26",
+      "fullContent": "עקב עבודות תשתית בג'יש,קווי64 ידלגו באופן זמני תחנות בשני הכיוונים...",
+      "effectiveStart": "2026-04-09T03:20:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:5091",
+      "affectedStop": "1:40979",
       "sourceAlertIds": [
-        "14017307427  null   null   null   null  38764  null",
-        "14017307427  null   null   null   null  5091  null"
+        "14020487162  null  20324  null   null  40979  null",
+        "14020487162  null  20325  null   null  40979  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:13724",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13724:0:01",
-          "patternId": "1:13724:0:01",
+          "apiRouteId": "1:20324",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20324:0:01",
+          "patternId": "1:20324:0:01",
           "agencyFilterIds": [
             "14"
           ]
         },
         {
-          "apiRouteId": "1:13725",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13725:1:01",
-          "patternId": "1:13725:1:01",
+          "apiRouteId": "1:20325",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20325:1:01",
+          "patternId": "1:20325:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "021f9193af5da8de37bf400bb6c39155c2a480de3d80218a58519cdefcaf5f93",
+      "title": "מחלף אם המושבות, תאונת דרכים, כביש 4 לדרום, 09.04.2026",
+      "fullContent": "עקב תאונת דרכים נוצרו עומסי תנועה לפני מחלף אם המושבות בכביש 4 לדרום.\nייתכנו שינויים בלוחות הזמנים של קווי השירות.\n\nקווים מושפעים:\n167, 947, 951, 970, 998",
+      "effectiveStart": "2026-04-09T04:44:00.000Z",
+      "effectiveEnd": "2026-04-09T13:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020564359  null  10916  null   null   null   null",
+        "14020564359  null  19713  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10916",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10916:0:01",
+          "patternId": "1:10916:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19713",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19713:1:01",
+          "patternId": "1:19713:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "0393a0a67186d2cb2dc49ebc04d28f9c4514b673e4dd15a9b1ddeda5dc6a2255",
+      "title": "בסיס חצור, חסימת מובילים, בסיס חצור, 09/04/26",
+      "fullContent": "עקב חסימת מובילי טנקים בכניסה לבסיס הבסיס נחסם לתנועה\nתחנה מבוטלת\n19491 בסיס חצור/3922",
+      "effectiveStart": "2026-04-09T12:26:00.000Z",
+      "effectiveEnd": "2026-04-09T18:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:28977",
+      "sourceAlertIds": [
+        "14020868816  null  15780  null   null  28977  null",
+        "14020868816  null  85  null   null  28977  null",
+        "14020868816  null  87  null   null  28977  null",
+        "14020868816  null  9603  null   null  28977  null",
+        "14020868816  null  9604  null   null  28977  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:15780",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15780:1:01",
+          "patternId": "1:15780:1:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        },
+        {
+          "apiRouteId": "1:85",
+          "patternUrl": "https://www.busnearby.co.il/route/1:85:0:01",
+          "patternId": "1:85:0:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        },
+        {
+          "apiRouteId": "1:87",
+          "patternUrl": "https://www.busnearby.co.il/route/1:87:1:01",
+          "patternId": "1:87:1:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        },
+        {
+          "apiRouteId": "1:9603",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9603:0:01",
+          "patternId": "1:9603:0:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        },
+        {
+          "apiRouteId": "1:9604",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9604:1:01",
+          "patternId": "1:9604:1:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        }
+      ],
+      "routeCount": 5
+    },
+    {
+      "contentId": "0a3473aaa7afe177b0a73599f31a5dbb66a6909a5cc3b1875a637e2d61417cd4",
+      "title": "אשדוד, עבודות, יצחק הנשיא 09.04.26",
+      "fullContent": "עקב עבודות התחנות הבאות מבוטלות זמנית:\n13205 - שדרות משה דיין/רוגוזין,\n15082 - חוף לידו/הטיילת,\n13210 - הטיילת/מקס נורדאו",
+      "effectiveStart": "2026-04-09T04:30:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:26211",
+      "sourceAlertIds": [
+        "14020524845  null   null   null   null  26211  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:17993",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17993:0:01",
+          "patternId": "1:17993:0:01",
+          "agencyFilterIds": [
+            "25"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "0b88c75f0584c04ec0d75a96729f5e3c413cf7f6ff81cf28bdb4322dab0eb87d",
+      "title": "-אביב – עבודות לילה ברחוב אבן גבירול בקטע ז'בוטינסקי/הדסה לכל הכיוונים(כולל צומת ארלוזורוב) - 9.4.2026",
+      "fullContent": "מביאים בזאת לידיעתכם, כי ביום ה' 9.4.2026 משעה 22:00 עד 05:00 בבוקר למחרת, תתבצענה עבודות בקטע הנ\"ל ויחולו שינויים במסלולי הקווים, 289, 189, 125, 79, 66, 61, 25, 9, 3, כדלקמן:\n\nקו: 3\nלכיוון הטייסים:\nעד רמז פינת ארלוזורוב ללא שינוי, המשך ישר בלוך, שמאלה אבן גבירול, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n21038 - הוועד הפועל/ארלוזורוב\n20699 - אבן גבירול/ארלוזורוב\n25823 - עיריית תל אביב - יפו/אבן גבירול\n\nמכיוון טייסים:\nעד אבן גבירול פינת בלוך ללא שינוי, ימינה בלוך, המשך רמז, ימינה ז'בוטינסקי, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n25818 - עיריית תל אביב - יפו/אבן גבירול\n20700 - אבן גבירול/ארלוזורוב\n25877 - גימנסיה הרצליה/ז'בוטינסקי\n\nקווים: 289, 189, 125, 25, 9\nמכיוון טייסים/בת-ים/חולון:\nעד אבן גבירול פינת בלוך ללא שינוי, ימינה בלוך, ימינה ארלוזורוב, שמאלה ויצמן, ימינה ה' באייר (כיכר המדינה), ימינה ז'בוטינסקי למערב, ימינה אבן גבירול, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n25818 - עיריית תל אביב - יפו/אבן גבירול\n21123 - עיריית תל אביב-יפו/אבן גבירול\n20700 - אבן גבירול/ארלוזורוב\n\nלכיוון טייסים/בת-ים/חולון:\nעד אבן גבירול פינת ז'בוטינסקי ללא שינוי, שמאלה ז'בוטינסקי, ימינה רמז, המשך בלוך, שמאלה אבן גבירול, והמשך במסלול הרגיל. \n\nתחנות מבוטלות:\n20698 - אבן גבירול/ז'בוטינסקי\n20699 - אבן גבירול/ארלוזורוב\n25823 - עיריית תל אביב - יפו/אבן גבירול\n\nקווים: 66, 61\nלכיוון כרמלית:\nעד ארלוזורוב פינת בלוך ללא שינוי, שמאלה בלוך, שמאלה אבן גבירול, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n21038 - הוועד הפועל/ארלוזורוב\n20699 - אבן גבירול/ארלוזורוב\n25823 - עיריית תל אביב - יפו/אבן גבירול\n\nמכיוון כרמלית:\nללא שינוי\n\nקו: 79\nלכיוון עיריית ת\"א: \nעד פרישמן פינת מלכי ישראל (מיד לאחר הפנייה משד' מסריק) ללא שינוי, שמאלה מלכי ישראל, שמאלה בן גוריון, ימינה הדסה וסיום הנסיעה. \n\nתחנות מבוטלות:\n25629 - כיכר רבין/מלכי ישראל\n25818 - עיריית תל אביב - יפו/אבן גבירול\n\nמכיוון עיריית ת\"א: \nללא שינוי",
+      "effectiveStart": "2026-04-09T19:00:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13679",
+      "sourceAlertIds": [
+        "14017566216  null  2293  null   null  13679  null",
+        "14017566216  null  2294  null   null  12878  null",
+        "14017566216  null  2369  null   null  13679  null",
+        "14017566216  null  2379  null   null  13675  null",
+        "14017566216  null  2512  null   null  12834  null",
+        "14017566216  null  2532  null   null  12834  null",
+        "14017566216  null  27083  null   null  12834  null",
+        "14017566216  null  27084  null   null  13675  null",
+        "14017566216  null  2961  null   null  13679  null",
+        "14017566216  null  2963  null   null  13675  null",
+        "14017566216  null  43429  null   null  13596  null",
+        "14017566216  null  9811  null   null  13679  null",
+        "14017566216  null  9813  null   null  12878  null",
+        "14017566216  null  9823  null   null  13679  null",
+        "14017566216  null  9824  null   null  12878  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:2293",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2293:0:01",
+          "patternId": "1:2293:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2294",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2294:1:01",
+          "patternId": "1:2294:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2369",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2369:0:01",
+          "patternId": "1:2369:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2379",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2379:1:01",
+          "patternId": "1:2379:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2512",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2512:1:01",
+          "patternId": "1:2512:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2532",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2532:0:01",
+          "patternId": "1:2532:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:27083",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27083:0:01",
+          "patternId": "1:27083:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:27084",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27084:1:01",
+          "patternId": "1:27084:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2961",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2961:0:01",
+          "patternId": "1:2961:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:2963",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2963:1:01",
+          "patternId": "1:2963:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:43429",
+          "patternUrl": "https://www.busnearby.co.il/route/1:43429:0:01",
+          "patternId": "1:43429:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:9811",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9811:0:01",
+          "patternId": "1:9811:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:9813",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9813:1:01",
+          "patternId": "1:9813:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:9823",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9823:0:01",
+          "patternId": "1:9823:0:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        },
+        {
+          "apiRouteId": "1:9824",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9824:1:01",
+          "patternId": "1:9824:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        }
+      ],
+      "routeCount": 15
+    },
+    {
+      "contentId": "0d8127e17041900f6e2a88e6c878717f21be68e94a08f00fa2eba45782937e22",
+      "title": "דןב\"ב , עבודות תשתית , 09.04.26",
+      "fullContent": "עקב עבודות תשתית בדוב\"ב , קווים , 43 , מדלגים באופן זמני על התחנות.",
+      "effectiveStart": "2026-04-09T05:58:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:7256",
+      "sourceAlertIds": [
+        "14020593788  null  489  null   null  7256  null",
+        "14020593788  null  493  null   null  7256  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:489",
+          "patternUrl": "https://www.busnearby.co.il/route/1:489:0:01",
+          "patternId": "1:489:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:493",
+          "patternUrl": "https://www.busnearby.co.il/route/1:493:1:01",
+          "patternId": "1:493:1:01",
           "agencyFilterIds": [
             "14"
           ]
@@ -128,6 +486,60 @@
         }
       ],
       "routeCount": 3
+    },
+    {
+      "contentId": "114a2f7fb6da4363b985252ae0e771ac7922eb78745e8bdbde7ee563605cda6f",
+      "title": "נוף הגליל,עבודות בכביש,מנחם אריאב,09.04.2026",
+      "fullContent": "עקב עבודות בכביש בנוף הגליל קווי 20+40+74+73, מדלגים באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T07:32:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:21137",
+      "sourceAlertIds": [
+        "14020668993  null  17686  null   null  21137  null",
+        "14020668993  null  17687  null   null  18519  null",
+        "14020668993  null  40923  null   null  4150  null",
+        "14020668993  null  40925  null   null  4150  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:17686",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17686:0:01",
+          "patternId": "1:17686:0:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:17687",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17687:1:01",
+          "patternId": "1:17687:1:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:40923",
+          "patternUrl": "https://www.busnearby.co.il/route/1:40923:0:01",
+          "patternId": "1:40923:0:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:40925",
+          "patternUrl": "https://www.busnearby.co.il/route/1:40925:1:01",
+          "patternId": "1:40925:1:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        }
+      ],
+      "routeCount": 4
     },
     {
       "contentId": "11b5dfe087173c01b869638aa33bae56cc1bfc4b95ce8aec993a51c4e44de4cf",
@@ -193,217 +605,495 @@
       "routeCount": 5
     },
     {
-      "contentId": "11db069f34e38e5ac6adf799e333f72c732e0088e0bcbdafb62c9caeae49acf9",
-      "title": "בני-ברק – עבודות לילה ברחוב צירלסון - 6.4.2026- 5.4.20226",
-      "fullContent": "מביאים בזאת לידיעתכם, כי ביום א' 5.4.2026 וביום ב' 6.4.2026 משעה 22:00 עד 06:00 בבוקר למחרת, תתבצענה עבודות ברחוב הנ\"ל ויחול שינוי במסלול קו 8ב', כדלקמן:\n\nמכיוון מעייני הישועה:\nעד אהרונוביץ פינת השלושה ללא שינוי, שמאלה השלושה, ממשיך במסלול הרגיל עד נפחא פינת אהרונוביץ, ימינה אהרונוביץ, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n28588 - אהרונוביץ/השלושה\n26579 - הרב בר אילן/הרב קלישר\n26580 - הרב קלישר/הילדסהיימר\n26578 - ביה\"ס מע\"ש/הרב צירלסון\n26555 - הרב צירלסון/ד\"ר ברויאר\n27058 - אהרונוביץ/נפחא",
-      "effectiveStart": "2026-04-05T19:00:00.000Z",
-      "effectiveEnd": "2026-04-06T03:00:00.000Z",
-      "activeNow": true,
+      "contentId": "11e2e46a897bfd605874fc243e999b0ca59495948090a4a58e1f4dd651ff50e8",
+      "title": "תל אביב, עבודות תשתית, רחוב הרכבת למערב 15.04.2026",
+      "fullContent": "נוסעים נכבדים,\nבליל רביעי 15.04.2026 החל משהעה 22:00 ועד 05:00 למחרת, יתקיימו עבודות תשתית ברחוב הרכבת לכיוון מערב בתל אביב.\nקווים מושפעים: 500,111,460,462 \nהשינויים להלן:\nקווים 500,111,460,462 לכיוון תל אביב: יסעו דרך רחוב המסגר.\nתחנות מבוטלות:\n20139 ← ישראל טל/המסגר\n21244 ← דרך מנחם בגין/הרכבת\n22986 ← הרכבת/סלומון\n20160 ← הרכבת/המסגר\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
+      "effectiveStart": "2026-04-15T19:00:00.000Z",
+      "effectiveEnd": "2026-04-16T02:00:00.000Z",
+      "activeNow": false,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:14058",
+      "affectedStop": "1:12952",
       "sourceAlertIds": [
-        "14013521830  null  2287  null   null  14058  null"
+        "14020880570  null  29362  null   null  12952  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:2287",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2287:0:01",
-          "patternId": "1:2287:0:01",
+          "apiRouteId": "1:29362",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29362:0:01",
+          "patternId": "1:29362:0:01",
           "agencyFilterIds": [
-            "5"
+            "18"
           ]
         }
       ],
       "routeCount": 1
     },
     {
-      "contentId": "17ff7e05318d6f2ea4c1452aa3662535940ea2ea3427e3c46626dba4840da0cc",
-      "title": "תל אביב, עבודות יום+לילה, רח' רוזנפלד, 5-7/4/26.",
-      "fullContent": "מיום ראשון 5/4 החל מהשעה 5:00 ועד \nליום שלישי 7/4 עד השעה 17:00, ייחסם לתנועה רח' רוזנפלד.\n•\tהחל מיום רביעי 8/4 יוזזו 150 מטר מערבה התחנות:\n\n21227 קמפוס ברושים/שלום רוזנפלד \nתוזז קרוב לצומת שלום רוזנפלד/ג'ורג' וויז.\n\n21235 קמפוס ברושים/שלום רוזנפלד \nתוזז קרוב לצומת שלום רוזנפלד/בן ישי\n\nבעקבות החסימה יחול שינוי מסלול בקוים \n12,572,604 בשני הכיוונים.\n\nהמסלול החלופי לקו 12 לכיוון מכללת לוינסקי:\nנוסעים במסלול הרגיל עד לצומת רוקח/ירוחם משל, \nלא פונים ימינה לרח' ירוחם משל אלא ממשיכים \nישר בשד' רוקח מערב, ימינה לדרך נמיר מרדכי, \nימינה לרח' חיים לבנון, שמאלה לרח' רידינג\nוממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21227 קמפוס ברושים-שלום רוזנפלד\n21497 מכון הנפט-חיים לבנון\n25077 מוזיאון ארץ ישראל-חיים לבנון\n21423 חיים לבנון/רידינג\n\nהמסלול החלופי לקו 12 לכיוון קרית עתידים:\nנוסעים במסלול הרגיל עד לצומת רדינג/חיים לבנון, \nלא פונים שמאלה לרח' חיים לבנון אלא ימינה, \nשמאלה לרח' נמיר מרדכי, שמאלה לשד' רוקח \nוממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21460 מוזיאון ארץ ישראל-חיים לבנון\n21750 מכון הנפט-חיים לבנון\n21235 קמפוס ברושים/שלום רוזנפלד\nתחנה זמנית חלופית:\n25071 סמינר הקיבוצים-דרך נמיר\n\nהמסלול החלופי לקו 572 לכיוון תל אביב:\nנוסעים במסלול הרגיל עד לכיכר ג'ורג' וייז/רוזנפלד, \nלא פונים ימינה לרח' רוזנפלד אלא ממשיכים לרח' ירוחם משל, \nימינה לשד' רוקח מערב, ימינה לדרך נמיר מרדכי, \nימינה לרח' חיים לבנון וממשיכים במסלול הרגיל.\nאין תחנות מבוטלות!\n\nהמסלול החלופי לקו 572 לכיוון כפר סבא:\nנוסעים במסלול הרגיל עד לצומת חיים לבנון/רוזנפלד, לא \nפונים שמאלה לרח' רוזנפלד אלא ממשיכים ישר ברח' חיים לבנון,\nשמאלה לרח' נמיר מרדכי, שמאלה לשד' רוקח, \nשמאלה לרח' ירוחם משל וממשיכים במסלול הרגיל.\nתחנה מבוטלת:\n21235 קמפוס ברושים/שלום רוזנפלד\n\nהמסלול החלופי לקו 604 לכיוון תל אביב:\nנוסעים במסלול הרגיל עד לכיכר ג'ורג' וייז/רוזנפלד, \nלא פונים ימינה לרח' רוזנפלד אלא ממשיכים לרח' ירוחם משל, \nימינה לשד' רוקח מערב, וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21497 מכון הנפט/חיים לבנון\n21423 חיים לבנון/רדינג\n25071 סמינר הקיבוצים/דרך נמיר\nתחנה זמנית חלופית:\n25970 שד' רוקח/דרך נמיר\n\nהמסלול החלופי לקו 604 לכיוון נתניה:\nנוסעים במסלול הרגיל עד לצומת רוקח/נמיר,לא פונים \nשמאלה לשד' מרדכי נמיר אלא ממשיכים ישר ברח' רוקח,\nשמאלה לרח' ירוחם משל וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21613 סמינר הקיבוצים/חיים לבנון\n21460 מוזאון ארץ ישראל/חיים לבנון\n21750 מכון הנפט/חיים לבנון\n21235 קמפוס ברושים/שלום רוזנפלד\nתחנה זמנית חלופית:\n25964 שד' רוקח/דרך נמיר",
-      "effectiveStart": "2026-04-05T02:00:00.000Z",
-      "effectiveEnd": "2026-04-07T14:00:00.000Z",
+      "contentId": "1c54db6116996f513d63239afa3b23c22904e884603e3dbb0b287120207d096f",
+      "title": "צפת, עבודות בכביש, רחוב הנשיא, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n51102 - מעונות הסטודנטים/הנשיא,\n51090 - קופת חולים/הנשיא,\n58004 - כיכר הדלי",
+      "effectiveStart": "2026-04-09T12:00:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
+      "affectedStop": "1:5617",
       "sourceAlertIds": [
-        "14007677803  null  19691  null   null   null   null",
-        "14007677803  null  19692  null   null  12944  null",
-        "14007677803  null  23397  null   null  12936  null",
-        "14007677803  null  23398  null   null  12944  null",
-        "14007677803  null  707  null   null  13072  null",
-        "14007677803  null  709  null   null  12944  null"
+        "14020835838  null   null   null   null  5617  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:19691",
-          "patternUrl": "https://www.busnearby.co.il/route/1:19691:0:01",
-          "patternId": "1:19691:0:01",
+          "apiRouteId": "1:12147",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12147:0:01",
+          "patternId": "1:12147:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:12655",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12655:1:01",
+          "patternId": "1:12655:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:13741",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13741:1:01",
+          "patternId": "1:13741:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:15195",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15195:1:01",
+          "patternId": "1:15195:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:15605",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15605:1:01",
+          "patternId": "1:15605:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:1609",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1609:1:01",
+          "patternId": "1:1609:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:16426",
+          "patternUrl": "https://www.busnearby.co.il/route/1:16426:1:01",
+          "patternId": "1:16426:1:01",
+          "agencyFilterIds": [
+            "24"
+          ]
+        },
+        {
+          "apiRouteId": "1:17815",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17815:1:01",
+          "patternId": "1:17815:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:20325",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20325:1:01",
+          "patternId": "1:20325:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:20878",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20878:0:01",
+          "patternId": "1:20878:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:21645",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21645:1:01",
+          "patternId": "1:21645:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:23948",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23948:0:01",
+          "patternId": "1:23948:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:24985",
+          "patternUrl": "https://www.busnearby.co.il/route/1:24985:0:01",
+          "patternId": "1:24985:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:35888",
+          "patternUrl": "https://www.busnearby.co.il/route/1:35888:1:01",
+          "patternId": "1:35888:1:01",
+          "agencyFilterIds": [
+            "24"
+          ]
+        },
+        {
+          "apiRouteId": "1:36884",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36884:0:01",
+          "patternId": "1:36884:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:37647",
+          "patternUrl": "https://www.busnearby.co.il/route/1:37647:0:02",
+          "patternId": "1:37647:0:02",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:379",
+          "patternUrl": "https://www.busnearby.co.il/route/1:379:0:01",
+          "patternId": "1:379:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:479",
+          "patternUrl": "https://www.busnearby.co.il/route/1:479:0:01",
+          "patternId": "1:479:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:489",
+          "patternUrl": "https://www.busnearby.co.il/route/1:489:0:01",
+          "patternId": "1:489:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:6855",
+          "patternUrl": "https://www.busnearby.co.il/route/1:6855:1:01",
+          "patternId": "1:6855:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:6900",
+          "patternUrl": "https://www.busnearby.co.il/route/1:6900:1:01",
+          "patternId": "1:6900:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 21
+    },
+    {
+      "contentId": "297667d5ac29649732bd57d99e7c693396aab572df7c41844ff93b8c1f686f9c",
+      "title": "ירושלים, סגירת רחוב, אגריפס למערב 9-10.4.2026",
+      "fullContent": "רחוב אגריפס ייחסם לכיוון מערב (מכי\"ח עד שערי צדק) לקווי השירות ויהפוך למדרחוב:\nקווי השירות ייסעו בהתאם למתווה הבא:.\nמסלול חלופי לכיוון בניני האומה:\nעד כי\"ח פינת אגריפס ללא שינוי.\nשמאלה אגריפס, ימינה עליאש, ימינה בצלאל, ימינה בן צבי, והמשך רגיל.\n\nתחנות מבוטלות: \n9870  שוק מחנה יהודה/אגריפס\n5885  שוקניון/אגריפס \n\nקווים מושפעים: 25,45,66",
+      "effectiveStart": "2026-04-09T15:00:00.000Z",
+      "effectiveEnd": "2026-04-09T22:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:11510",
+      "sourceAlertIds": [
+        "14020041713  null  12414  null   null  11510  null",
+        "14020041713  null  5526  null   null   null   null",
+        "14020041713  null  5528  null   null  11510  null",
+        "14020041713  null  5650  null   null   null   null",
+        "14020041713  null  5652  null   null  11510  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:12414",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12414:0:01",
+          "patternId": "1:12414:0:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:5526",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5526:0:01",
+          "patternId": "1:5526:0:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:5528",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5528:1:01",
+          "patternId": "1:5528:1:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:5650",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5650:0:01",
+          "patternId": "1:5650:0:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:5652",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5652:1:01",
+          "patternId": "1:5652:1:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        }
+      ],
+      "routeCount": 5
+    },
+    {
+      "contentId": "2b4b74ae67b3126d67186261d51865bf8cd067f88a2475cb87bcfb106e8188ba",
+      "title": "רחובות, עבודות כביש, כביש 412 לדרום 09.04.2026",
+      "fullContent": "נוסעים נכבדים, \n\nעקב עבודות כביש וחסימת נתיב על כביש 412 לדרום, רחובות \nישנם עיכובים לקווים הבאים:\n367/ 371/ 377 לבאר שבע",
+      "effectiveStart": "2026-04-09T11:16:00.000Z",
+      "effectiveEnd": "2026-04-09T16:30:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020859620  null  10855  null   null   null   null",
+        "14020859620  null  11492  null   null   null   null",
+        "14020859620  null  8140  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10855",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10855:0:01",
+          "patternId": "1:10855:0:01",
           "agencyFilterIds": [
             "15"
           ]
         },
         {
-          "apiRouteId": "1:19692",
-          "patternUrl": "https://www.busnearby.co.il/route/1:19692:1:01",
-          "patternId": "1:19692:1:01",
+          "apiRouteId": "1:11492",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11492:0:01",
+          "patternId": "1:11492:0:01",
           "agencyFilterIds": [
             "15"
           ]
         },
         {
-          "apiRouteId": "1:23397",
-          "patternUrl": "https://www.busnearby.co.il/route/1:23397:0:01",
-          "patternId": "1:23397:0:01",
+          "apiRouteId": "1:8140",
+          "patternUrl": "https://www.busnearby.co.il/route/1:8140:0:01",
+          "patternId": "1:8140:0:01",
           "agencyFilterIds": [
             "15"
           ]
-        },
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "2db88b489452d8c05778dbba7c30f0da6cb7fae1d56c25106be270b4e5851f9d",
+      "title": "כפר חנניה,עבודות,ל'09.04.26",
+      "fullContent": "עקב עבודות תשתית בכפר חנניה,קווי 40 149 148 ידלגו באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T03:36:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:41580",
+      "sourceAlertIds": [
+        "14020494502  null  21024  null   null  41580  null",
+        "14020494502  null  21025  null   null  41580  null",
+        "14020494502  null  21026  null   null  41580  null",
+        "14020494502  null  21027  null   null  41580  null",
+        "14020494502  null  7669  null   null  41580  null",
+        "14020494502  null  7671  null   null  41580  null"
+      ],
+      "routes": [
         {
-          "apiRouteId": "1:23398",
-          "patternUrl": "https://www.busnearby.co.il/route/1:23398:1:01",
-          "patternId": "1:23398:1:01",
+          "apiRouteId": "1:21024",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21024:0:01",
+          "patternId": "1:21024:0:01",
           "agencyFilterIds": [
-            "15"
+            "14"
           ]
         },
         {
-          "apiRouteId": "1:707",
-          "patternUrl": "https://www.busnearby.co.il/route/1:707:0:01",
-          "patternId": "1:707:0:01",
+          "apiRouteId": "1:21025",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21025:1:01",
+          "patternId": "1:21025:1:01",
           "agencyFilterIds": [
-            "15"
+            "14"
           ]
         },
         {
-          "apiRouteId": "1:709",
-          "patternUrl": "https://www.busnearby.co.il/route/1:709:1:01",
-          "patternId": "1:709:1:01",
+          "apiRouteId": "1:21026",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21026:0:01",
+          "patternId": "1:21026:0:01",
           "agencyFilterIds": [
-            "15"
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:21027",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21027:1:01",
+          "patternId": "1:21027:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:7669",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7669:0:01",
+          "patternId": "1:7669:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:7671",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7671:1:01",
+          "patternId": "1:7671:1:01",
+          "agencyFilterIds": [
+            "14"
           ]
         }
       ],
       "routeCount": 6
     },
     {
-      "contentId": "2c56ae248296e391c22185e6b31bc9bc9a4dc44f46b152f3a86d3365cbf45744",
-      "title": "תל אביב, העתקת תחנת הקצה ממסוף ההגנה לתמח\"ת 10.03.26",
-      "fullContent": "התחנות הבאות מבוטלות זמנית:\n20860 - מסוף ההגנה/איסוף,\n20860 - מסוף ההגנה/איסוף,\n20859 - מסוף ההגנה/הורדה",
-      "effectiveStart": "2026-04-05T02:00:00.000Z",
-      "effectiveEnd": "2026-04-07T15:00:00.000Z",
-      "activeNow": true,
+      "contentId": "2fd9e296584fe3294ff1607c694f4261ad6cb49e0770f408bc1c3cd8695b18a9",
+      "title": "תל אביב, עבודות תשתית רוזנפלד במקטע ג'ורג' ווייז - חיים לבנון לשני הכיוונים, 12+14-15.04.2026",
+      "fullContent": "נוסעים נכבדים,\nבלילות ראשון שלישי ורביעי 12+14-15.04.2026 החל מהשעה 22:00 ועד 05:00 למחרת, יסגר רחוב רוזנפלד במקטע ג'ורג' ווייז - חיים לבנון לשני הכיוונים.\nאי לכך, קווים: 107/450/464/474/506 ישנו את מסלולם.\nהשינוי להלן: \nהקווים בכיוון צפון: \nממשיכים על חיים לבנון ישר, ימינה קלצ'קין ומקצרים למסוף\nהקווים בכיוון דרום:\n יוצאים ממסוף קלצ'קין שמאלה ושוב שמאלה לחיים לבנון בלי לעבור בקלאוזנר, המשך למסלול בחיים לבנון.\nתחנות מבוטלות: \n20482 ← ביה''ס לרפואה/קלצ'קין\n20138 ← מוזאון העם היהודי/קלאוזנר\n20137 ← מוזאון העם היהודי/קלאוזנר\n21665 ← הפקולטה להנדסה/קלאוזנר\n20794 ← ד''ר ג'ורג' וייז/שלום רוזנפלד\n20503 ← ביה''ס לרפואה/קלצ'קין\n25075 ← הפקולטה להנדסה/ד''ר ג'ורג' וויז\n21734 ← מדעי החיים/קלאוזנר\nתחנות חלופיות:\n27065 ← האוניברסיטה/חיים לבנון\n21469 ← חיים לבנון/ד''ר ג'ורג' וויז\n21385 ← מכון התקנים/חיים לבנון\n21498 ← מכון התקנים/חיים לבנון\n21388 ← האוניברסיטה/חיים לבנון\n21387 ← חיים לבנון/ד''ר ג'ורג' וויז\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:50875",
+      "affectedStop": "1:12944",
       "sourceAlertIds": [
-        "13954108025  null   null   null   null  50875  null"
+        "14020873063  null  29362  null   null  12944  null",
+        "14020873063  null  29363  null   null  13229  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:2738",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2738:0:01",
-          "patternId": "1:2738:0:01",
+          "apiRouteId": "1:29362",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29362:0:01",
+          "patternId": "1:29362:0:01",
           "agencyFilterIds": [
-            "5"
+            "18"
           ]
         },
         {
-          "apiRouteId": "1:35324",
-          "patternUrl": "https://www.busnearby.co.il/route/1:35324:0:01",
-          "patternId": "1:35324:0:01",
+          "apiRouteId": "1:29363",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29363:1:01",
+          "patternId": "1:29363:1:01",
           "agencyFilterIds": [
-            "5"
+            "18"
           ]
         }
       ],
       "routeCount": 2
     },
     {
-      "contentId": "2c80ce4959c88e3584cc503008719e1f1e94a5ca25fb4427cd71ba7b64b87686",
-      "title": "תל-אביב - עבודות ברצף ברח' רוזנפלד בקטע ג'ורג' וייז/לבנון בשני הכיוונים 7.4.2026 - 5.4.2026",
-      "fullContent": "מביאים בזאת לידיעתכם, כי מיום א' 5.4.2026 עד יום ג' 7.4.2026 (כולל), תתבצענה עבודות ברצף בקטע הנ\"ל, ויחולו שינויים במסלולי הקווים, 289, 25, כדלקמן:\n\nקו: 25\nלכיוון קלצ'קין:\nעד איינשטיין פינת לבנון ללא שינוי, שמאלה לבנון (לא לפנות ימינה), ימינה קלצ'קין, ועד למסוף קלצ'קין – תחנה סופית.\n\nתחנות מבוטלות:\n21513 - האוניברסיטה/חיים לבנון\n21498 - מכון התקנים/חיים לבנון\n21235 - קמפוס ברושים/שלום רוזנפלד\n21665 - הפקולטה להנדסה/קלאוזנר\n20138 - מוזאון העם היהודי/קלאוזנר\n20503 - ביה\"ס לרפואה/קלצ'קין\n\nתחנה חדשה:\n27065 – האוניברסיטה/חיים לבנון\n\nמכיוון קלצ'קין:\nיציאה ממסוף קלצ'קין שמאלה לרח' קלצ'קין, שמאלה לבנון, ימינה איינשטיין, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n20482 - ביה\"ס לרפואה/קלצ'קין\n21734 - מדעי החיים/קלאוזנר\n20137 - מוזאון העם היהודי/קלאוזנר\n25075 - הפקולטה להנדסה/ד''ר ג'ורג' וויז\n20794 - ד\"ר ג'ורג' וייז/שלום רוזנפלד\n21385 - מכון התקנים/חיים לבנון\n21469 - חיים לבנון/ד\"ר ג'ורג' וויז\n\nתחנה חדשה:\n21388 – האוניברסיטה/חיים לבנון\nקו: 289\nלכיוון מסוף מערבי:\nעד הכיכר ברח' קלאוזנר פינת קלצ'קין ללא שינוי, פרסה בכיכר חזרה ברח' קלאוזנר, המשך ירוחם משל, ועד למסוף המערבי.\n\nתחנות מבוטלות:\n20503 – ביה\"ס לרפואה/קלצ'קין\n21389 – חיים לבנון/קלצ'קין\n21513 – האוניברסיטה/חיים לבנון\n21498 – מכון התקנים/חיים לבנון\n21235 – קמפוס ברושים/שלום רוזנפלד\n\nמכיוון מסוף מערבי:\nעד הכיכר ברח' משל פינת רוזנפלד ללא שינוי, המשך ישר ברח' ג'ורג' וייז, (לא לפנות שמאלה לרוזנפלד), המשך קלאוזנר, נסיעה עד הכיכר ברח' קלאוזנר פינת קלצ'קין, פרסה בכיכר, חזרה ברח' קלאוזנר, המשך ירוחם משל, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n21227 - קמפוס ברושים/שלום רוזנפלד\n21385 - מכון התקנים/חיים לבנון\n21469 - חיים לבנון/ד\"ר ג'ורג' וויז\n27065 - האוניברסיטה/חיים לבנון\n21547 - קלצ'קין/חיים לבנון\n20482 - ביה\"ס לרפואה/קלצ'קין",
-      "effectiveStart": "2026-04-05T01:30:00.000Z",
-      "effectiveEnd": "2026-04-07T17:00:00.000Z",
+      "contentId": "2fe53ccb0e6053cb6b9eb4b6a4d298be25384db10204065691a09fd36dc41e14",
+      "title": "ירושלים, אוטובוס תקוע, מעלות הרב פרדס, 8.4.26",
+      "fullContent": "עקב אוטובוס תקוע ברחוב מעלות הפרדס ישנו עיכוב בקווי השירות\nחלק מקווי השירות סטו מהמסלול",
+      "effectiveStart": "2026-04-08T19:50:00.000Z",
+      "effectiveEnd": "2026-04-09T20:30:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
-        "DETOUR"
+        "SIGNIFICANT_DELAYS"
       ],
-      "affectedStop": "1:13049",
       "sourceAlertIds": [
-        "14001486467  null  2369  null   null  13049  null",
-        "14001486467  null  2379  null   null  12944  null",
-        "14001486467  null  9823  null   null  12936  null",
-        "14001486467  null  9824  null   null  12944  null"
+        "14020008890  null  18067  null   null   null   null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:2369",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2369:0:01",
-          "patternId": "1:2369:0:01",
+          "apiRouteId": "1:18067",
+          "patternUrl": "https://www.busnearby.co.il/route/1:18067:1:01",
+          "patternId": "1:18067:1:01",
           "agencyFilterIds": [
-            "5"
-          ]
-        },
-        {
-          "apiRouteId": "1:2379",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2379:1:01",
-          "patternId": "1:2379:1:01",
-          "agencyFilterIds": [
-            "5"
-          ]
-        },
-        {
-          "apiRouteId": "1:9823",
-          "patternUrl": "https://www.busnearby.co.il/route/1:9823:0:01",
-          "patternId": "1:9823:0:01",
-          "agencyFilterIds": [
-            "5"
-          ]
-        },
-        {
-          "apiRouteId": "1:9824",
-          "patternUrl": "https://www.busnearby.co.il/route/1:9824:1:01",
-          "patternId": "1:9824:1:01",
-          "agencyFilterIds": [
-            "5"
-          ]
-        }
-      ],
-      "routeCount": 4
-    },
-    {
-      "contentId": "3031793af106dfc03390d0efa78c3583b3b7c78cce412bc556b6edde8c25eadc",
-      "title": "כביש 1 /4 , חסימה משטרתית , מחלף גנות 06.04.2026",
-      "fullContent": "נוסעים נכבדים \n\nעקב חסימה משטרתית רמפת היציאה מכביש 1 ל4 צפון , מחלף גנות \nקו 669 לרעננה \nיגיע עד מחלף שפירים/כביש 1 , ימינה במחלף שפירים , שמאלה ל412 ראשון , ימינה בצומת בית דגן , במחלף השבעה ימינה ל4 צפון חזרה למסלול \nללא דילוג תחנות",
-      "effectiveStart": "2026-04-06T07:36:00.000Z",
-      "effectiveEnd": "2026-04-06T15:00:00.000Z",
-      "activeNow": true,
-      "expired": false,
-      "stopConditions": [
-        "DETOUR"
-      ],
-      "sourceAlertIds": [
-        "14017352516  null  11707  null   null   null   null"
-      ],
-      "routes": [
-        {
-          "apiRouteId": "1:11707",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11707:1:01",
-          "patternId": "1:11707:1:01",
-          "agencyFilterIds": [
-            "15"
+            "18"
           ]
         }
       ],
       "routeCount": 1
+    },
+    {
+      "contentId": "300c12677ad894671034400cecb562704a943e76b3b8a633cb8d7a7deaea47a3",
+      "title": "עילוט, עבודות בכביש, שכונה מערבית, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n51811 - שכונה מערבית כיכר,\n51812 - ככר השכונה המערבית\n53793 - שכונה מערבית א,\n53792 - שכונת אלג'בל ב,\n51785 - שכונה מערבית ב,\n51805 - שכונה מערבית א,",
+      "effectiveStart": "2026-04-09T12:05:00.000Z",
+      "effectiveEnd": "2026-04-09T16:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:19055",
+      "sourceAlertIds": [
+        "14020848498  null   null   null   null  19039  null",
+        "14020848498  null   null   null   null  19055  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:41039",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41039:0:01",
+          "patternId": "1:41039:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:41042",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41042:1:01",
+          "patternId": "1:41042:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 2
     },
     {
       "contentId": "3119f8b31880ab867714153df87fc4f185b960bcfbf8842b7da879581b493a4a",
@@ -417,7 +1107,8 @@
         "DETOUR"
       ],
       "sourceAlertIds": [
-        "14013477424  null  12422  null   null   null   null"
+        "14013477424  null  12422  null   null   null   null",
+        "14013477424  null  19151  null   null   null   null"
       ],
       "routes": [
         {
@@ -427,9 +1118,76 @@
           "agencyFilterIds": [
             "3"
           ]
+        },
+        {
+          "apiRouteId": "1:19151",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19151:0:01",
+          "patternId": "1:19151:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
         }
       ],
-      "routeCount": 1
+      "routeCount": 2
+    },
+    {
+      "contentId": "31a974875b049a52eb166520d672621887dc421b713c90ece664051c593a0dcf",
+      "title": "כפר חנניה, עבודות בכביש, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n54987 - הרימון/השיקמה,\n54989 - הרימון/הגפן,\n54988 - הרימון/הזית",
+      "effectiveStart": "2026-04-09T03:47:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:41580",
+      "sourceAlertIds": [
+        "14020497056  null   null   null   null  41580  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:21024",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21024:0:01",
+          "patternId": "1:21024:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:21025",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21025:1:01",
+          "patternId": "1:21025:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:21027",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21027:1:01",
+          "patternId": "1:21027:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:7669",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7669:0:01",
+          "patternId": "1:7669:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:7671",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7671:1:01",
+          "patternId": "1:7671:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 5
     },
     {
       "contentId": "38439aed6464ce3822583df03d58f010156138013456817cdf1fc7a81db394ac",
@@ -468,379 +1226,1172 @@
       "routeCount": 2
     },
     {
-      "contentId": "47ac9e0c2ac0df32938d3fa12bffaa172071cfa7950db1e14e3d2ce7415e4b4d",
-      "title": "תל אביב, עבודות תשתית, רחוב שלום רוזנפלד 23-26.03 + 29-31.03 + 01-02.04 + 05.04",
-      "fullContent": "נוסעים נכבדים,\nבלילות ראשון עד חמישי 23-26.03 + 29-31.03 + 01-02.04 + 05.04 החל מהשעה 20:00 ועד 05:00 למחרת, יתקיימו עבודות תשתית ברחוב שלום רוזנפלד בשני הכיוונים בעיר תל אביב.\nקו מושפע: 506 בשני הכיוונים.\nהשינויים להלן: \nקו 506 לכיוון ת\"א: מדרך נמיר ימינה לשדרות רוקח, שמאלה לירוחם משל, ישר ג'ורג' וויז והמשך מסלול.\nתחנות מבוטלות:\n21613 - סמינר הקיבוצים/חיים לבנון\n21460 - מוזאון ארץ ישראל/חיים לבנון\n21750 - מכון הנפט/חיים לבנון\n21235 - קמפוס ברושים/שלום רוזנפלד\nקו 506 לכיוון לשוהם: מג'ורג' וויז ישר לירוחם משל, ימינה לשדרות רוקח, שמאלה לדרך נמיר והמשך מסלול.\nתחנות מבוטלות:\n21497 - מכון הנפט/חיים לבנון\n25077 - מוזאון ארץ ישראל/חיים לבנון\n25071 - סמינר הקיבוצים/דרך נמיר\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
-      "effectiveStart": "2026-04-05T17:00:00.000Z",
-      "effectiveEnd": "2026-04-06T02:00:00.000Z",
+      "contentId": "386aabcfd6adef422b56085cf7a22c7d44106d31bbea3b1e5aacd88e20d67728",
+      "title": "ג'דידה מכר, עבודות בכביש, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית: \n53631 - אלג'למה,\n59426 - 425/411,\n59412 - בנין אחים חטיב,\n56048 - 411/425\n59413 - כיכר/ג'דידה,\n59424 - מסעף גדידה מכר,\n59425 - שוק שינאווי,",
+      "effectiveStart": "2026-04-09T08:06:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:12944",
+      "affectedStop": "1:6711",
       "sourceAlertIds": [
-        "13987154589  null  17193  null   null  12944  null",
-        "13987154589  null  17194  null   null  13117  null"
+        "14020691806  null   null   null   null  6711  null",
+        "14020691806  null   null   null   null  6723  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:17193",
-          "patternUrl": "https://www.busnearby.co.il/route/1:17193:0:01",
-          "patternId": "1:17193:0:01",
+          "apiRouteId": "1:17940",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17940:0:01",
+          "patternId": "1:17940:0:01",
           "agencyFilterIds": [
-            "18"
+            "14"
           ]
         },
         {
-          "apiRouteId": "1:17194",
-          "patternUrl": "https://www.busnearby.co.il/route/1:17194:1:01",
-          "patternId": "1:17194:1:01",
+          "apiRouteId": "1:17947",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17947:1:01",
+          "patternId": "1:17947:1:01",
           "agencyFilterIds": [
-            "18"
+            "14"
           ]
         }
       ],
       "routeCount": 2
     },
     {
-      "contentId": "587ed8adf91ef697b0429bdc97f6b8e8612b0ca695ca36242b55c2224930f2f6",
-      "title": "נוף הגליל, עבודות בכביש, מנחם אריאב, 06.04.2026",
-      "fullContent": "עקב עבודות בכביש בעיר נוף הגליל, מנחם אריאב\n קווי השירות: 431, 440, 341, 342, 332, 338 12, 833\nסוטים ממסלול הנסיעה ומדלגים על התחנות המצורפות באופן זמני בשני הכיוונים \nתחנות מבוטלות: 54001 ← מנחם אריאב/הצבר, 55044 ← עצמון/שומרון, 54175 ← מרכז רסקו, 54009 ← מרכז רסקו, 53999 ← מנחם אריאב/הצבר, 51200 ← מנחם אריאב, 51201 ← מנחם אריאב/גולן",
-      "effectiveStart": "2026-04-06T05:18:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
-      "activeNow": true,
+      "contentId": "3b7531a88457451432327a59b05e24ede8c63d5cd8623ff3e8ddada9e4a69a80",
+      "title": "רחובות - עבודות לילה בקטע מרחוב הרצל, בשני הכיוונים. ימים ראשון עד חמישי 12-16/4/2026.",
+      "fullContent": "בימים ראשון עד חמישי 12-16/4/2026 מדי לילה החל מהשעה 22:00 ועד 05:00 למחרת ייחסם לתנועה רחוב הרצל, בקטע: א.ד. גורדון – בית הפועלים, בשני הכיוונים, עקב עבודות.\n\nקו 3 (קו סיבובי – בדרכו חזרה לתחנה המרכזית): ייסע על פי המסלול הקיים עד צומת הרחובות הרב הרצוג/ א.ד. גורדון, ימשיך ישר ברחוב הרב הרצוג, יפנה ימינה לרחוב יעקב, ימינה לרחוב הרצל, שמאלה לרחוב בית הפועלים ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: א.ד. גורדון/ הרצל (תחנה 31866), הרצל – משטרה (תחנה 31246).\n\nקו 12א מהתחנה המרכזית (דרך הרכבת) לאושיות: ייסע על פי המסלול הקיים עד צומת הרחובות הרצל/ בית הפועלים, יפנה שמאלה לרחוב בית הפועלים, ימשיך ישר לרחוב לוין אפשטיין ורחוב דוד רמז, יפנה ימינה לרחוב רוז'נסקי, ימינה לדרך יבנה, שמאלה לרחוב הרצל ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: הרצל/ וייצמן (תחנה 32116), הרצל – משטרה (תחנה 32117).\nתחנה חלופית: בית הפועלים/ גלוסקין (תחנה 31247).\n\nקו 15 (קו סיבובי – בדרכו לשכונת אושיות): ייסע על פי המסלול הקיים עד צומת הרחובות דוד רמז/ רוז'נסקי, יפנה ימינה לרחוב רוז'נסקי, שמאלה לרחוב ביל\"ו, יבצע פרסה בכיכר, ייכנס לתחנה המרכזית ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: רוז'נסקי – קופת חולים רמז (תחנה 34877), דרך יבנה/ רוז'נסקי (תחנה 31242), דרך יבנה (תחנה 31243), דרך יבנה (תחנה 31244), הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), הרצל/ טלר (תחנה 35386), לבקוביץ' – השוק העירוני (תחנה 31099), בית הפועלים/ גלוסקין (תחנה 31247), לוין אפשטיין/ פינס (תחנה 31248), רמז – קופת חולים (תחנה 31249).\nתחנה חלופית: רוז'נסקי – בית המשפט (תחנה 31250).\n\nקו 16א מתחנת הרכבת לתחנה מרכזית רחובות: ייסע על פי המסלול הקיים עד צומת דרך הים/ רוז'נסקי/ דרך יבנה, יפנה ימינה לרחוב רוז'נסקי ויתחבר (בצומת רוז'נסקי/ דוד רמז) להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: דרך יבנה/ רוז'נסקי (תחנה 31242), דרך יבנה (תחנה 31243), דרך יבנה (תחנה 31244), הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), בית הפועלים/ גלוסקין (תחנה 31247), לוין אפשטיין/ פינס (תחנה 31248), רמז – קופת חולים (תחנה 31249).\nתחנות חלופיות: רוז'נסקי/ דרך יבנה (תחנה 33923), רוז'נסקי – בית המשפט (תחנה 31250).\n\nקו 16 מאזור התעשייה עקרון 2000 לתחנת הרכבת: ייסע על פי המסלול הקיים עד צומת הרחובות הרצל/ בית הפועלים, יפנה שמאלה לרחוב בית הפועלים, ימשיך ישר לרחוב לוין אפשטיין ורחוב דוד רמז, יפנה ימינה לרחוב רוז'נסקי, שמאלה לדרך הים ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: הרצל/ וייצמן (תחנה 32116), הרצל – משטרה (תחנה 32117), דרך יבנה – מכון וייצמן (תחנה 32118), דרך יבנה/ קק\"ל (תחנה 32119), דרך יבנה/ דרך אצ\"ל (תחנה 32120).\nתחנה חלופית: בית הפועלים/ גלוסקין (תחנה 31247).\n\nקווים 26, 26א מתחנת הרכבת רחובות למזכרת בתיה וקו 27 מרחובות (תחנת הרכבת) למושב יציץ: ייסעו על פי המסלולים הקיימים עד צומת הרצל/ דרך יבנה, יפנו ימינה לדרך יבנה, שמאלה לרחוב רוז'נסקי, שמאלה לרחוב ביל\"ו (קווים 26א, 27 ייכנסו לתחנה המרכזית וייצאו חזרה), ימשיכו ישר לרחוב לבקוביץ', יפנו ימינה לרחוב הרצל ויתחברו להמשך המסלולים הקיימים.\n\nתחנות מבוטלות זמנית: הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), הרצל/ טלר (תחנה 35386), לבקוביץ' – השוק העירוני (תחנה 31099).\nתחנה חלופית: דרך יבנה – מכון וייצמן (תחנה 32118).\n\nקו 26 ממזכרת בתיה לתחנת רכבת רחובות: ייסע על פי המסלול הקיים עד צומת הרחובות הרצל/ בית הפועלים, יפנה שמאלה לרחוב בית הפועלים, ימשיך ישר לרחוב לוין אפשטיין ורחוב דוד רמז, יפנה ימינה לרחוב רוז'נסקי, ימינה לדרך יבנה, שמאלה לרחוב הרצל ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: הרצל/ וייצמן (תחנה 32116), הרצל – משטרה (תחנה 32117).\nתחנה חלופית: בית הפועלים/ גלוסקין (תחנה 31247).\n\nקו 164 מפתח תקווה לרחובות: ייסע על פי המסלול הקיים עד צומת הרצל/ דרך יבנה, יפנה ימינה לדרך יבנה, שמאלה לרחוב רוז'נסקי, שמאלה לרחוב ביל\"ו, יבצע פרסה בכיכר, ייכנס לתחנה המרכזית רחובות ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), הרצל/ טלר (תחנה 35386), לבקוביץ' – השוק העירוני (תחנה 31099).\nתחנה חלופית: דרך יבנה – מכון וייצמן (תחנה 32118).\n\nקו 164 מרחובות לפתח תקווה, קו לילה 174 מרחובות לתל אביב-יפו, קו 201 מרחובות לתל אביב-יפו, קן לילה 273 מגדרה לתל אביב-יפו, קו 274 מאזור התעשייה עקרון 2000 לתל אביב-יפו (רמת אביב), קו 301 מאשקלון לתל אביב-יפו וקו לילה 326 ממזכרת בתיה לראשל\"צ (חנה וסע): ייסעו על פי המסלולים הקיימים עד צומת הרחובות הרצל/ בית הפועלים, יפנו שמאלה לרחוב בית הפועלים, ימשיכו ישר לרחוב לוין אפשטיין ורחוב דוד רמז, יפנו ימינה לרחוב רוז'נסקי, ימינה לדרך יבנה, שמאלה לרחוב הרצל ויתחברו להמשך המסלולים הקיימים.\n\nתחנות מבוטלות זמנית: הרצל/ וייצמן (תחנה 32116), הרצל – משטרה (תחנה 32117), הרצל – מכון וייצמן (תחנה 34230), הרצל – הפקולטה לחקלאות (תחנה 34231), הרצל – תחנת רכבת רחובות (תחנה 34232).\nתחנה חלופית: בית הפועלים/ גלוסקין (תחנה 31247).\n\nקו לילה 174 מתל אביב-יפו לרחובות, קווים 201, 274, 277 מתל אביב לרחובות/ אזור התעשייה עקרון 2000, קו לילה 273 מתל אביב-יפו לגדרה וקו לילה 326 מראשל\"צ (חנה וסע) למזכרת בתיה: ייסעו על פי המסלולים הקיימים עד צומת הרצל/ דרך יבנה, יפנו ימינה לדרך יבנה, שמאלה לרחוב רוז'נסקי, שמאלה לרחוב ביל\"ו, ימשיכו ישר לרחוב לבקוביץ', יפנו ימינה לרחוב הרצל ויתחברו להמשך המסלולים הקיימים.\n\nתחנות מבוטלות זמנית: הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), הרצל/ טלר (תחנה 35386).\nתחנה חלופית: דרך יבנה – מכון וייצמן (תחנה 32118).\n\nקו 301 מתל אביב-יפו לאשקלון: ייסע על פי המסלול הקיים עד צומת הרצל/ דרך יבנה, יפנה ימינה לדרך יבנה, שמאלה לרחוב רוז'נסקי, שמאלה לרחוב ביל\"ו, יבצע פרסה בכיכר, ייכנס לתחנה המרכזית רחובות ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: הרצל – מכון וייצמן (תחנה 31245), הרצל – משטרה (תחנה 31246), הרצל/ טלר (תחנה 35386).\nתחנה חלופית: דרך יבנה – מכון וייצמן (תחנה 32118).\n \nקו 393 מאילת לתל אביב-יפו: ייסע על פי המסלול הקיים עד צומת הרחובות הרצל/ בית הפועלים, יפנה שמאלה לרחוב בית הפועלים, ימשיך ישר לרחוב לוין אפשטיין ורחוב דוד רמז, יפנה ימינה לרחוב רוז'נסקי, ימשיך ישר לדרך אצ\"ל, יפנה שמאלה (בצומת פארק המדע) לכביש מס' 412 לכיוון נס ציונה ויתחבר להמשך המסלול הקיים.\n\nתחנה מבוטלת זמנית: הרצל/ וייצמן (תחנה 32116).\nתחנה חלופית: בית הפועלים/ גלוסקין (תחנה 31247).",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:4150",
+      "affectedStop": "1:15557",
       "sourceAlertIds": [
-        "14017261722  null  1208  null   null  4150  null",
-        "14017261722  null  1209  null   null  21145  null",
-        "14017261722  null  1299  null   null  21145  null",
-        "14017261722  null  1302  null   null  4150  null",
-        "14017261722  null  13953  null   null  18519  null",
-        "14017261722  null  13954  null   null  18519  null",
-        "14017261722  null  13956  null   null  18519  null",
-        "14017261722  null  13957  null   null  4150  null",
-        "14017261722  null  13958  null   null  4506  null",
-        "14017261722  null  13960  null   null  4506  null",
-        "14017261722  null  13979  null   null  21137  null",
-        "14017261722  null  14021  null   null  4150  null",
-        "14017261722  null  14023  null   null  21145  null"
+        "14020824621  null  24281  null   null  15557  null",
+        "14020824621  null  3067  null   null  16062  null",
+        "14020824621  null  3315  null   null  15436  null",
+        "14020824621  null  3317  null   null  16062  null",
+        "14020824621  null  3354  null   null  15557  null",
+        "14020824621  null  3356  null   null  16062  null",
+        "14020824621  null  3383  null   null  16062  null",
+        "14020824621  null  7396  null   null  15557  null",
+        "14020824621  null  7400  null   null  16062  null",
+        "14020824621  null  7444  null   null  16062  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:1208",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1208:0:01",
-          "patternId": "1:1208:0:01",
+          "apiRouteId": "1:24281",
+          "patternUrl": "https://www.busnearby.co.il/route/1:24281:0:01",
+          "patternId": "1:24281:0:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:1209",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1209:1:01",
-          "patternId": "1:1209:1:01",
+          "apiRouteId": "1:3067",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3067:0:01",
+          "patternId": "1:3067:0:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:1299",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1299:0:01",
-          "patternId": "1:1299:0:01",
+          "apiRouteId": "1:3315",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3315:0:01",
+          "patternId": "1:3315:0:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:1302",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1302:1:01",
-          "patternId": "1:1302:1:01",
+          "apiRouteId": "1:3317",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3317:1:01",
+          "patternId": "1:3317:1:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13953",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13953:0:01",
-          "patternId": "1:13953:0:01",
+          "apiRouteId": "1:3354",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3354:0:01",
+          "patternId": "1:3354:0:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13954",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13954:1:01",
-          "patternId": "1:13954:1:01",
+          "apiRouteId": "1:3356",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3356:1:01",
+          "patternId": "1:3356:1:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13956",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13956:1:01",
-          "patternId": "1:13956:1:01",
+          "apiRouteId": "1:3383",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3383:1:01",
+          "patternId": "1:3383:1:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13957",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13957:0:01",
-          "patternId": "1:13957:0:01",
+          "apiRouteId": "1:7396",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7396:0:01",
+          "patternId": "1:7396:0:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13958",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13958:1:01",
-          "patternId": "1:13958:1:01",
+          "apiRouteId": "1:7400",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7400:1:01",
+          "patternId": "1:7400:1:01",
           "agencyFilterIds": [
-            "6"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:13960",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13960:1:01",
-          "patternId": "1:13960:1:01",
+          "apiRouteId": "1:7444",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7444:1:01",
+          "patternId": "1:7444:1:01",
           "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:13979",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13979:0:01",
-          "patternId": "1:13979:0:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:14021",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14021:0:01",
-          "patternId": "1:14021:0:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:14023",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14023:1:01",
-          "patternId": "1:14023:1:01",
-          "agencyFilterIds": [
-            "6"
+            "3"
           ]
         }
       ],
-      "routeCount": 13
+      "routeCount": 10
     },
     {
-      "contentId": "5994f260101fa003e81bc851a358cac2b2c191235b3c12ccdc98ffc0156e7e95",
-      "title": "עכו , עבודות תשתית , 06.04.26",
-      "fullContent": "עקב עבודות תשתית , בעכו ,כביש 8510 , קווים 2א / 4 / 271/281 /272 /60, מדלגים באופן זמני על התחנות.",
-      "effectiveStart": "2026-04-06T06:30:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
-      "activeNow": true,
-      "expired": false,
-      "stopConditions": [
-        "DETOUR"
-      ],
-      "affectedStop": "1:18779",
-      "sourceAlertIds": [
-        "14017284118  null  12138  null   null  18779  null"
-      ],
-      "routes": [
-        {
-          "apiRouteId": "1:12138",
-          "patternUrl": "https://www.busnearby.co.il/route/1:12138:1:01",
-          "patternId": "1:12138:1:01",
-          "agencyFilterIds": [
-            "14"
-          ]
-        }
-      ],
-      "routeCount": 1
-    },
-    {
-      "contentId": "739f691a634ac1b3cb9ce85e157c0cf1e0a54db31f4961722bfa6d16e325672a",
-      "title": "בני ברק, עבודות לילה, צירלסון 05-06.04.2026",
-      "fullContent": "עקב עבודות התחנות הבאות מבוטלות זמנית מ-22:00 עד 06:00 למחרת:\n26579 - הרב בר אילן/הרב קלישר,\n26580 - הרב קלישר/הילדסהיימר,\n26578 - ביה''ס מע''ש/הרב צירלסון,\n26555 - הרב צירלסון/ד''ר ברויאר",
-      "effectiveStart": "2026-04-05T19:00:00.000Z",
-      "effectiveEnd": "2026-04-06T03:00:00.000Z",
-      "activeNow": true,
-      "expired": false,
-      "stopConditions": [
-        "DETOUR"
-      ],
-      "affectedStop": "1:14058",
-      "sourceAlertIds": [
-        "14013498759  null   null   null   null  14058  null"
-      ],
-      "routes": [
-        {
-          "apiRouteId": "1:2287",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2287:0:01",
-          "patternId": "1:2287:0:01",
-          "agencyFilterIds": [
-            "5"
-          ]
-        }
-      ],
-      "routeCount": 1
-    },
-    {
-      "contentId": "76b02a1b40928f17fb1c314848250af8f4c1bb7c5083e88e4a0a80672ce22cc1",
-      "title": "עוספיא, חסימת כביש, רחוב אמין כיוף, 06.04.2026",
-      "fullContent": "עקב חסימה כביש ברחוב אמין כיוף שבכפר עוספיא - קווי 3 חווים עיכובים ב-2 הכיוונים.",
-      "effectiveStart": "2026-04-06T07:33:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
+      "contentId": "3df7b9d5916d62447f1e4cc64a6c375c41e6e1605290ff8c6b64f9c1656d6b82",
+      "title": "מחלף זרזיר, תאונת דרכים, כביש 77, 09.04.2026",
+      "fullContent": "עקב תאונת דרכים בין מחלף זרזיר לרמת ישי על כביש 77 - קווי 22, 68, 301, 426, 969 חווים עיכובים ב-2 הכיוונים.",
+      "effectiveStart": "2026-04-09T11:33:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "SIGNIFICANT_DELAYS"
       ],
       "sourceAlertIds": [
-        "14017317743  null  14212  null   null   null   null",
-        "14017317743  null  14213  null   null   null   null"
+        "14020828864  null  14180  null   null   null   null",
+        "14020828864  null  14184  null   null   null   null",
+        "14020828864  null  14786  null   null   null   null",
+        "14020828864  null  14787  null   null   null   null",
+        "14020828864  null  15739  null   null   null   null",
+        "14020828864  null  15740  null   null   null   null",
+        "14020828864  null  19959  null   null   null   null",
+        "14020828864  null  19960  null   null   null   null",
+        "14020828864  null  30777  null   null   null   null",
+        "14020828864  null  30778  null   null   null   null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:14212",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14212:0:01",
-          "patternId": "1:14212:0:01",
+          "apiRouteId": "1:14180",
+          "patternUrl": "https://www.busnearby.co.il/route/1:14180:0:01",
+          "patternId": "1:14180:0:01",
           "agencyFilterIds": [
             "16"
           ]
         },
         {
-          "apiRouteId": "1:14213",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14213:1:01",
-          "patternId": "1:14213:1:01",
+          "apiRouteId": "1:14184",
+          "patternUrl": "https://www.busnearby.co.il/route/1:14184:1:01",
+          "patternId": "1:14184:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:14786",
+          "patternUrl": "https://www.busnearby.co.il/route/1:14786:0:01",
+          "patternId": "1:14786:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:14787",
+          "patternUrl": "https://www.busnearby.co.il/route/1:14787:1:01",
+          "patternId": "1:14787:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15739",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15739:0:01",
+          "patternId": "1:15739:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15740",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15740:1:01",
+          "patternId": "1:15740:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:19959",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19959:0:01",
+          "patternId": "1:19959:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:19960",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19960:1:01",
+          "patternId": "1:19960:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:30777",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30777:0:01",
+          "patternId": "1:30777:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:30778",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30778:1:01",
+          "patternId": "1:30778:1:01",
           "agencyFilterIds": [
             "16"
           ]
         }
       ],
-      "routeCount": 2
+      "routeCount": 10
     },
     {
-      "contentId": "7f77e99cc1fbf75edbe98e6a6fec7d16d3abfdaa9ae7a6528fa6fdf58dc87f49",
-      "title": "כביש 1, חסימה משטרתית מחלף גנות, 06.04.2026",
-      "fullContent": "נוסעים נכבדים, \nבעקבות חסימה משטרתית ביציאה מכביש 1 לכביש 4 גנות, קווים: 139/202/209/210/220/230/240/384 (כיוון 1) משנים את מסלולם ללא דילוג על תחנות.\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
-      "effectiveStart": "2026-04-06T07:36:00.000Z",
-      "effectiveEnd": "2026-04-06T20:30:00.000Z",
+      "contentId": "438941b8d704c82d5d76d7d5fed397f01ee01143222b5b2d87ea407d8739f04d",
+      "title": "תל אביב, עבודות לילה, צומת ראול ולנברג/דבורה הנביאה, 12+14-16/4/26.",
+      "fullContent": "בימים ראשון 12/4 + שלישי עד חמישי 14-16/4\nתיחסם לתנועה צומת ראול ולנברג/דבורה הנביאה \nהחסימה תחל בשעה 22:00 ועד לשעה 5:00. (4 לילות)\n\nבעקבות החסימה יחול שינוי מסלול לקוים \n6,7,12,21,205 בשני הכיוונים\n\nהמסלול החלופי לקו 6,205 לכיוון קרית עתידים:\nנוסעים במסלול הרגיל ומסיימים את הקו בתחנה הזמנית\nברח' ראול ולנברג/הארד, לא ממשיכים ישר ברח' ראול ולנברג \nאלא פונים ימינה לרח' הארד, מבצעים פרסה בכיכר הקרובה וחוזרים בזחרה, \nשמאלה לרח' ראול ולנברג \nומסיימים בתחנה ראול ולנברג/הארד.\nתחנות מבוטלות:\n21830 ראול ולנברג/הארד\n20755 דבורה הנביאה/ראול ולנברג\n26807 מסוף עתידים (תחנת קצה)\nתחנת קצה חלופית:\n21357 ראול ולנברג/הארד\n\nהמסלול החלופי לקוים 6 לכיוון האוניברסיטה, 205 לכיוון יהוד:\nמתחילים את הנסיעה ברח' הארד בתחנה ראול ולנברג/הארד \n(התחנה השניה של הקו) וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n26806 מסוף עתידים (תחנת מוצא)\nתחנת מוצא חלופית:\n21357 ראול ולנברג/הארד\n\nהמסלול החלופי לקו 7 לכיוון תל אביב:\nנוסעים במסלול הרגיל עד לצומת בית אל/הצנחנים, \nלא חוזרים בחזרה לדבורה הנביאה אלא פונים ימינה לרח' הצנחנים, \nשמאלה לרח' ראול ולנברג, ימינה לרח' 2184, ימינה לרח' 2229, \nימינה לרח' 2184, שמאלה למסוף עתידים ומסיימים את הקו.\nתחנות מבוטלות:\n26802 הצנחנים/אח\"י דקר\n26790 דבורה הנביאה/ראול ולנברג\n20755 דבורה הנביאה/ראול ולנברג\n26807 מסוף עתידים (תחנת קצה)\nתחנת קצה חלופית:\n26798 בית אל/דבורה הנביאה\n\nהמסלול החלופי לקו 7 לכיוון רמת גן:\nיציאה ממסוף עתידים, ימינה לרח' 2184, שמאלה לרח' 2229, \nימינה לרח' 2185, ימינה לרח' 2229, שמאלה לרח' 2184,\nשמאלה לרח' ראול ולנברג, ימינה לרח' הצנחנים, \nשמאלה לרח' בית אל, ימינה לרח' דבורה הנביאה \nוממשיכים במסלול הרגיל.\nתחנה מבוטלת:\n26806 מסוף עתידים (תחנת מוצא)\nתחנת מוצא חלופית:\n26808 ביה\"ס משה שרת/הצנחנים\n\nהמסלול החלופי לקו 12 לכיוון קרית עתידים:\nנוסעים במסלול הרגיל עד לצומת ראול ולנברג/משמר הירדן, \nלא ממשיכים ישר ברח' ראול ולנברג אלא פונים שמאלה \nלרח' משמר הירדן, ימינה לרח' דבורה הנביאה, \nשמאלה לרח' בית אל, ימינה לרח' הצנחנים, \nשמאלה לרח' ראול ולנברג, ימינה לרח' 2184, ימינה לרח' 2229, \nימינה לרח' 2184, שמאלה למסוף עתידים ומסיימים את הקו.\nתחנות מבוטלות:\n21358 ראול ולנברג/משמר הירדן\n21827 ראול ולנברג/הברזל\n21829 ראול ולנברג/הנחושת\n21830 ראול ולנברג/הארד\n20742 ראול ולנברג/דבורה הנביאה\n26808 ביה\"ס משה שרת/הצנחנים\n26802 בית אל/אח\"י דקר\n26797 דבורה הנביאה/בית אל\n20755 דבורה הנביאה/ראול ולנברג\n26807 מסוף עתידים (תחנת קצה)\nתחנות חלופיות זמניות:\n28564 משמר הירדן/טורקוב\n26457 משמר הירדן/הרוגי מלכות\nתחנת קצה חלופית:\n26798 בית אל/דבורה\n\nהמסלול החלופי לקו 12 לכיוון מכללת לוינסקי:\nיציאה ממסוף עתידים, ימינה לרח' 2184, שמאלה לרח' 2229, \nימינה לרח' 2185, ימינה לרח' 2229, שמאלה לרח' 2184,\nשמאלה לרח' ראול ולנברג, ימינה לרח' הצנחנים, \nימינה לרח' בית אל, ימינה לרח' דבורה הנביאה, \nשמאלה לרח' משמר הירדן, ימינה לרח' ראול ולנברג \nוממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n26806 מסוף עתידים (תחנת מוצא)\n26790 דבורה הנביאה/ראול ולנברג\n20874 ראול ולנברג/דבורה הנביאה\n21357 ראול ולנברג/הארד\n21356 ראול ולנברג/הנחושת\n21831 מטה מרחב ירקון/ראול ולנברג\n26595 ראול ולנברג/הברזל\n26454 ראול ולנברג/משמר הירדן\nתחנות חלופיות זמניות:\n20634 משמר הירדן/הרוגי מלכות\n28563 משמר הירדן/טורקוב\nתחנת מוצא חלופית:\n20284 בית אבות בית בלב/בית אל\n\nהמסלול החלופי לקו 21 לכיוון תל אביב:\nנוסעים במסלול הרגיל עד לצומת צה\"ל/דבורה הנביאה, \nלא פונים שמאלה לרח' דבורה הנביאה אלא ימינה, \nשמאלה לרח' משמר הירדן, ימינה לרח' ראול ולנברג \nוממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n26785 דבורה הנביאה/צה\"ל\n26790 דבורה הנביאה/ראול ולנברג\n20874 ראול ולנברג/דבורה הנביאה\n21357 ראול ולנברג/הארד\n21356 ראול ולנברג/הנחושת\n26595 ראול ולנברג/הברזל\nתחנות חלופיות זמניות:\n26783 משמר הירדן/דבורה הנביאה\n20634 משמר הירדן/הרוגי מלכות\n28563 משמר הירדן/טורקוב\n\nהמסלול החלופי לקו 21 לכיוון רמת השרון:\nנוסעים במסלול הרגיל עד לצומת ראול ולנברג/משמר הירדן, \nלא ממשיכים ישר ברח' ראול ולנברג אלא פונים \nשמאלה לרח' משמר הירדן, ימינה לרח' דבורה הנביאה, \nשמאלה לרח' בית אל, מבצעים פניית פרסה וחוזרים בחזרה, \nימינה לרח' דבורה הנביאה, ימינה לרח' צה\"ל \nוממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21827 ראול ולנברג/הברזל\n21829 ראול ולנברג/הנחושת\n21830 ראול ולנברג/הארד\n21626 דבורה הנביאה/ראול ולנברג\nתחנות חלופיות זמניות:\n28564 משמר הירדן/טורקוב\n26457 משמר הירדן/הרוגי מלכות\n26782 משמר הירדן/דבורה הנביאה",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13187",
+      "sourceAlertIds": [
+        "14020847606  null  23991  null   null  13187  null",
+        "14020847606  null  23992  null   null  13028  null",
+        "14020847606  null  27899  null   null  13244  null",
+        "14020847606  null  27900  null   null  48097  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:23991",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23991:0:01",
+          "patternId": "1:23991:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:23992",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23992:1:01",
+          "patternId": "1:23992:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:27899",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27899:0:01",
+          "patternId": "1:27899:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:27900",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27900:1:01",
+          "patternId": "1:27900:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        }
+      ],
+      "routeCount": 4
+    },
+    {
+      "contentId": "4b539228544e7e091e1d143e76d17517027d52907f9403ead13a0bf1d8179c73",
+      "title": "אגריפס ירושלים , חסימות מדרחוב, 09.4.2026",
+      "fullContent": "מבוצעת חסימת מדרחוב בידי העירייה ברחוב אגריפס לכיוון מערב תחנות מבוטלות: 9870 - שוק מחנה יהודה/אגריפס, 5885 - שוקניון/אגריפס",
+      "effectiveStart": "2026-04-09T14:00:00.000Z",
+      "effectiveEnd": "2026-04-09T23:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
+      "affectedStop": "1:11510",
       "sourceAlertIds": [
-        "14017353556  null  11196  null   null   null   null",
-        "14017353556  null  11594  null   null   null   null",
-        "14017353556  null  11595  null   null   null   null",
-        "14017353556  null  11597  null   null   null   null",
-        "14017353556  null  11599  null   null   null   null"
+        "14020487349  null   null   null   null  11510  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:11196",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11196:0:01",
-          "patternId": "1:11196:0:01",
+          "apiRouteId": "1:10799",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10799:1:01",
+          "patternId": "1:10799:1:01",
           "agencyFilterIds": [
-            "18"
+            "3"
           ]
         },
         {
-          "apiRouteId": "1:11594",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11594:0:01",
-          "patternId": "1:11594:0:01",
+          "apiRouteId": "1:12414",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12414:0:01",
+          "patternId": "1:12414:0:01",
           "agencyFilterIds": [
-            "18"
+            "38"
           ]
         },
         {
-          "apiRouteId": "1:11595",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11595:0:01",
-          "patternId": "1:11595:0:01",
+          "apiRouteId": "1:30726",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30726:0:01",
+          "patternId": "1:30726:0:01",
           "agencyFilterIds": [
-            "18"
+            "16"
           ]
         },
         {
-          "apiRouteId": "1:11597",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11597:0:01",
-          "patternId": "1:11597:0:01",
+          "apiRouteId": "1:5528",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5528:1:01",
+          "patternId": "1:5528:1:01",
           "agencyFilterIds": [
-            "18"
+            "38"
           ]
         },
         {
-          "apiRouteId": "1:11599",
-          "patternUrl": "https://www.busnearby.co.il/route/1:11599:0:01",
-          "patternId": "1:11599:0:01",
+          "apiRouteId": "1:5652",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5652:1:01",
+          "patternId": "1:5652:1:01",
           "agencyFilterIds": [
-            "18"
+            "38"
           ]
         }
       ],
       "routeCount": 5
     },
     {
-      "contentId": "7fa434807dd9e6d5777954ef4f8d8e7249560fea82417e612470a8bed83bb27a",
-      "title": "תל-אביב - העתקת תחנת הקצה ממסוף ההגנה לתמח\"ת - מבצע \"שאגת הארי - החל מתאריך - 10.3.2026 ועד הודעה חדשה.",
-      "fullContent": "מביאים בזאת לידיעתכם כי החל מהיום, יום ג' 10.3.2026 ועד הודעה חדשה, תועתק תחנת הקצה של קו 114 ממסוף ההגנה לתמח\"ת, במסלול כדלקמן:\n\nיציאה מתחנת המוצא בקומה 7 בתמח\"ת, ירידה דרך הויאדוקט (לכיוון צפון), המשך ברח' החרש (לכיוון רח' הרכבת), נסיעה עד צומת החרש / ראש פינה, ביצוע פרסה בצומת וחזרה ברחוב החרש לכיוון דרום, המשך ברחוב החרש לכיוון דרום, ימינה ההגנה, ימינה לבנדה, ימינה לוינסקי, המשך דרך ההגנה, המשך במסלול הרגיל עד לוינסקי פינת לבנדה (לאחר החזרה מתל השומר), ימינה לרח' לבנדה, ימינה לרח' החרש, עליה לויאדוקט לכיוון תמח\"ת, עד לתחנה הסופית בקומה 7.\n\nתחנות מבוטלות:\n20860 – מסוף ההגנה/איסוף\n20859 – מסוף ההגנה/הורדה",
-      "effectiveStart": "2026-03-10T01:30:00.000Z",
-      "effectiveEnd": "2026-04-13T01:30:00.000Z",
-      "activeNow": true,
+      "contentId": "4e7b623729587e6444afc2afc124194b0578ec6f3343135a6aa526f098004d29",
+      "title": "כביש 4, עבודות בכביש, מחלף מסובים, 09.04.2026",
+      "fullContent": "עקב עבודות התחנה הבאה מבוטלת זמנית מ-23:59 עד 05:00 למחרת:\n\n33432 - מחלף מסובים",
+      "effectiveStart": "2026-04-09T20:59:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
       "expired": false,
       "stopConditions": [
-        "STOP_MOVED"
+        "DETOUR"
       ],
-      "affectedStop": "1:50875",
+      "affectedStop": "1:21589",
       "sourceAlertIds": [
-        "13954032830  null  35324  null   null  50875  null"
+        "14020899365  null   null   null   null  21589  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:35324",
-          "patternUrl": "https://www.busnearby.co.il/route/1:35324:0:01",
-          "patternId": "1:35324:0:01",
+          "apiRouteId": "1:39854",
+          "patternUrl": "https://www.busnearby.co.il/route/1:39854:1:01",
+          "patternId": "1:39854:1:01",
           "agencyFilterIds": [
-            "5"
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:42803",
+          "patternUrl": "https://www.busnearby.co.il/route/1:42803:0:01",
+          "patternId": "1:42803:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:43392",
+          "patternUrl": "https://www.busnearby.co.il/route/1:43392:0:01",
+          "patternId": "1:43392:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "517f658bd2827c217247e3c43dbf54a49beaf6818eadef3618bda7a14146da41",
+      "title": "כביש 4, עבודות בכביש, מחלך מסובים. 09.04.2026",
+      "fullContent": "קווים 592, 593, 594 כיוון הלוך ידלגו על תחנה מספר 33432 מחלף מסובים עקב עבודות במחלף בכביש.\nתאריך 09/04/2026 משעה 22:30 עד תאריך 10/04/2026 05:00 בבוקר.",
+      "effectiveStart": "2026-04-09T19:30:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:21589",
+      "sourceAlertIds": [
+        "14020854582  null  29653  null   null  21589  null",
+        "14020854582  null  29661  null   null  21589  null",
+        "14020854582  null  29693  null   null  21589  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:29653",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29653:0:01",
+          "patternId": "1:29653:0:01",
+          "agencyFilterIds": [
+            "23"
+          ]
+        },
+        {
+          "apiRouteId": "1:29661",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29661:0:01",
+          "patternId": "1:29661:0:01",
+          "agencyFilterIds": [
+            "23"
+          ]
+        },
+        {
+          "apiRouteId": "1:29693",
+          "patternUrl": "https://www.busnearby.co.il/route/1:29693:0:01",
+          "patternId": "1:29693:0:01",
+          "agencyFilterIds": [
+            "23"
+          ]
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "57759558d307a31d967684c6f49e88eb922aa8cb9304483b24140f9722689638",
+      "title": "פתח תקווה, עבודות חירום , מונטיפיורי/ סולר 09.04.2026",
+      "fullContent": "עקב עבודות התחנות הבאות מבוטלות זמנית:\n\n31378 - חובבי ציון/מונטיפיורי\n32436 - מונטיפיורי/ברון הירש\n36764 - שוק עירוני/ברון הירש",
+      "effectiveStart": "2026-04-09T11:30:00.000Z",
+      "effectiveEnd": "2026-04-09T12:30:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:15644",
+      "sourceAlertIds": [
+        "14020795933  null   null   null   null  15644  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:1005",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1005:1:01",
+          "patternId": "1:1005:1:01",
+          "agencyFilterIds": [
+            "15"
           ]
         }
       ],
       "routeCount": 1
     },
     {
-      "contentId": "82ea225ed16aa357cd2c16f1b344adf0937c60422bb1d3870370416247507a4a",
-      "title": "כביש 471, תאונה, צומת נחשונים. 06/04/2026",
-      "fullContent": "עקב תאונה בכביש 471 למזרח יתכנו עיכובים בקווים:\n470. 472. 473. 477.478.",
-      "effectiveStart": "2026-04-06T07:56:00.000Z",
-      "effectiveEnd": "2026-04-06T13:00:00.000Z",
+      "contentId": "5875fed72523d45f7ab8b6fbdf0bb7fb363c372bc53776ef615d178a626b975a",
+      "title": "בית שאן, חסימה משטרתית, כביש 90, צומת בית העלמין, 09.04.2026",
+      "fullContent": "עקב חסימה משטרתית התחנות הבאות מבוטלות זמנית:\n56968 - בית עלמין בית שאן/כביש 90,\n56969 - בית עלמין בית שאן/כביש 90",
+      "effectiveStart": "2026-04-09T12:15:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:50037",
+      "sourceAlertIds": [
+        "14020852526  null   null   null   null  50024  null",
+        "14020852526  null   null   null   null  50037  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:15563",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15563:0:01",
+          "patternId": "1:15563:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15564",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15564:1:01",
+          "patternId": "1:15564:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15589",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15589:0:01",
+          "patternId": "1:15589:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15590",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15590:1:01",
+          "patternId": "1:15590:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 4
+    },
+    {
+      "contentId": "5fc6748817285567ee73b30525cc5d29fb184b7ca835fad6a0ac9c84fdd9e2b8",
+      "title": "דובב, עבודות בכביש, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n50944 - מסעף דובב,\n50936 - דוב''ב מרכז,\n59962 - דובב אלון/אלה,\n59963 - דובב יציאה",
+      "effectiveStart": "2026-04-09T06:08:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:7256",
+      "sourceAlertIds": [
+        "14020594973  null   null   null   null  7256  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:489",
+          "patternUrl": "https://www.busnearby.co.il/route/1:489:0:01",
+          "patternId": "1:489:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:493",
+          "patternUrl": "https://www.busnearby.co.il/route/1:493:1:01",
+          "patternId": "1:493:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "71882b04cdb650a852b580460e094231bb6543873dd390d74b2bc293e3d12fba",
+      "title": "צפת , עבודות בכביש , הנשיא , 09.04.26",
+      "fullContent": "עקב עבודות בכביש בצפת , רחוב הנשיא , קווים , 17/4/ 4א/6/6 א/ 16/16א/5/985/987/984/992/993/9 / 981/980/982/989 , מדלגים באופן זמני על התחנות.",
+      "effectiveStart": "2026-04-09T11:38:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:5617",
+      "sourceAlertIds": [
+        "14020833574  null  12147  null   null  5617  null",
+        "14020833574  null  12655  null   null  5617  null",
+        "14020833574  null  13741  null   null  5617  null",
+        "14020833574  null  15195  null   null  5617  null",
+        "14020833574  null  1609  null   null  5617  null",
+        "14020833574  null  17815  null   null  5617  null",
+        "14020833574  null  20325  null   null  5617  null",
+        "14020833574  null  20878  null   null  5617  null",
+        "14020833574  null  21645  null   null  5617  null",
+        "14020833574  null  23948  null   null  5617  null",
+        "14020833574  null  24985  null   null  5617  null",
+        "14020833574  null  36884  null   null  5617  null",
+        "14020833574  null  37647  null   null  5617  null",
+        "14020833574  null  379  null   null  5617  null",
+        "14020833574  null  479  null   null  5617  null",
+        "14020833574  null  489  null   null  5617  null",
+        "14020833574  null  6855  null   null  5617  null",
+        "14020833574  null  6900  null   null  5617  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:12147",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12147:0:01",
+          "patternId": "1:12147:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:12655",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12655:1:01",
+          "patternId": "1:12655:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:13741",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13741:1:01",
+          "patternId": "1:13741:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:15195",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15195:1:01",
+          "patternId": "1:15195:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:1609",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1609:1:01",
+          "patternId": "1:1609:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:17815",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17815:1:01",
+          "patternId": "1:17815:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:20325",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20325:1:01",
+          "patternId": "1:20325:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:20878",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20878:0:01",
+          "patternId": "1:20878:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:21645",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21645:1:01",
+          "patternId": "1:21645:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:23948",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23948:0:01",
+          "patternId": "1:23948:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:24985",
+          "patternUrl": "https://www.busnearby.co.il/route/1:24985:0:01",
+          "patternId": "1:24985:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:36884",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36884:0:01",
+          "patternId": "1:36884:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:37647",
+          "patternUrl": "https://www.busnearby.co.il/route/1:37647:0:02",
+          "patternId": "1:37647:0:02",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:379",
+          "patternUrl": "https://www.busnearby.co.il/route/1:379:0:01",
+          "patternId": "1:379:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:479",
+          "patternUrl": "https://www.busnearby.co.il/route/1:479:0:01",
+          "patternId": "1:479:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:489",
+          "patternUrl": "https://www.busnearby.co.il/route/1:489:0:01",
+          "patternId": "1:489:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:6855",
+          "patternUrl": "https://www.busnearby.co.il/route/1:6855:1:01",
+          "patternId": "1:6855:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:6900",
+          "patternUrl": "https://www.busnearby.co.il/route/1:6900:1:01",
+          "patternId": "1:6900:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 18
+    },
+    {
+      "contentId": "71bf04672a45e0ce2d8a6b4a068aca7c31801a333d62d887287f7e1cffdda0c4",
+      "title": "תל אביב, עבודות לילה, צומת אבן גבירול/ארלוזורוב, 9/4/26.",
+      "fullContent": "ביום חמישי 9/4 \nתיחסם לתנועה צומת אבן גבירול/ארלוזורוב,\nהחסימה תחל בשעה 22:00 ועד לשעה 5:00. (לילה 1)\n\nבעקבות החסימה יחול שינוי מסלול בקוים:\n21,24,26,48,56,126,608 בשני הכיוונים\n55 לכיוון קרית אונו\n90 לכיוון תל אביב\n\nהמסלול החלופי לקוים 21,24 לכיוון רמת השרון, \n26,56,126 לכיוון תל אביב, 48 לכיוון רעננה, 608 לכיוון נתניה.\nנוסעים במסלול הרגיל עד לצומת אבן גבירול/בלוך, \nלא ממשיכים ישר ברח' אבן גבירול אלא פונים ימינה לרח' דוד בלוך,\nימינה לרח' ארלוזורוב, שמאלה לרח' וייצמן, \nימינה לרח' ה' באייר (מקיפים את כיכר המדינה), \nימינה לרח' ז'בוטינסקי מערב, \nימינה לרח' אבן גבירול וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21123 עיריית תל אביב-יפו/אבן גבירול\n20700 אבן גבירול/ארלוזורוב\nתחנה זמנית חלופית:\n25820 עיריית תל אביב-יפו/בלוך\n\nהמסלול החלופי לקוים: 21,24,48,608 לכיוון תל אביב,\n26,126 לכיוון בת ים, 56 לכיוון יהוד.\nנוסעים במסלול הרגיל עד לצומת אבן גבירול/ז'בוטינסקי, \nלא ממשיכים ישר ברח' אבל גבירול אלא פונים שמאלה \nלרח' ז'בוטינסקי, ימינה לרח' דוד רמז, ישר לרח' דוד בלוך, \nשמאלה לרח' אבן גבירול וממשיכים במסלול הרגיל.\nתחנה מבוטלת:\n20699 אבן גבירול/ארלוזורוב\n25823 עיריית תל אביב-יפו/אבן גבירול\nתחנה זמנית חלופית:\n25877 גימנסיה הרצליה/ז'בוטינסקי\n\nהמסלול החלופי לקו 55 לכיוון קרית אונו.\nנוסעים במסלול הרגיל עד לצומת ז'בוטינסקי/אבן גבירול, \nלא פונים ימינה לרח' אבל גבירול אלא ממשיכים ישר \nברח' ז'בוטינסקי, ימינה לרח' דוד רמז, שמאלה לרח' ארלוזורוב, \nשמאלה לרח' אבן גבירול וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n20699 אבן גבירול/ארלוזורוב\n25823 עיריית תל אביב - יפו/אבן גבירול\n21136 רבנות תל אביב/שד' דוד המלך\n21000 ביה\"ח איכילוב/שד' דוד המלך\n21815 ביה\"ח איכילוב/ויצמן\n\nהמסלול החלופי לקו 90 לכיוון תל אביב:\nנוסעים במסלול הרגיל עד צומת ארלוזורוב/רמז, לא \nממשיכים ישר ברח' ארלוזורוב אלא פונים שמאלה לרח' בלוך, \nשמאלה לרח' אבן גבירול וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21038 הוועד הפועל/ארלוזורוב\n20699 אבן גבירול/ארלוזורוב\n25823 עיריית תל אביב-יפו/אבן גבירול\nתחנות חלופיות זמניות:\n25875 בלוך/ארלוזורוב",
+      "effectiveStart": "2026-04-09T19:00:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13679",
+      "sourceAlertIds": [
+        "14017435452  null  21997  null   null  13679  null",
+        "14017435452  null  21999  null   null  12878  null",
+        "14017435452  null  22825  null   null  45038  null",
+        "14017435452  null  22826  null   null  13679  null",
+        "14017435452  null  23991  null   null  12878  null",
+        "14017435452  null  23992  null   null  13679  null",
+        "14017435452  null  7701  null   null  13679  null",
+        "14017435452  null  7704  null   null  13675  null",
+        "14017435452  null  7705  null   null  12834  null",
+        "14017435452  null  974  null   null  12814  null",
+        "14017435452  null  979  null   null  13679  null",
+        "14017435452  null  980  null   null  12878  null",
+        "14017435452  null  9842  null   null  12878  null",
+        "14017435452  null  9843  null   null  13679  null",
+        "14017435452  null  9866  null   null  12878  null",
+        "14017435452  null  9867  null   null  13679  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:21997",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21997:0:01",
+          "patternId": "1:21997:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:21999",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21999:1:01",
+          "patternId": "1:21999:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:22825",
+          "patternUrl": "https://www.busnearby.co.il/route/1:22825:0:01",
+          "patternId": "1:22825:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:22826",
+          "patternUrl": "https://www.busnearby.co.il/route/1:22826:1:01",
+          "patternId": "1:22826:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:23991",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23991:0:01",
+          "patternId": "1:23991:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:23992",
+          "patternUrl": "https://www.busnearby.co.il/route/1:23992:1:01",
+          "patternId": "1:23992:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:7701",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7701:0:01",
+          "patternId": "1:7701:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:7704",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7704:1:01",
+          "patternId": "1:7704:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:7705",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7705:0:01",
+          "patternId": "1:7705:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:974",
+          "patternUrl": "https://www.busnearby.co.il/route/1:974:0:01",
+          "patternId": "1:974:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:979",
+          "patternUrl": "https://www.busnearby.co.il/route/1:979:0:01",
+          "patternId": "1:979:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:980",
+          "patternUrl": "https://www.busnearby.co.il/route/1:980:1:01",
+          "patternId": "1:980:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:9842",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9842:0:01",
+          "patternId": "1:9842:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:9843",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9843:1:01",
+          "patternId": "1:9843:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:9866",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9866:0:01",
+          "patternId": "1:9866:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:9867",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9867:1:01",
+          "patternId": "1:9867:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        }
+      ],
+      "routeCount": 16
+    },
+    {
+      "contentId": "76558167166955b0c882721654be1411432a33d93dc89e222c64fd82919c4f81",
+      "title": "תל אביב, עבודות לילה, רח' ההגנה, 9/4/26.",
+      "fullContent": "ביום חמישי 9/4 ייחסם לתנועה רח' ההגנה \nלכיוון מזרח בקטע שבין רח' יגאל אלון ועד לרח' משה דיין. \nהחסימה תחל בשעה 22:00 ועד לשעה 5:00. (לילה 1)\n\nבעקבות החסימה יחול שינוי מסלול לקוים: \n35 לכיוון רמת גן\n59,236 לכיוון אור יהודה.\n\nהמסלול החלופי לקוים 35 לכיוון רמת גן, 236 לכיוון אור יהודה.\nנוסעים במסלול הרגיל עד לצומת ההגנה/אצ\"ל, \nלא ממשיכים ישר ברח' ההגנה אלא פונים ימינה לרח' האצ\"ל, \nשמאלה לרח' הלח\"י, ישר לדרך בר-לב וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21305 גן התקווה/דרך ההגנה\n27050 דרך ההגנה/גבעתי\n21194 דרך משה דיין/ההגנה\n21530 דרך משה דיין/קרייתי\nתחנה זמנית חלופית:\n25643 שוק התקווה-אצ\"ל\n\nהמסלול החלופי לקו 59 לכיוון אור יהודה.\nנוסעים במסלול הרגיל עד לצומת יגאל אלון/ההגנה, \nלא פונים שמאלה לרח' ההגנה אלא ימינה, שמאלה לרח' האצ\"ל, \nשמאלה לרח' הלח\"י, ישר לדרך בר-לב וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n21305 גן התקווה/דרך ההגנה\n27050 דרך ההגנה/גבעתי\n21194 דרך משה דיין/ההגנה\n21530 דרך משה דיין/קרייתי\nתחנה זמנית חלופית:\n25643 שוק התקווה-אצ\"ל",
+      "effectiveStart": "2026-04-09T19:00:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:12915",
+      "sourceAlertIds": [
+        "14017602533  null  1034  null   null  12915  null",
+        "14017602533  null  25408  null   null  12915  null",
+        "14017602533  null  985  null   null  12915  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:1034",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1034:0:01",
+          "patternId": "1:1034:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:25408",
+          "patternUrl": "https://www.busnearby.co.il/route/1:25408:1:01",
+          "patternId": "1:25408:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:985",
+          "patternUrl": "https://www.busnearby.co.il/route/1:985:0:01",
+          "patternId": "1:985:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "79ea38b429570faef2ab4de102e4b8fe36f8e9f27a17f77be8a9b6933856cfe2",
+      "title": "ירושלים, חסימה במתווה מדרחוב, אגריפס 09.04.2026 - 10.04.2026",
+      "fullContent": "רחוב אגריפס למערב חסום ע\"י העירייה במתווה המדרחוב .\nקו 74 בכיוון הר נוף נוסע במסלול החלופה.\n\nתחנות מבוטלות:\n9870 - שוק מחנה יהודה/אגריפס\n5885 - שוקניון/אגריפס\n\nתחנות חלופיות:\n3541 - עליאש \n1570 - בצלאל/טרומפלדור \n9920 - בצלאל/נסים בכר \n1963 - שדרות בן צבי/הרב שמואל ברוך",
+      "effectiveStart": "2026-04-09T14:00:00.000Z",
+      "effectiveEnd": "2026-04-09T23:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:11510",
+      "sourceAlertIds": [
+        "14020473722  null  30726  null   null  11510  null",
+        "14020473722  null  30727  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:30726",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30726:0:01",
+          "patternId": "1:30726:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:30727",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30727:1:01",
+          "patternId": "1:30727:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "83e8bbf03783a5fcd98b460f1025b874163798ce0adea5f28f1f98ec059bc000",
+      "title": "כביש 77, תאונה, מחלף זרזיר, 09.04.2026",
+      "fullContent": "עקב תאונת דרכים במחלף זרזיר כביש 77 למזרח קווי 826,505,836,845,846,912,956,962,963,968 חווים עיכובים.",
+      "effectiveStart": "2026-04-09T11:33:00.000Z",
+      "effectiveEnd": "2026-04-09T19:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "SIGNIFICANT_DELAYS"
       ],
       "sourceAlertIds": [
-        "14017354567  null  14554  null   null   null   null"
+        "14020825466  null  13355  null   null   null   null",
+        "14020825466  null  13356  null   null   null   null",
+        "14020825466  null  19673  null   null   null   null",
+        "14020825466  null  19674  null   null   null   null",
+        "14020825466  null  19731  null   null   null   null",
+        "14020825466  null  27932  null   null   null   null",
+        "14020825466  null  27933  null   null   null   null",
+        "14020825466  null  36419  null   null   null   null",
+        "14020825466  null  36420  null   null   null   null",
+        "14020825466  null  7111  null   null   null   null",
+        "14020825466  null  7112  null   null   null   null",
+        "14020825466  null  7159  null   null   null   null",
+        "14020825466  null  7161  null   null   null   null",
+        "14020825466  null  7166  null   null   null   null",
+        "14020825466  null  7273  null   null   null   null",
+        "14020825466  null  7276  null   null   null   null",
+        "14020825466  null  7293  null   null   null   null",
+        "14020825466  null  7294  null   null   null   null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:14554",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14554:1:01",
-          "patternId": "1:14554:1:01",
+          "apiRouteId": "1:13355",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13355:1:01",
+          "patternId": "1:13355:1:01",
           "agencyFilterIds": [
-            "25"
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:13356",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13356:0:01",
+          "patternId": "1:13356:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19673",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19673:0:01",
+          "patternId": "1:19673:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19674",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19674:1:01",
+          "patternId": "1:19674:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19731",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19731:1:01",
+          "patternId": "1:19731:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:27932",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27932:1:01",
+          "patternId": "1:27932:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:27933",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27933:0:01",
+          "patternId": "1:27933:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:36419",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36419:1:01",
+          "patternId": "1:36419:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:36420",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36420:0:01",
+          "patternId": "1:36420:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7111",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7111:0:01",
+          "patternId": "1:7111:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7112",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7112:1:01",
+          "patternId": "1:7112:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7159",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7159:0:01",
+          "patternId": "1:7159:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7161",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7161:1:01",
+          "patternId": "1:7161:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7166",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7166:0:01",
+          "patternId": "1:7166:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7273",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7273:1:01",
+          "patternId": "1:7273:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7276",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7276:0:01",
+          "patternId": "1:7276:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7293",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7293:1:01",
+          "patternId": "1:7293:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7294",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7294:0:01",
+          "patternId": "1:7294:0:01",
+          "agencyFilterIds": [
+            "3"
           ]
         }
       ],
-      "routeCount": 1
+      "routeCount": 18
     },
     {
       "contentId": "848e77d9b338b565bb06fe5cfbc08112c5ed93ecd10deca493c7514ea79a35d2",
@@ -906,144 +2457,333 @@
       "routeCount": 5
     },
     {
-      "contentId": "9bef420cfa545871c11748b376209429ae9ecf63ad6fd0aedfc3a57d75ed26eb",
-      "title": "תל אביב, עבודות תשתית רוזנפלד במקטע ג'ורג' ווייז - חיים לבנון לשני הכיוונים, 05-07.04.2026",
-      "fullContent": "נוסעים נכבדים, \nהחל מיום ראשון 05.04.2026 בתחילת השירות ועד יום שלישי 07.04 סמוך לכניסת החג יסגר רחוב רוזנפלד במקטע ג'ורג' ווייז - חיים לבנון לשני הכיוונים.\nאי לכך, קווים: 107/450/464/474/506 ישנו את מסלולם.\nהשינוי להלן: \nהקווים בכיוון צפון: \nממשיכים על חיים לבנון ישר, ימינה קלצ'קין ומקצרים למסוף\nהקווים בכיוון דרום:\n יוצאים ממסוף קלצ'קין שמאלה ושוב שמאלה לחיים לבנון בלי לעבור בקלאוזנר, המשך למסלול בחיים לבנון.\nתחנות מבוטלות: \n20482 ← ביה''ס לרפואה/קלצ'קין\n20138 ← מוזאון העם היהודי/קלאוזנר\n20137 ← מוזאון העם היהודי/קלאוזנר\n21665 ← הפקולטה להנדסה/קלאוזנר\n20794 ← ד''ר ג'ורג' וייז/שלום רוזנפלד\n20503 ← ביה''ס לרפואה/קלצ'קין\n25075 ← הפקולטה להנדסה/ד''ר ג'ורג' וויז\n21734 ← מדעי החיים/קלאוזנר\nתחנות חלופיות:\n27065 ← האוניברסיטה/חיים לבנון\n21469 ← חיים לבנון/ד''ר ג'ורג' וויז\n21385 ← מכון התקנים/חיים לבנון\n21498 ← מכון התקנים/חיים לבנון\n21388 ← האוניברסיטה/חיים לבנון\n21387 ← חיים לבנון/ד''ר ג'ורג' וויז\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
-      "effectiveStart": "2026-04-05T02:00:00.000Z",
-      "effectiveEnd": "2026-04-07T14:00:00.000Z",
+      "contentId": "8a6b8d09ed25040ebef1f2b314b5e4ff8ffd1a562ada3797eb761aa5b4dad963",
+      "title": "כביש 4 , עבודות תשתית , צומת מסובים 09-10.04.2026",
+      "fullContent": "במסגרת פרויקט הוספת נת\"צ בכביש 4:\n \nבליל חמישי, 09.04.26, החל מהשעה 23:59 ועד השעה 05:00 בבוקר למחרת, תבוצענה עבודות לילה לפריסת הסדר תנועה זמני בצומת מסובים\n \n \nהסדרי תנועה ועבודה:\n \nלא תתאפשר התנועה לרמפת הירידה מכביש 4 לכביש 461 מזרח\n \nלא תתאפשר התנועה לרמפת העלייה מכביש 461 לכביש 4 צפון \n \nהתנועה תכוון ע\"י פקחים",
+      "effectiveStart": "2026-04-09T20:59:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:21589",
+      "sourceAlertIds": [
+        "14020700908  null  35693  null   null  21589  null",
+        "14020700908  null  35694  null   null  21589  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:35693",
+          "patternUrl": "https://www.busnearby.co.il/route/1:35693:0:01",
+          "patternId": "1:35693:0:01",
+          "agencyFilterIds": [
+            "35"
+          ]
+        },
+        {
+          "apiRouteId": "1:35694",
+          "patternUrl": "https://www.busnearby.co.il/route/1:35694:0:01",
+          "patternId": "1:35694:0:01",
+          "agencyFilterIds": [
+            "35"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "8f6d4ea5374fee297a1bb7469db83d2a4e5297a871fdcd9855d10cac92e94180",
+      "title": "תל אביב-יפו - עבודות לילה ברחוב שלום רוזנפלד (אוניברסיטת תל אביב). ימים ראשון 12/4/2026 + שלישי ורביעי 14-15/4/2026.",
+      "fullContent": "בימים ראשון 12/4/2026 + שלישי ורביעי 14-15/4/2026 מדי לילה החל מהשעה 20:00 ועד 05:00 למחרת ייחסם לתנועה רחוב שלום רוזנפלד, בשני הכיוונים, עקב עבודות.\n\nקו 271 מחולון (קריית שרת) לתל אביב-יפו: ייסע על פי המסלול הקיים עד צומת חיים לבנון/ שלום רוזנפלד, ימשיך ישר ברחוב חיים לבנון, יפנה ימינה לרחוב קלצ'קין וימינה למסוף האוניברסיטה. \n\nתחנות מבוטלות: שלום רוזנפלד – קמפוס ברושים (תחנה 21235), קלאוזנר - הפקולטה להנדסה (תחנה 21665), קלאוזנר - מוזיאון העם היהודי (תחנה 20138), קלצ'קין - בית הספר לרפואה (תחנה 20503).\nתחנות חלופיות: חיים לבנון – מכון התקנים (תחנה 21385), חיים לבנון/ ד\"ר ג'ורג' וייז (תחנה 21469), חיים לבנון – האוניברסיטה (תחנה 27065).\n\nקו 271 מתל אביב-יפו לחולון (מסוף קריית שרת): ייצא כרגיל ממסוף קלצ'קין ויפנה שמאלה לרחוב קלצ'קין, שמאלה לרחוב חיים לבנון ויתחבר (בצומת חיים לבנון/ שלום רוזנפלד) להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: קלצ'קין – בית הספר לרפואה (תחנה 20482), קלאוזנר – הפקולטה למדעי החיים (תחנה 21734), קלאוזנר - מוזיאון העם היהודי (תחנה 20137), ד\"ר ג'ורג' וייז - הפקולטה להנדסה (תחנה 25075), ד\"ר ג'ורג' וייז/ שלום רוזנפלד (תחנה 20794).\nתחנות חלופיות: חיים לבנון – האוניברסיטה (תחנה 21388), חיים לבנון/ ד\"ר ג'ורג' וייז (תחנה 21387), חיים לבנון – מכון התקנים (תחנה 21498).",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13229",
+      "sourceAlertIds": [
+        "14020855975  null  9877  null   null  13229  null",
+        "14020855975  null  9880  null   null  12944  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:9877",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9877:0:01",
+          "patternId": "1:9877:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:9880",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9880:1:01",
+          "patternId": "1:9880:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "932ecda3e69e35e26f4f0123759ee6dfd99df4f4012409651506be0115d812c9",
+      "title": "תל-אביב – עבודות לילה בדרך ההגנה בקטע יגאל אלון/גבעתי לכיוון מזרח - 9.4.2026",
+      "fullContent": "מביאים בזאת לידיעתכם, כי ביום ה' 9.4.2026 משעה 22:00 עד 05:00 בבוקר למחרת, תתבצענה עבודות בקטע הנ\"ל, ויחול שינוי במסלול קו 38, כדלקמן:\n\nמכיוון חולון:\nעד ההגנה פינת אצ\"ל ללא שינוי, ימינה אצ\"ל, שמאלה לח\"י, שמאלה משה דיין, והמשך במסלול הרגיל.\n\nתחנות מבוטלות:\n21305 - גן התקווה/דרך ההגנה\n27050 - דרך ההגנה/גבעתי\n\nלכיוון חולון:\nללא שינוי",
+      "effectiveStart": "2026-04-09T19:00:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:12991",
+      "sourceAlertIds": [
+        "14017599161  null  18632  null   null  12991  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:18632",
+          "patternUrl": "https://www.busnearby.co.il/route/1:18632:1:01",
+          "patternId": "1:18632:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "934b9f05692ba1f00e93a1397cf1d806b648294d6df189dc21e5395798c35549",
+      "title": "עכו,עבודות תשתית,כביש8510,ל'09.04.26",
+      "fullContent": "עקב עבודות תשתית,בעכו קווי /272/ 4 / 60 / 2 /.ידלגו באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T06:04:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:12944",
+      "affectedStop": "1:18779",
       "sourceAlertIds": [
-        "13999539303  null  10978  null   null  12944  null",
-        "13999539303  null  10979  null   null  13359  null",
-        "13999539303  null  10983  null   null  12944  null",
-        "13999539303  null  10984  null   null  13229  null",
-        "13999539303  null  15252  null   null  12944  null",
-        "13999539303  null  15253  null   null  13359  null",
-        "13999539303  null  17193  null   null  12944  null",
-        "13999539303  null  17194  null   null  13359  null",
-        "13999539303  null  29362  null   null  12944  null",
-        "13999539303  null  29363  null   null  13229  null"
+        "14020596239  null  12138  null   null  18779  null",
+        "14020596239  null  17408  null   null  39149  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:10978",
-          "patternUrl": "https://www.busnearby.co.il/route/1:10978:0:01",
-          "patternId": "1:10978:0:01",
+          "apiRouteId": "1:12138",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12138:1:01",
+          "patternId": "1:12138:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:17408",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17408:1:01",
+          "patternId": "1:17408:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "9632adfaf99edeec383c53d256123898be2dbad860387b7d0d22c782b13ff479",
+      "title": "תל אביב, עבודות תשתית צומת ראול ולנברג/דבורה הנביאה, 12+14-16.04.2026",
+      "fullContent": "נוסעים נכבדים,\nבלילות ראשון שלישי רביעי וחמישי 12+14-16.04.2026 החל מהשעה 22:00 עד 05:00 למחרת יסגר צומת ראול ולנברג/דבורה הנביאה.\nאי לכך, קו 634 ישנה את מסלולו בשני היכוונים.\nהשינויים להלן: \nבכיוון צפון:\nהקווים יסיימו נסיעתם ברחוב ראול ולנברג פינת הארד, יבצעו פניה ימינה לארד ופרסה בכיכר, חניה תפעולית בארד ובולנברג לדרום\nבכיוון דרום: \nיוצאים מולנברג/הארד ומשם המשך למסלול הרגיל.\nתחנות מבוטלות: \n21830 ← ראול ולנברג/הארד\n20755 ← דבורה הנביאה/ראול ולנברג\n26807 ← מסוף עתידים\n26806 ← מסוף עתידים\nתחנה חלופית: \n21357 ← ראול ולנברג/הארד\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13244",
+      "sourceAlertIds": [
+        "14020869875  null  34367  null   null  13244  null",
+        "14020869875  null  34368  null   null  48097  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:34367",
+          "patternUrl": "https://www.busnearby.co.il/route/1:34367:0:01",
+          "patternId": "1:34367:0:01",
           "agencyFilterIds": [
             "18"
           ]
         },
         {
-          "apiRouteId": "1:10979",
-          "patternUrl": "https://www.busnearby.co.il/route/1:10979:1:01",
-          "patternId": "1:10979:1:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:10983",
-          "patternUrl": "https://www.busnearby.co.il/route/1:10983:0:01",
-          "patternId": "1:10983:0:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:10984",
-          "patternUrl": "https://www.busnearby.co.il/route/1:10984:1:01",
-          "patternId": "1:10984:1:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:15252",
-          "patternUrl": "https://www.busnearby.co.il/route/1:15252:0:01",
-          "patternId": "1:15252:0:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:15253",
-          "patternUrl": "https://www.busnearby.co.il/route/1:15253:1:01",
-          "patternId": "1:15253:1:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:17193",
-          "patternUrl": "https://www.busnearby.co.il/route/1:17193:0:01",
-          "patternId": "1:17193:0:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:17194",
-          "patternUrl": "https://www.busnearby.co.il/route/1:17194:1:01",
-          "patternId": "1:17194:1:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:29362",
-          "patternUrl": "https://www.busnearby.co.il/route/1:29362:0:01",
-          "patternId": "1:29362:0:01",
-          "agencyFilterIds": [
-            "18"
-          ]
-        },
-        {
-          "apiRouteId": "1:29363",
-          "patternUrl": "https://www.busnearby.co.il/route/1:29363:1:01",
-          "patternId": "1:29363:1:01",
+          "apiRouteId": "1:34368",
+          "patternUrl": "https://www.busnearby.co.il/route/1:34368:1:01",
+          "patternId": "1:34368:1:01",
           "agencyFilterIds": [
             "18"
           ]
         }
       ],
-      "routeCount": 10
+      "routeCount": 2
     },
     {
-      "contentId": "9c5e0a6892dd9f5199da9b861f62a916441940f43292b102b952dd1a613b5cee",
-      "title": "ירושלים, מצב חרום, הכותל המערבי 6.4.2026",
-      "fullContent": "לאור מצב החרום הקיים ובהנחית משטרת ישראל, קווי הכותל לא מגיעים לתחנות מסביב לחומות העיר העתיקה, הם ייסעו בהתאם למסלול הבא:\nקו 1 \nבהלוך ממשיך ישר מרחוב הצנחנים למנהרת צה\"ל, ימינה ליצחק קריב ימינה לשלמה המלך ושמאלה לשבטי ישראל להמשך מסלול. \nתחנות מבוטלות:\n5956 סולטן סולימאן/שער שכם, 1309 מוזיאון רוקפלר/סולטאן סולימאן, 434 דרך יריחו/דרך העופל, 9823 מעלה השלום/מעלות עיר דוד, 2551 הכותל המערבי, 1862 שער האשפות/מעלה השלום, 1879 הר ציון/מעלה השלום, 2778 ממילא/קריב\n\nקו 3\nמגיע עד לקצה של רחוב שמואל הנביא, ממשיך מכיכר זקס ימינה לשבטי ישראל, שמאלה לנביאים, שמאלה לבר-לב חזרה לשמואל הנביא.\nתחנות מבוטלות:\n5956 סולטן סולימאן/שער שכם, 1309 מוזיאון רוקפלר/סולטאן סולימאן, 434 דרך יריחו/דרך העופל, 9823 מעלה השלום/מעלות עיר דוד, 2551 הכותל המערבי, 1862 שער האשפות/מעלה השלום, 1879 הר ציון/מעלה השלום, 5998 שער יפו/יפו\nללא תחנות חלופיות לכל הקווים. \n\nקווים מושפעים: 1,3",
-      "effectiveStart": "2026-04-06T01:00:00.000Z",
-      "effectiveEnd": "2026-04-06T22:00:00.000Z",
+      "contentId": "97dc1fff4bdfefce85dddf04055fa6b000ac4eb8565de1763be0cab7b1bc8b30",
+      "title": "חולון - עבודות לילה בקטע מרחוב ברקת. יום ראשון 12/4/2026.",
+      "fullContent": "ביום ראשון 12/4/2026 החל מהשעה 22:00 ועד 05:00 למחרת ייחסם לתנועה רחוב ברקת, בקטע: שדרות מנחם בגין – הופיין, בשני הכיוונים, עקב עבודות.\n\nקו 5 ממסוף קריית שרת לבית חולים וולפסון וקו 24 מחולון ראשל\"צ (חנה וסע): ייסעו על פי המסלולים הקיימים עד צומת הרחובות גולדה מאיר/ פנחס איילון, יפנו שמאלה לרחוב פנחס איילון, ימינה לשדרות מנחם בגין, שמאלה לרחוב חיים ברלב ויתחברו להמשך המסלולים הקיימים. \n\nתחנות מבוטלות זמנית: גולדה מאיר – קניון חולון (תחנה 36331), ברקת/ הופיין (תחנה 34935), ברקת - ביטוח לאומי (תחנה 35853).\nתחנות חלופיות: פנחס איילון – מדיטק (תחנה 37923), פנחס איילון – מיי מול (תחנה 36935).\n\nקו 5 מבית חולים וולפסון למסוף קריית שרת וקו 24 מראשל\"צ (חנה וסע) לחולון: ייסעו על פי המסלולים הקיימים עד צומת חיים ברלב/ שדרות מנחם בגין/ ברקת, יפנו ימינה לשדרות מנחם בגין, שמאלה לרחוב פנחס איילון, ימינה לרחוב גולדה מאיר ויתחברו להמשך המסלולים הקיימים . \n\nתחנות מבוטלות זמנית: ברקת/ שדרות מנחם בגין (תחנה 35795), ברקת - ביטוח לאומי (תחנה 35846), גולדה מאיר/ ברקת (תחנה 36328). \nתחנות חלופיות: שדרות מנחם בגין/ ברקת (תחנה 37771), פנחס איילון/ שדרות מנחם בגין (תחנה 35280), פנחס איילון – מיי מול (תחנה 39774).\n\nקו 71 מתל אביב-יפו (קריית חינוך) לראשל\"צ (קניון הזהב): ייסע על פי המסלול הקיים עד צומת הרחובות הופיין/ ברקת/ גולדה מאיר, ימשיך ישר לרחוב גולדה מאיר, יפנה ימינה לרחוב פנחס איילון, ימינה לשדרות מנחם בגין, שמאלה לרחוב חיים ברלב ויתחבר להמשך המסלול הקיים. \n\nתחנות מבוטלות זמנית: ברקת/ הופיין (תחנה 34935), ברקת - ביטוח לאומי (תחנה 35853).\nתחנות חלופיות: גולדה מאיר/ ברקת (תחנה 36328), פנחס איילון – מדיטק (תחנה 37923), פנחס איילון – מיי מול (תחנה 36935).\n\nקו 71 מראשל\"צ (קניון הזהב) לתל אביב-יפו (קריית חינוך): ייסע על פי המסלול הקיים עד צומת חיים ברלב/ שדרות מנחם בגין/ ברקת, יפנה ימינה לשדרות מנחם בגין, שמאלה לרחוב פנחס איילון, שמאלה לרחוב גולדה מאיר, ימשיך ישר לרחוב הופיין ויתחבר להמשך המסלול הקיים . \n\nתחנות מבוטלות זמנית: ברקת/ שדרות מנחם בגין (תחנה 35795), ברקת - ביטוח לאומי (תחנה 35846). \nתחנות חלופיות: שדרות מנחם בגין/ ברקת (תחנה 37771), פנחס איילון/ שדרות מנחם בגין (תחנה 35280), פנחס איילון – מיי מול (תחנה 39774).",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:22957",
+      "sourceAlertIds": [
+        "14020885397  null  36593  null   null  22957  null",
+        "14020885397  null  36594  null   null  23645  null",
+        "14020885397  null  9836  null   null  22957  null",
+        "14020885397  null  9838  null   null  23645  null",
+        "14020885397  null  9844  null   null  22957  null",
+        "14020885397  null  9847  null   null  23645  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:36593",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36593:0:01",
+          "patternId": "1:36593:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:36594",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36594:1:01",
+          "patternId": "1:36594:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:9836",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9836:0:01",
+          "patternId": "1:9836:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:9838",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9838:1:01",
+          "patternId": "1:9838:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:9844",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9844:0:01",
+          "patternId": "1:9844:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:9847",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9847:1:01",
+          "patternId": "1:9847:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 6
+    },
+    {
+      "contentId": "a02bb5a44a40cf9d45bccd08c16ea577d6fa0a22f032228e0d1d7a9e694d5202",
+      "title": "טבריה, עבודות בכביש, רחוב מבצע כחול וחום, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n784 - מבצע כחול וחום/מבצע נחשון,\n730 - מבצע כחול וחום/מבצע חורב",
+      "effectiveStart": "2026-04-09T12:18:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:8877",
+      "affectedStop": "1:51530",
       "sourceAlertIds": [
-        "14017148044  null  10393  null   null  8877  null",
-        "14017148044  null  13435  null   null  8877  null"
+        "14020855355  null   null   null   null  51530  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:10393",
-          "patternUrl": "https://www.busnearby.co.il/route/1:10393:0:02",
-          "patternId": "1:10393:0:02",
+          "apiRouteId": "1:15620",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15620:1:01",
+          "patternId": "1:15620:1:01",
           "agencyFilterIds": [
-            "38"
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "a2fbc42c5376780403a23ce0c2780bdd5e235b302f0c466e7813258ceb9daca4",
+      "title": "עבודות לילה במחלף מסובים לכיוון צפון - 9.4.2026",
+      "fullContent": "מביאים בזאת לידיעתכם, כי ביום ה' 9.4.2026 משעה 24:00 עד 05:00 בבוקר, תתבצענה עבודות במחלף הנ\"ל, ויחול שינוי במסלול קו 41, כדלקמן:\n\nלכיוון תחנה מרכזית פתח-תקווה:\nעד בר-לב פינת דרך הטייסים ללא שינוי, שמאלה דרך הטייסים, ימינה עודד, ימינה אלוף שדה, היצמדות לנתיב השמאלי לצורך כניסה לשיקוע, המשך גשר אלוף שדה, המשך דרך שיבא והמשך במסלול הרגיל. \n\nתחנות מבוטלות:\n21379 - פארק אריאל שרון/דרך לוד\n33432 - מחלף מסובים\n\nמכיוון תחנה מרכזית פתח-תקווה:\nללא שינוי",
+      "effectiveStart": "2026-04-09T21:00:00.000Z",
+      "effectiveEnd": "2026-04-11T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:13044",
+      "sourceAlertIds": [
+        "14020729367  null  2453  null   null  13044  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:2453",
+          "patternUrl": "https://www.busnearby.co.il/route/1:2453:1:01",
+          "patternId": "1:2453:1:01",
+          "agencyFilterIds": [
+            "5"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "a622c1e5690dd78075c9b701eafd00c59e1b35de1fa9a7934f6f525583533404",
+      "title": "עילוט,עבודות בכביש,09.04.2026",
+      "fullContent": "עקב עבודות בכביש בעילוט שכונת מערבית קו 13+13א ידלג באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T11:45:00.000Z",
+      "effectiveEnd": "2026-04-09T20:30:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:19055",
+      "sourceAlertIds": [
+        "14020832538  null  41039  null   null  19055  null",
+        "14020832538  null  41042  null   null  19039  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:41039",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41039:0:01",
+          "patternId": "1:41039:0:01",
+          "agencyFilterIds": [
+            "7"
           ]
         },
         {
-          "apiRouteId": "1:13435",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13435:0:01",
-          "patternId": "1:13435:0:01",
+          "apiRouteId": "1:41042",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41042:1:01",
+          "patternId": "1:41042:1:01",
           "agencyFilterIds": [
-            "38"
+            "7"
           ]
         }
       ],
@@ -1110,40 +2850,246 @@
       "routeCount": 5
     },
     {
-      "contentId": "b7f64b9997e1fd885792287f72a76e65733c5b3b78c0172f97f55f3ea769e91a",
-      "title": "תל-אביב - העתקת תחנת הקצה ממסוף ההגנה לתמח\"ת - מבצע \"שאגת הארי - החל מתאריך - 10.3.2026 ועד הודעה חדשה.",
-      "fullContent": "מביאים בזאת לידיעתכם כי החל מהיום, יום ג' 10.3.2026 ועד הודעה חדשה, תועתק תחנת הקצה של קו 166 ממסוף ההגנה לתמח\"ת, במסלול כדלקמן:\n\nלכוון תמח\"ת:\nעד המסגר פינת לה גרדיה ללא שינוי, המשך בנתיב השמאלי, לכיוון העליה לויאדוקט לקומה 7 לתמח\"ת – תחנה סופית בקומה 7.\nתחנות מבוטלות:\n20353 – ת.רכבת ההגנה/החרש\n20859 – מסוף ההגנה/הורדה\n\nמכוון תמח\"ת:\nיציאה מקומה 7 מהתמח\", ירידה בויאדוקט לכיוון צפון, המשך ישר ברחוב המסגר, והמשך במסלול הרגיל לכיוון פ\"ת.\n\nתחנה מבוטלת:\n20860 – מסוף ההגנה/איסוף",
-      "effectiveStart": "2026-03-10T01:30:00.000Z",
-      "effectiveEnd": "2026-04-13T01:30:00.000Z",
+      "contentId": "b5fac9d704a233f0be4636632828ced52646eca928381f8de2ec9656a3bdb24a",
+      "title": "ג'דיידה מכר , עבודות תשתית , 09.04.26",
+      "fullContent": "עקב עבודות תשתית בג'דיידה מכר , קווים , 564/311/305/48/ , מדלגים באופן זמני על התחנות בנוסף לא מתחילים מתחנת מוצא.",
+      "effectiveStart": "2026-04-09T07:54:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
-        "STOP_MOVED"
+        "DETOUR"
       ],
-      "affectedStop": "1:29482",
+      "affectedStop": "1:6711",
       "sourceAlertIds": [
-        "13954036147  null  2738  null   null  29482  null",
-        "13954036147  null  2739  null   null  50878  null"
+        "14020679302  null  17940  null   null  6711  null",
+        "14020679302  null  17947  null   null  6723  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:2738",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2738:0:01",
-          "patternId": "1:2738:0:01",
+          "apiRouteId": "1:17940",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17940:0:01",
+          "patternId": "1:17940:0:01",
           "agencyFilterIds": [
-            "5"
+            "14"
           ]
         },
         {
-          "apiRouteId": "1:2739",
-          "patternUrl": "https://www.busnearby.co.il/route/1:2739:1:01",
-          "patternId": "1:2739:1:01",
+          "apiRouteId": "1:17947",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17947:1:01",
+          "patternId": "1:17947:1:01",
           "agencyFilterIds": [
-            "5"
+            "14"
           ]
         }
       ],
       "routeCount": 2
+    },
+    {
+      "contentId": "b6d780ae99f48977e146e309654b6d9ce782452644f315ee2e04ba8f2a50d69c",
+      "title": "כביש 25 למזרח, תאונת דרכים, בית פלט/אל משאש, 09.04.2026",
+      "fullContent": "עקב תאונת דרכים בסמוך אל בית פלט/אל משאש, נוצרו עומסי תנועה בכביש 25 למזרח.\nייתכנו שינויים בלוחות הזמנים של קווי השירות.\n\nקווים מושפעים:\n48, 49, 56, 390, 391, 393, 397, 399, 790, 794, 993",
+      "effectiveStart": "2026-04-09T09:09:00.000Z",
+      "effectiveEnd": "2026-04-09T15:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020812095  null  26584  null   null   null   null",
+        "14020812095  null  28924  null   null   null   null",
+        "14020812095  null  5170  null   null   null   null",
+        "14020812095  null  7305  null   null   null   null",
+        "14020812095  null  7364  null   null   null   null",
+        "14020812095  null  7371  null   null   null   null",
+        "14020812095  null  7444  null   null   null   null",
+        "14020812095  null  7462  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:26584",
+          "patternUrl": "https://www.busnearby.co.il/route/1:26584:1:01",
+          "patternId": "1:26584:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:28924",
+          "patternUrl": "https://www.busnearby.co.il/route/1:28924:1:01",
+          "patternId": "1:28924:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:5170",
+          "patternUrl": "https://www.busnearby.co.il/route/1:5170:1:01",
+          "patternId": "1:5170:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7305",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7305:0:01",
+          "patternId": "1:7305:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7364",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7364:1:01",
+          "patternId": "1:7364:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7371",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7371:1:01",
+          "patternId": "1:7371:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7444",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7444:1:01",
+          "patternId": "1:7444:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7462",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7462:1:01",
+          "patternId": "1:7462:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 8
+    },
+    {
+      "contentId": "b748279068ea13fb62a4f229c26c8eb11a4af540b4664c04ec373a05e74ffaec",
+      "title": "צומת טללים, תאונת דרכים, צומץ טללים 09.04.2026",
+      "fullContent": "נוסעים נכבדים, \n\nעקב תאונת דרכים בצומת טללים \nהקווים הבאים ישנו את מסלולם לפי הכוונת שוטרים בשטח\nקווים מושפעים: \n60/ 64/ 65/ 140/ 142/ 144 לשני הכיוונים \n\nתחנות מבוטלות:\n13817 צומת טללים\n13800 צומת טללים",
+      "effectiveStart": "2026-04-09T11:30:00.000Z",
+      "effectiveEnd": "2026-04-09T20:30:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:26616",
+      "sourceAlertIds": [
+        "14020834356  null  10871  null   null  26616  null",
+        "14020834356  null  11058  null   null  26616  null",
+        "14020834356  null  11751  null   null  26616  null",
+        "14020834356  null  11826  null   null  26611  null",
+        "14020834356  null  11827  null   null  26616  null",
+        "14020834356  null  17145  null   null  26611  null",
+        "14020834356  null  17148  null   null  26616  null",
+        "14020834356  null  17150  null   null  26611  null",
+        "14020834356  null  17152  null   null  26616  null",
+        "14020834356  null  7988  null   null  26611  null",
+        "14020834356  null  8004  null   null  26616  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10871",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10871:1:01",
+          "patternId": "1:10871:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:11058",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11058:1:01",
+          "patternId": "1:11058:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:11751",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11751:1:01",
+          "patternId": "1:11751:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:11826",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11826:0:01",
+          "patternId": "1:11826:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:11827",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11827:1:01",
+          "patternId": "1:11827:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:17145",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17145:0:01",
+          "patternId": "1:17145:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:17148",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17148:1:01",
+          "patternId": "1:17148:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:17150",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17150:0:01",
+          "patternId": "1:17150:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:17152",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17152:1:01",
+          "patternId": "1:17152:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:7988",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7988:0:01",
+          "patternId": "1:7988:0:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        },
+        {
+          "apiRouteId": "1:8004",
+          "patternUrl": "https://www.busnearby.co.il/route/1:8004:1:01",
+          "patternId": "1:8004:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        }
+      ],
+      "routeCount": 11
     },
     {
       "contentId": "b9a97b9a3c0afc83923f4bc97c33963015c1c1a52d925e6d7b69fbe619be7e7b",
@@ -1200,119 +3146,38 @@
       "routeCount": 4
     },
     {
-      "contentId": "c20f2ae22efbdcd666d4fb46f3e8dd7eb257f4a5010fca7c2a53edf02a7b379a",
-      "title": "נוף הגליל, עבודות בכביש, מנחם אריאב, 06.04.2026",
-      "fullContent": "עקב עבודות בכביש בעיר נוף הגליל, מנחם אריאב\n קווי השירות: 40, 75, 34, 39, 44, 74,20\nסוטים ממסלול הנסיעה ומדלגים על התחנות המצורפות באופן זמני בשני הכיוונים \nתחנות מבוטלות: 54001 ← מנחם אריאב/הצבר, 55044 ← עצמון/שומרון, 54175 ← מרכז רסקו, 54009 ← מרכז רסקו, 53999 ← מנחם אריאב/הצבר, 51200 ← מנחם אריאב, 51201 ← מנחם אריאב/גולן",
-      "effectiveStart": "2026-04-06T05:18:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
+      "contentId": "bb6f22e372cf5d5e86550c319f2f368accb684673239bba5f6b32f908eeea8fe",
+      "title": "פתח תקווה, עבודות חירום , מונטיפיורי/ סולר 09.04.2026",
+      "fullContent": "נוסעים נכבדים \nעקב עבודות חירום \nתיחסם לתנועה מונטיפיורי/ סולר \nבעקבות החסימה יחול שינוי מסלול בקוים \n76 לכיוון פתח תקווה\n279 לכיוון אלעד\n\nהמסלול החלופי לקו 76 לכיוון פתח תקווה.\nנוסעים במסלול הרגיל עד לצומת רוטשילד/ההסתדרות, לא ממשיכים ישר ברח' רוטשילד אלא פונים ימינה לרח' ההסתדרות, שמאלה לרח' חיים עוזר, שמאלה לרח' הברון הירש, \nימינה לרח' יהודה לייב פינסקר וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n31378 חובבי ציון/מונטיפיורי\n32436 מונטיפיורי/ברון הירש\n36764 שוק עירוני/ברון הירש\n\nהמסלול החלופי לקו 279 לכיוון אלעד.\nנוסעים במסלול הרגיל עד לצומת דוד פרנקפורטר/רוטשילד, \nלא פונים שמאלה לרח' רוטשילד אלא ממשיכים \nישר ברח' ההסתדרות, שמאלה לרח' חיים עוזר, \nימינה לרח' יהושע שטמפפר וממשיכים במסלול הרגיל.\nתחנות מבוטלות:\n31378 חובבי ציון/מונטיפיורי\n32436 מונטיפיורי/ברון הירש\n36764 שוק עירוני/ברון הירש",
+      "effectiveStart": "2026-04-09T09:30:00.000Z",
+      "effectiveEnd": "2026-04-09T15:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:4150",
+      "affectedStop": "1:15644",
       "sourceAlertIds": [
-        "14017230696  null  1208  null   null  4150  null",
-        "14017230696  null  1209  null   null  21145  null",
-        "14017230696  null  1299  null   null  21145  null",
-        "14017230696  null  1302  null   null  4150  null",
-        "14017230696  null  13956  null   null  21145  null",
-        "14017230696  null  13957  null   null  4150  null",
-        "14017230696  null  13958  null   null  4506  null",
-        "14017230696  null  13960  null   null  4506  null",
-        "14017230696  null  14021  null   null  4150  null",
-        "14017230696  null  14023  null   null  21145  null"
+        "14020766072  null  1005  null   null  15644  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:1208",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1208:0:01",
-          "patternId": "1:1208:0:01",
+          "apiRouteId": "1:1005",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1005:1:01",
+          "patternId": "1:1005:1:01",
           "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:1209",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1209:1:01",
-          "patternId": "1:1209:1:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:1299",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1299:0:01",
-          "patternId": "1:1299:0:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:1302",
-          "patternUrl": "https://www.busnearby.co.il/route/1:1302:1:01",
-          "patternId": "1:1302:1:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:13956",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13956:1:01",
-          "patternId": "1:13956:1:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:13957",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13957:0:01",
-          "patternId": "1:13957:0:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:13958",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13958:1:01",
-          "patternId": "1:13958:1:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:13960",
-          "patternUrl": "https://www.busnearby.co.il/route/1:13960:1:01",
-          "patternId": "1:13960:1:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:14021",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14021:0:01",
-          "patternId": "1:14021:0:01",
-          "agencyFilterIds": [
-            "6"
-          ]
-        },
-        {
-          "apiRouteId": "1:14023",
-          "patternUrl": "https://www.busnearby.co.il/route/1:14023:1:01",
-          "patternId": "1:14023:1:01",
-          "agencyFilterIds": [
-            "6"
+            "15"
           ]
         }
       ],
-      "routeCount": 10
+      "routeCount": 1
     },
     {
-      "contentId": "e1d5a9571d7b31023c0a288bf6f6b990fc03b70b81f44e101b6cf5d3f7b89e2a",
-      "title": "עכו, עבודות בכביש, 06.04.2026",
+      "contentId": "bfdb3a2dac3f72995c6414383533fc526f76115930dd56c34bcedab258415b63",
+      "title": "עכו, עבודות בכביש, כביש 8510, 09.04.2026",
       "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n51256 - כביש 8510/שדרות מנוף,\n51522 - מסעף יד נתן",
-      "effectiveStart": "2026-04-06T06:55:00.000Z",
-      "effectiveEnd": "2026-04-06T14:00:00.000Z",
+      "effectiveStart": "2026-04-09T06:17:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
@@ -1320,7 +3185,7 @@
       ],
       "affectedStop": "1:18779",
       "sourceAlertIds": [
-        "14017284455  null   null   null   null  18779  null"
+        "14020602445  null   null   null   null  18779  null"
       ],
       "routes": [
         {
@@ -1335,40 +3200,974 @@
       "routeCount": 1
     },
     {
-      "contentId": "f1f8458e1e2bda7fa603b941c50c3a6123160791c4821a3ac5e299219c52c320",
-      "title": "תל אביב-יפו - חסימה רציפה ברחוב שלום רוזנפלד (אוניברסיטת תל אביב). ימים ראשון, שני ושלישי 5-7/4/2026.",
-      "fullContent": "בחול המועד פסח, החל מתחילת השירות ביום ראשון 5/4/2026 ברציפות עד גמר השירות ביום שלישי 7/4/2026 ייחסם לתנועה רחוב שלום רוזנפלד, בשני הכיוונים, עקב עבודות.\n\nקו 222 מראשל\"צ (תחנת רכבת ראשונים) לתל אביב-יפו:ייסע על פי המסלול הקיים עד צומת הרחובות איינשטיין/ חיים לבנון, יפנה שמאלה לרחוב חיים לבנון, ימינה לרחוב קלצ'קין וימינה למסוף האוניברסיטה. \n\nתחנות מבוטלות: האוניברסיטה/ חיים לבנון (תחנה 21513), חיים לבנון – מכון התקנים (תחנה 21498), שלום רוזנפלד – קמפוס ברושים (תחנה 21235), קלאוזנר - הפקולטה להנדסה (תחנה 21665), קלאוזנר - מוזיאון העם היהודי (תחנה 20138), קלצ'קין - בית הספר לרפואה (תחנה 20503).\nתחנה חלופית: חיים לבנון – האוניברסיטה (תחנה 27065).\n\nקו 271 מחולון (קריית שרת) לתל אביב-יפו: ייסע על פי המסלול הקיים עד צומת הרחובות חיים לבנון/ שלום רוזנפלד, ימשיך ישר ברחוב חיים לבנון, יפנה ימינה לרחוב קלצ'קין וימינה למסוף האוניברסיטה. \n\nתחנות מבוטלות: שלום רוזנפלד – קמפוס ברושים (תחנה 21235), קלאוזנר - הפקולטה להנדסה (תחנה 21665), קלאוזנר - מוזיאון העם היהודי (תחנה 20138), קלצ'קין - בית הספר לרפואה (תחנה 20503).\nתחנות חלופיות: חיים לבנון – מכון התקנים (תחנה 21385), חיים לבנון/ ד\"ר ג'ורג' וייז (תחנה 21469), חיים לבנון – האוניברסיטה (תחנה 27065).\n\nקו 271 מתל אביב-יפו לחולון (מסוף קריית שרת): ייצא כרגיל ממסוף קלצ'קין ויפנה שמאלה לרחוב קלצ'קין, שמאלה לרחוב חיים לבנון ויתחבר (בצומת חיים לבנון/ שלום רוזנפלד) להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: קלצ'קין – בית הספר לרפואה (תחנה 20482), קלאוזנר – הפקולטה למדעי החיים (תחנה 21734), קלאוזנר - מוזיאון העם היהודי (תחנה 20137), ד\"ר ג'ורג' וייז - הפקולטה להנדסה (תחנה 25075), ד\"ר ג'ורג' וייז/ שלום רוזנפלד (תחנה 20794).\nתחנות חלופיות: חיים לבנון – האוניברסיטה (תחנה 21388), חיים לבנון/ ד\"ר ג'ורג' וייז (תחנה 21387), חיים לבנון – מכון התקנים (תחנה 21498).",
-      "effectiveStart": "2026-04-05T02:00:00.000Z",
-      "effectiveEnd": "2026-04-07T15:00:00.000Z",
+      "contentId": "c1fe397624f5098dcbd537ab5407cfdaf1d2e97ed927043d2e9d501b16d2907f",
+      "title": "בית שאן, חסימה משטרתית, כביש 90, 09.04.2026",
+      "fullContent": "עקב חסימה משטרתית בצומת בית העלמין על כביש 90, בית שאן - קווי 28, 29 מדלגים על תחנות באופן זמני ב-2 הכיוונים. \n\nתחנות מבוטלות זמנית: 56968 ← בית עלמין בית שאן/כביש 90, 56969 ← בית עלמין בית שאן/כביש 90.",
+      "effectiveStart": "2026-04-09T11:50:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
       "activeNow": true,
       "expired": false,
       "stopConditions": [
         "DETOUR"
       ],
-      "affectedStop": "1:13229",
+      "affectedStop": "1:50037",
       "sourceAlertIds": [
-        "14001512094  null  9877  null   null  13229  null",
-        "14001512094  null  9880  null   null  12944  null"
+        "14020834906  null  15563  null   null  50037  null",
+        "14020834906  null  15564  null   null  50024  null",
+        "14020834906  null  15589  null   null  50024  null",
+        "14020834906  null  15590  null   null  50037  null"
       ],
       "routes": [
         {
-          "apiRouteId": "1:9877",
-          "patternUrl": "https://www.busnearby.co.il/route/1:9877:0:01",
-          "patternId": "1:9877:0:01",
+          "apiRouteId": "1:15563",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15563:0:01",
+          "patternId": "1:15563:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15564",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15564:1:01",
+          "patternId": "1:15564:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15589",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15589:0:01",
+          "patternId": "1:15589:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15590",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15590:1:01",
+          "patternId": "1:15590:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 4
+    },
+    {
+      "contentId": "c39cd37f8a3dd72ee61ae769c18533acc620c3490260435d3afd2cd1ec5cb0f8",
+      "title": "טבריה, עבודות תשתית, רחוב מבצע כחול וחום, 09.04.2026",
+      "fullContent": "עקב עבודות תשתית בשכונה החדשה בטבריה, המושבה רחוב מבצע כחול וחום - קווי 9 מדלגים על תחנות באופן זמני. \n\nתחנות מבוטלות זמנית: 784 ← מבצע כחול וחום/מבצע נחשון, 730 ← מבצע כחול וחום/מבצע חורב.",
+      "effectiveStart": "2026-04-09T11:59:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:51530",
+      "sourceAlertIds": [
+        "14020847887  null  15620  null   null  51530  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:15620",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15620:1:01",
+          "patternId": "1:15620:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "c640bf52a222d242d82e1c55df07ad53d4da3b4516a5ccf61181dfd1c4700d85",
+      "title": "חולון - עבודות לילה בקטע מרחוב ההסתדרות. ימים ראשון 12/4/2026 + שלישי 14/4/2026.",
+      "fullContent": "בימים ראשון 12/4/2026 + שלישי 14/4/2026 מדי לילה החל מהשעה 22:00 ועד 05:00 למחרת ייחסם לתנועה רחוב ההסתדרות, בקטע: וייצמן – זלמן ארן, בשני הכיווניםם, עקב עבודות.\n\nקו 87 מאזור לחניון חולון: ייסע על פי המסלול הקיים עד צומת הרחובות וייצמן/ ההסתדרות, ימשיך ישר ברחוב וייצמן, יפנה ימינה לרחוב הופיין, ימשיך ישר לשדרות יוספטל ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: ההסתדרות/ אחד במאי (תחנה 33889), אילת – מרכז נאות רחל (תחנה 36272).\nתחנות חלופיות: וייצמן – עיריית חולון (תחנה 36363), הופיין – מרכז רפואי מכבי (תחנה 39750).\n\nקו 87 מחניון חולון לאזור: ייסע על פי המסלול הקיים עד צומת שדרות יוספטל/ אילת/ הופיין, ימשיך ישר לרחוב הופיין, יפנה שמאלה לרחוב וייצמן ויתחבר (בצומת וייצמן/ ההסתדרות) להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: אילת/ חצרים (תחנה 37659), ההסתדרות – מרכז נאות רחל (תחנה 36274), ההסתדרות/ אחד במאי (תחנה 31460).\nתחנה חלופית: הופיין – מרכז רפואי מכבי (תחנה 35061).\n\nקו 406 מירושלים לחניון חולון: ייסע על פי המסלול הקיים עד צומת הרחובות וייצמן/ ההסתדרות, ימשיך ישר ברחוב וייצמן, יפנה ימינה לרחוב הופיין, ימשיך ישר לשדרות יוספטל ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: ההסתדרות/ אחד במאי (תחנה 33889), אילת – מרכז נאות רחל (תחנה 36272).\nתחנות חלופיות: וייצמן – עיריית חולון (תחנה 36363), הופיין – מרכז רפואי מכבי (תחנה 39750).\n\nקו 406 מחניון חולון לירושלים: ייסע על פי המסלול הקיים עד צומת שדרות יוספטל/ אילת/ הופיין, ימשיך ישר לרחוב הופיין, יפנה שמאלה לרחוב וייצמן, ימינה לרחוב ההסתדרות ויתחבר להמשך המסלול הקיים.\n\nתחנות מבוטלות זמנית: אילת/ חצרים (תחנה 37659), ההסתדרות/ אחד במאי (תחנה 31460).\nתחנות חלופיות: הופיין – מרכז רפואי מכבי (תחנה 35061), וייצמן – עיריית חולון (תחנה 33895).",
+      "effectiveStart": "2026-04-12T19:00:00.000Z",
+      "effectiveEnd": "2026-04-13T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:21938",
+      "sourceAlertIds": [
+        "14020691242  null  9853  null   null  21938  null",
+        "14020691242  null  9854  null   null  15699  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:9853",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9853:0:01",
+          "patternId": "1:9853:0:01",
           "agencyFilterIds": [
             "3"
           ]
         },
         {
-          "apiRouteId": "1:9880",
-          "patternUrl": "https://www.busnearby.co.il/route/1:9880:1:01",
-          "patternId": "1:9880:1:01",
+          "apiRouteId": "1:9854",
+          "patternUrl": "https://www.busnearby.co.il/route/1:9854:1:01",
+          "patternId": "1:9854:1:01",
           "agencyFilterIds": [
             "3"
           ]
         }
       ],
       "routeCount": 2
+    },
+    {
+      "contentId": "c919606cd36d1155aa8d17bf434e8aa6bef29e77cc467849d46c431fa002f7f4",
+      "title": "נס ציונה, עבודות, כביש 412 לדרום, 09.04.2026",
+      "fullContent": "עקב עבודות נוצרו עומסי תנועה בכביש 412 לדרום, נס ציונה.\nייתכנו שינויים בלוחות הזמנים של קווי השירות.\n\nקווים מושפעים:\n2, 5, 164, 166, 201, 204, 205, 274, 277, 301, 318, 319",
+      "effectiveStart": "2026-04-09T11:19:00.000Z",
+      "effectiveEnd": "2026-04-09T15:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020860199  null  13573  null   null   null   null",
+        "14020860199  null  19602  null   null   null   null",
+        "14020860199  null  19705  null   null   null   null",
+        "14020860199  null  24281  null   null   null   null",
+        "14020860199  null  3315  null   null   null   null",
+        "14020860199  null  3327  null   null   null   null",
+        "14020860199  null  3354  null   null   null   null",
+        "14020860199  null  3362  null   null   null   null",
+        "14020860199  null  41353  null   null   null   null",
+        "14020860199  null  41355  null   null   null   null",
+        "14020860199  null  6585  null   null   null   null",
+        "14020860199  null  7396  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:13573",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13573:0:01",
+          "patternId": "1:13573:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19602",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19602:0:01",
+          "patternId": "1:19602:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:19705",
+          "patternUrl": "https://www.busnearby.co.il/route/1:19705:1:01",
+          "patternId": "1:19705:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:24281",
+          "patternUrl": "https://www.busnearby.co.il/route/1:24281:0:01",
+          "patternId": "1:24281:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:3315",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3315:0:01",
+          "patternId": "1:3315:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:3327",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3327:1:01",
+          "patternId": "1:3327:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:3354",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3354:0:01",
+          "patternId": "1:3354:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:3362",
+          "patternUrl": "https://www.busnearby.co.il/route/1:3362:0:01",
+          "patternId": "1:3362:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:41353",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41353:0:01",
+          "patternId": "1:41353:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:41355",
+          "patternUrl": "https://www.busnearby.co.il/route/1:41355:0:01",
+          "patternId": "1:41355:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:6585",
+          "patternUrl": "https://www.busnearby.co.il/route/1:6585:1:01",
+          "patternId": "1:6585:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:7396",
+          "patternUrl": "https://www.busnearby.co.il/route/1:7396:0:01",
+          "patternId": "1:7396:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 12
+    },
+    {
+      "contentId": "ce5ef80cab46f2e918dcba8284271e52d5d0fc690fafaf1e7156efc8ddc70dc9",
+      "title": "ירושלים - מדרחוב אגריפס. יום חמישי 9/4/2026.",
+      "fullContent": "ביום חמישי 9/4/2026 יתקיים המדרחוב ברחוב אגריפס (לכיוון מערב). אי לכך החל מהשעה 17:00 ועד גמר השירות קו 18, בכיוון הנסיעה ממלחה לבנייני האומה לא ייסע דרך רחוב אגריפס.\n\nתחנות מבוטלות זמנית: אגריפס - שוק מחנה יהודה (תחנה 9870), אגריפס - שוקניון (תחנה 5885), היכל המשפט/ אבא אבן (תחנה 1106).\nתחנות חלופיות: אגריפס/ כי\"ח (תחנה 6134), עליאש (תחנה 3541), בצלאל/ טרומפלדור (תחנה 1570).",
+      "effectiveStart": "2026-04-09T14:00:00.000Z",
+      "effectiveEnd": "2026-04-10T01:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:11510",
+      "sourceAlertIds": [
+        "14020551142  null  10799  null   null  11510  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10799",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10799:1:01",
+          "patternId": "1:10799:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "ce7c190350644c7621cfec6ec49f9e44aeb39493ad2b61dd65357645fbc09949",
+      "title": "נוף הגליל,עבודות בכביש,מנחם אריאב,09.04.2026",
+      "fullContent": "עקב עבודות בכביש בנוף הגליל קווי 431+440, מדלגים באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T07:32:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:18519",
+      "sourceAlertIds": [
+        "14020671397  null  17814  null   null  18519  null",
+        "14020671397  null  17815  null   null  21137  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:17814",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17814:0:01",
+          "patternId": "1:17814:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:17815",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17815:1:01",
+          "patternId": "1:17815:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "cf49a91f5bd2e6fafe389be5919bd9337ab1659935f4ce4365cd334b67157409",
+      "title": "ג'יש, עבודות תשתית, 10-30.04.2026",
+      "fullContent": "עקב עבודות תשתית התחנה הבאה מבוטלת זמנית:\n57503 - מועדון פיס",
+      "effectiveStart": "2026-04-10T03:00:00.000Z",
+      "effectiveEnd": "2026-04-29T22:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:40979",
+      "sourceAlertIds": [
+        "14020702827  null   null   null   null  40979  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:20324",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20324:0:01",
+          "patternId": "1:20324:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:20325",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20325:1:01",
+          "patternId": "1:20325:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "d0e0944a402634485e9cf0462d236ce3d5fa5443cdad5a6013f3ee15ea827a77",
+      "title": "כפר מנדא, עבודות בכביש, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n56582 - מגדל מים/רחוב 66,\n56583 - רחוב 39/אלנבעה,\n56584 - רחוב 39/אלנבעה,\n56586 - שכונת אלמעברה",
+      "effectiveStart": "2026-04-09T11:07:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:48319",
+      "sourceAlertIds": [
+        "14020808536  null   null   null   null  48319  null",
+        "14020808536  null   null   null   null  48321  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:28453",
+          "patternUrl": "https://www.busnearby.co.il/route/1:28453:0:01",
+          "patternId": "1:28453:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:28454",
+          "patternUrl": "https://www.busnearby.co.il/route/1:28454:1:01",
+          "patternId": "1:28454:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "d739e0a39cdacb2987837aa1d9704c4fccf5d98fb63f4a86ca3a6280730525d2",
+      "title": "כפר מנדא,עבודות בכביש,09.04.2026",
+      "fullContent": "עקב עבודות בכביש בכפר מנדא קו 8 ידלג באופן זמני על תחנות.",
+      "effectiveStart": "2026-04-09T10:19:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:48319",
+      "sourceAlertIds": [
+        "14020779770  null  28453  null   null  48319  null",
+        "14020779770  null  28454  null   null  48321  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:28453",
+          "patternUrl": "https://www.busnearby.co.il/route/1:28453:0:01",
+          "patternId": "1:28453:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:28454",
+          "patternUrl": "https://www.busnearby.co.il/route/1:28454:1:01",
+          "patternId": "1:28454:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "db327b99b507f8180239b13c606c3f1c630656b83d5ccbe637ece6842a5bf90f",
+      "title": "ירושלים, עבודות תשתית, רחוב עמק רפאים בקטע מרטין לותר קינג - סגן כהן, 01.04.26 - 14.04.26",
+      "fullContent": "בין תאריכים 01.04.26 - 14.04.26 לאורך כל שעות היממה יתקיימו עבודות ברחוב עמק רפאים בקטע מרטין לותר קינג - סגן כהן בירושלים והכביש יסגר לתנועה \n\nקווי 97, 77, 77א ישנו את מסלולם ללא דילוג על תחנות \n\nקווים ,97 77א, 77 לכיוון מלחה, רמת רחל: \n\nייסעו במסלולם המקורי עד עמק רפאים פינת מרטין לותר קינג, \nיפנו ימינה לרחוב מרטין לותר קינג, יבצעו פרסה בכיכר (מרטין לותר \nקינג/יצחק אלחנן) לרחוב סגן כהן ויחזרו דרך רחוב סגן כהן לרחוב \nעמק רפאים להמשך מסלולם\n \nקווים ,97 77א, 77 לכיוון הגבעה הצרפתית, בנייני האומה:\n\nללא שינוי במסלולי הנסיעה",
+      "effectiveStart": "2026-04-01T02:00:00.000Z",
+      "effectiveEnd": "2026-04-14T02:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "sourceAlertIds": [
+        "14005211440  null  30794  null   null   null   null",
+        "14005211440  null  36950  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:30794",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30794:0:01",
+          "patternId": "1:30794:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:36950",
+          "patternUrl": "https://www.busnearby.co.il/route/1:36950:0:01",
+          "patternId": "1:36950:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "dce14dcd76bd42b58ae006ee1e4ce662184735d77db10ba1bac66f9bf217d0b2",
+      "title": "ג'יש, עבודות בכביש, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנה הבאה מבוטלת זמנית:\n57503 - מועדון פיס",
+      "effectiveStart": "2026-04-09T03:32:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:40979",
+      "sourceAlertIds": [
+        "14020489321  null   null   null   null  40979  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:20324",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20324:0:01",
+          "patternId": "1:20324:0:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        },
+        {
+          "apiRouteId": "1:20325",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20325:1:01",
+          "patternId": "1:20325:1:01",
+          "agencyFilterIds": [
+            "14"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "dfba97b11fcd4c0ed162250cde5ca8fdf3abb1067391ca84c50aa00a8aa0e4e7",
+      "title": "כביש 25 , תאונת דרכים , צומת אבו תלול 09.04.2026",
+      "fullContent": "נוסעים נכבדים \n\nעקב תאונת דרכים בכביש 25 בצומת אבו תלול ישנם עיכובים לקווים הבאים : \n50 לבאר שבע / 59 לבאר שבע / 67 באר שבע",
+      "effectiveStart": "2026-04-09T09:09:00.000Z",
+      "effectiveEnd": "2026-04-09T18:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020787326  null  10848  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10848",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10848:1:01",
+          "patternId": "1:10848:1:01",
+          "agencyFilterIds": [
+            "15"
+          ]
+        }
+      ],
+      "routeCount": 1
+    },
+    {
+      "contentId": "e2b1533e755f77752af22f0ff48d9221a958308091fed5eb3376cb338724063f",
+      "title": "בית שמש, עבודות בכביש, אנה פרנק, 09.4.2026",
+      "fullContent": "בעקבות עבודות תשתית ברחוב אנה פרנק בבית שמש, קווי השירות מוסטים ממסלולם\nקווים מושפעים :-\n3,21,23, 23א",
+      "effectiveStart": "2026-04-09T04:30:00.000Z",
+      "effectiveEnd": "2026-04-09T22:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:49754",
+      "sourceAlertIds": [
+        "14020533563  null  15498  null   null  49754  null",
+        "14020533563  null  30563  null   null  49754  null",
+        "14020533563  null  37094  null   null  49754  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:15498",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15498:0:01",
+          "patternId": "1:15498:0:01",
+          "agencyFilterIds": [
+            "35"
+          ]
+        },
+        {
+          "apiRouteId": "1:30563",
+          "patternUrl": "https://www.busnearby.co.il/route/1:30563:0:01",
+          "patternId": "1:30563:0:01",
+          "agencyFilterIds": [
+            "35"
+          ]
+        },
+        {
+          "apiRouteId": "1:37094",
+          "patternUrl": "https://www.busnearby.co.il/route/1:37094:0:01",
+          "patternId": "1:37094:0:01",
+          "agencyFilterIds": [
+            "35"
+          ]
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "e8eb367d166275440c7d537b7bee89f105ce14d8521196f9949fc58a99f79994",
+      "title": "נוף הגליל, עבודות בכביש, רחוב שדרות מנחם אריאב, 09.04.2026",
+      "fullContent": "עקב עבודות בכביש התחנות הבאות מבוטלות זמנית:\n54001 - מנחם אריאב/הצבר,\n53999 - מנחם אריאב/הצבר,\n51200 - מנחם אריאב",
+      "effectiveStart": "2026-04-09T07:50:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:21137",
+      "sourceAlertIds": [
+        "14020670799  null   null   null   null  18519  null",
+        "14020670799  null   null   null   null  21137  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:17686",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17686:0:01",
+          "patternId": "1:17686:0:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:17687",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17687:1:01",
+          "patternId": "1:17687:1:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:17814",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17814:0:01",
+          "patternId": "1:17814:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:17815",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17815:1:01",
+          "patternId": "1:17815:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:40923",
+          "patternUrl": "https://www.busnearby.co.il/route/1:40923:0:01",
+          "patternId": "1:40923:0:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        },
+        {
+          "apiRouteId": "1:40925",
+          "patternUrl": "https://www.busnearby.co.il/route/1:40925:1:01",
+          "patternId": "1:40925:1:01",
+          "agencyFilterIds": [
+            "6"
+          ]
+        }
+      ],
+      "routeCount": 6
+    },
+    {
+      "contentId": "ebeff057059d24104f6acbb9959776f8da309fd423a7f185e681b696bda9567e",
+      "title": "ירושלים. ביטול תחנה. 9.4.2026",
+      "fullContent": "בהנחיות המשטרה תחנה 2551 הכותל המערבי מבוטלת \nמושפע 1.3.51",
+      "effectiveStart": "2026-04-09T03:00:00.000Z",
+      "effectiveEnd": "2026-04-09T20:30:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:9983",
+      "sourceAlertIds": [
+        "14020524241  null  10393  null   null  9983  null",
+        "14020524241  null  10491  null   null  9983  null",
+        "14020524241  null  13435  null   null  9983  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:10393",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10393:0:02",
+          "patternId": "1:10393:0:02",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:10491",
+          "patternUrl": "https://www.busnearby.co.il/route/1:10491:1:01",
+          "patternId": "1:10491:1:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        },
+        {
+          "apiRouteId": "1:13435",
+          "patternUrl": "https://www.busnearby.co.il/route/1:13435:0:01",
+          "patternId": "1:13435:0:01",
+          "agencyFilterIds": [
+            "38"
+          ]
+        }
+      ],
+      "routeCount": 3
+    },
+    {
+      "contentId": "f130276895161b4cb09848817e1740e2fa80dae92e446981731c6a947aa9794b",
+      "title": "צפת, עבודות תשתית, רחוב יורד הסירההנשיא, 09.04.2026",
+      "fullContent": "עקב עובדות תשתית והורדת מיגוניות ברחוב יורד הסירה שבצפת - קווי 450 חווים עיכובים ב-2 הכיוונים.",
+      "effectiveStart": "2026-04-09T11:39:00.000Z",
+      "effectiveEnd": "2026-04-09T14:00:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020849834  null  15604  null   null   null   null",
+        "14020849834  null  15605  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:15604",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15604:0:01",
+          "patternId": "1:15604:0:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        },
+        {
+          "apiRouteId": "1:15605",
+          "patternUrl": "https://www.busnearby.co.il/route/1:15605:1:01",
+          "patternId": "1:15605:1:01",
+          "agencyFilterIds": [
+            "16"
+          ]
+        }
+      ],
+      "routeCount": 2
+    },
+    {
+      "contentId": "f6698999c751ddbc94293628289c75465d21bdd70a114485f989b4cf2f4738a2",
+      "title": "תל אביב-יפו - עבודות לילה בצומת הרחובות אבן גבירול/ ארלוזורוב. יום חמישי 9/4/2026.",
+      "fullContent": "ביום חמישי 9/4/2026 החל מהשעה 22:00 ועד 05:00 למחרת ייחסם לתנועה צומת הרחובות אבן גבירול/ ארלוזורוב, עקב עבודות.\n\nקווים 74, 277 מראשל\"צ/ אזור התעשייה עקרון 2000 לתל אביב-יפו: \nייסעו על פי המסלולים הקיימים עד צומת אבן גבירול/ בלוך, יפנו ימינה לרחוב בלוך, ימינה לרחוב ארלוזורוב, שמאלה לרחוב וייצמן, שמאלה (אחרי הקפת 3/4 מכיכר המדינה) לרחוב ז'בוטינסקי, ימינה לרחוב אבן גבירול ויתחברו להמשך המסלולים הקיימים.\n\nתחנות מבוטלות זמנית: אבן גבירול - עיריית תל אביב-יפו (תחנה 21123), אבן גבירול – עיריית תל אביב-יפו (תחנה 25818), אבן גבירול/ ארלוזורוב (תחנה 20700).\nתחנה חלופית: בלוך – עיריית תל אביב-יפו (תחנה 25820).\n\nקווים 74, 277 מתל אביב-יפו לראשל\"צ/ אזור התעשייה עקרון 2000:\nייסעו על פי המסלולים הקיימים עד צומת הרחובות אבן גבירול/ ז'בוטינסקי, יפנו שמאלה לרחוב ז'בוטינסקי, ימינה לרחוב רמז, ימשיכו ישר לרחוב בלוך, יפנו שמאלה לרחוב אבן גבירול ויתחברו להמשך המסלולים הקיימים.\n\nתחנות מבוטלות זמנית: אבן גבירול/ ז'בוטינסקי (תחנה 20698), אבן גבירול/ ארלוזורוב (תחנה 20699), אבן גבירול - עיריית תל אביב-יפו (תחנה 25823).\nתחנות חלופיות: ז'בוטינסקי – גימנסיה הרצליה (תחנה 25877), בלוך/ ארלוזורוב (תחנה 25875), בלוך – עיריית תל אביב-יפו (תחנה 25821).",
+      "effectiveStart": "2026-04-09T19:00:00.000Z",
+      "effectiveEnd": "2026-04-10T02:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:12878",
+      "sourceAlertIds": [
+        "14017459239  null  11537  null   null  12878  null",
+        "14017459239  null  24281  null   null  13679  null",
+        "14017459239  null  25570  null   null  13679  null",
+        "14017459239  null  25571  null   null  12878  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:11537",
+          "patternUrl": "https://www.busnearby.co.il/route/1:11537:1:01",
+          "patternId": "1:11537:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:24281",
+          "patternUrl": "https://www.busnearby.co.il/route/1:24281:0:01",
+          "patternId": "1:24281:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:25570",
+          "patternUrl": "https://www.busnearby.co.il/route/1:25570:0:01",
+          "patternId": "1:25570:0:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        },
+        {
+          "apiRouteId": "1:25571",
+          "patternUrl": "https://www.busnearby.co.il/route/1:25571:1:01",
+          "patternId": "1:25571:1:01",
+          "agencyFilterIds": [
+            "3"
+          ]
+        }
+      ],
+      "routeCount": 4
+    },
+    {
+      "contentId": "fd6f69ea5979239026e3c137fcd17649d8fb47898c1ce18a92bd16cfc40251ab",
+      "title": "כביש 77, תאונה, מחלף המוביל, 09.04.2026",
+      "fullContent": "עקב תאונת דרכים במחלף המוביל לכיוון מזרח, כביש 77, נחסם הכביש לתנועה.\nקווי השירות [828+325+311+280+309+310+12+14+320] צפויים לעיכובים ב-2 הכיוונים.",
+      "effectiveStart": "2026-04-09T11:33:00.000Z",
+      "effectiveEnd": "2026-04-09T20:30:00.000Z",
+      "activeNow": true,
+      "expired": false,
+      "stopConditions": [
+        "SIGNIFICANT_DELAYS"
+      ],
+      "sourceAlertIds": [
+        "14020833859  null  1399  null   null   null   null",
+        "14020833859  null  1401  null   null   null   null",
+        "14020833859  null  16493  null   null   null   null",
+        "14020833859  null  16494  null   null   null   null",
+        "14020833859  null  17417  null   null   null   null",
+        "14020833859  null  17418  null   null   null   null",
+        "14020833859  null  20077  null   null   null   null",
+        "14020833859  null  20078  null   null   null   null",
+        "14020833859  null  21073  null   null   null   null",
+        "14020833859  null  21086  null   null   null   null",
+        "14020833859  null  27725  null   null   null   null",
+        "14020833859  null  27726  null   null   null   null",
+        "14020833859  null  27728  null   null   null   null",
+        "14020833859  null  34136  null   null   null   null",
+        "14020833859  null  34137  null   null   null   null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:1399",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1399:0:02",
+          "patternId": "1:1399:0:02",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:1401",
+          "patternUrl": "https://www.busnearby.co.il/route/1:1401:1:02",
+          "patternId": "1:1401:1:02",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:16493",
+          "patternUrl": "https://www.busnearby.co.il/route/1:16493:0:02",
+          "patternId": "1:16493:0:02",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:16494",
+          "patternUrl": "https://www.busnearby.co.il/route/1:16494:1:02",
+          "patternId": "1:16494:1:02",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:17417",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17417:0:01",
+          "patternId": "1:17417:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:17418",
+          "patternUrl": "https://www.busnearby.co.il/route/1:17418:1:01",
+          "patternId": "1:17418:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:20077",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20077:0:01",
+          "patternId": "1:20077:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:20078",
+          "patternUrl": "https://www.busnearby.co.il/route/1:20078:1:01",
+          "patternId": "1:20078:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:21073",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21073:0:01",
+          "patternId": "1:21073:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:21086",
+          "patternUrl": "https://www.busnearby.co.il/route/1:21086:1:01",
+          "patternId": "1:21086:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:27725",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27725:0:01",
+          "patternId": "1:27725:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:27726",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27726:1:01",
+          "patternId": "1:27726:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:27728",
+          "patternUrl": "https://www.busnearby.co.il/route/1:27728:1:01",
+          "patternId": "1:27728:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:34136",
+          "patternUrl": "https://www.busnearby.co.il/route/1:34136:0:01",
+          "patternId": "1:34136:0:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        },
+        {
+          "apiRouteId": "1:34137",
+          "patternUrl": "https://www.busnearby.co.il/route/1:34137:1:01",
+          "patternId": "1:34137:1:01",
+          "agencyFilterIds": [
+            "7"
+          ]
+        }
+      ],
+      "routeCount": 15
+    },
+    {
+      "contentId": "ff753eb59194a8286ef3adeb99a4a7c57c3abd20492dc419e734dac8e81bef4e",
+      "title": "קיסריה, עבודות תשתית תחנת רכבת קיסריה, 09-10.04.2026",
+      "fullContent": "נוסעים נכבדים, \nמתאריך 09.04.26 יום חמישי משעה 23:00 ועד 10.04.26 יום שישי בשעה 16:00,\nיתבצעו עבודות תשתית בתחנת רכבת קיסריה.\nאי לכך, קווים: 10/11/67/80/160/241/716 בשני הכיוונים יסיימו ויתחילו בתחנה:\n43586 הטוחן/גרניט.\nפרסה בכיכר הקרובה וימשיכו במסלול ללא שינוי.\nתחנה מבוטלת:\n2665 מסוף רכבת קיסריה.\nבברכת נסיעה טובה ובטוחה,\nהנהלת קווים.",
+      "effectiveStart": "2026-04-09T20:00:00.000Z",
+      "effectiveEnd": "2026-04-10T13:00:00.000Z",
+      "activeNow": false,
+      "expired": false,
+      "stopConditions": [
+        "DETOUR"
+      ],
+      "affectedStop": "1:51812",
+      "sourceAlertIds": [
+        "14017188783  null  12192  null   null  51812  null",
+        "14017188783  null  12198  null   null  51812  null",
+        "14017188783  null  12278  null   null  51812  null",
+        "14017188783  null  14991  null   null  51812  null",
+        "14017188783  null  34315  null   null  51812  null"
+      ],
+      "routes": [
+        {
+          "apiRouteId": "1:12192",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12192:0:01",
+          "patternId": "1:12192:0:01",
+          "agencyFilterIds": [
+            "18"
+          ]
+        },
+        {
+          "apiRouteId": "1:12198",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12198:1:01",
+          "patternId": "1:12198:1:01",
+          "agencyFilterIds": [
+            "18"
+          ]
+        },
+        {
+          "apiRouteId": "1:12278",
+          "patternUrl": "https://www.busnearby.co.il/route/1:12278:1:01",
+          "patternId": "1:12278:1:01",
+          "agencyFilterIds": [
+            "18"
+          ]
+        },
+        {
+          "apiRouteId": "1:14991",
+          "patternUrl": "https://www.busnearby.co.il/route/1:14991:1:01",
+          "patternId": "1:14991:1:01",
+          "agencyFilterIds": [
+            "18"
+          ]
+        },
+        {
+          "apiRouteId": "1:34315",
+          "patternUrl": "https://www.busnearby.co.il/route/1:34315:1:01",
+          "patternId": "1:34315:1:01",
+          "agencyFilterIds": [
+            "18"
+          ]
+        }
+      ],
+      "routeCount": 5
     }
   ]
 }

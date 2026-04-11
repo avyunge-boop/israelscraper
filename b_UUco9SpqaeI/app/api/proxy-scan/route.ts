@@ -4,10 +4,7 @@ import path from "path"
 import { NextResponse } from "next/server"
 
 import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
-import {
-  isBusnearbyRoutesDatabaseEmpty,
-  resolveOrchestratorRepoRoot,
-} from "@/lib/server/workspace-paths"
+import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 900
@@ -60,13 +57,6 @@ function withBusnearbyRefreshIfNeeded(
   return [...args, "--refresh"]
 }
 
-function touchesBusnearbyScan(args: string[]): boolean {
-  return (
-    args.includes("--all") ||
-    args.some((a) => /^--agency=busnearby$/i.test(a))
-  )
-}
-
 function resolveNodeExecutable(): string {
   const fromEnv = process.env.NODE_BINARY?.trim()
   if (fromEnv && existsSync(fromEnv)) return fromEnv
@@ -103,7 +93,11 @@ type RunOrchestratorOpts = {
   onStderr?: (chunk: string) => void
 }
 
-/** Cloud Run: סריקה דרך שירות הסקרייפר (לא pnpm מקומי). */
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+/** Cloud Run: סריקה דרך שירות הסקרייפר (לא pnpm מקומי). POST /run-scrape מחזיר מיד; ממתינים ל-/status ואז /last-result. */
 async function runOrchestratorViaScraperApi(
   body: ScanBody,
   opts?: RunOrchestratorOpts
@@ -128,10 +122,12 @@ async function runOrchestratorViaScraperApi(
   const text = await res.text()
   let data: {
     ok?: boolean
+    started?: boolean
     exitCode?: number
     stdout?: string
     stderr?: string
     error?: string
+    agency?: string
   }
   try {
     data = JSON.parse(text) as typeof data
@@ -140,6 +136,62 @@ async function runOrchestratorViaScraperApi(
       `Scraper API returned non-JSON (${res.status}): ${text.slice(0, 200)}`
     )
   }
+
+  if (res.status === 409) {
+    throw new Error(
+      `Scraper API: ${data.error ?? "scrape already running"}${data.agency ? ` (${data.agency})` : ""}`
+    )
+  }
+
+  if (data.started === true && data.ok === true) {
+    const pollMs = 3000
+    for (;;) {
+      await sleep(pollMs)
+      const stRes = await fetch(`${base}/status`, { cache: "no-store" })
+      const stText = await stRes.text()
+      let st: { running?: boolean }
+      try {
+        st = JSON.parse(stText) as { running?: boolean }
+      } catch {
+        throw new Error(`Scraper API /status non-JSON: ${stText.slice(0, 200)}`)
+      }
+      if (!st.running) break
+    }
+    const lrRes = await fetch(`${base}/last-result`, { cache: "no-store" })
+    const lrText = await lrRes.text()
+    let lr: {
+      exitCode?: number
+      stdout?: string
+      stderr?: string
+      gcsError?: string
+      error?: string
+    }
+    try {
+      lr = JSON.parse(lrText) as typeof lr
+    } catch {
+      throw new Error(
+        `Scraper API /last-result non-JSON: ${lrText.slice(0, 200)}`
+      )
+    }
+    if (!lrRes.ok) {
+      throw new Error(lr.error ?? `last-result HTTP ${lrRes.status}`)
+    }
+    const stdout = lr.stdout ?? ""
+    let stderr = lr.stderr ?? ""
+    if (lr.gcsError) {
+      stderr = stderr
+        ? `${stderr}\n[GCS] ${lr.gcsError}`
+        : `[GCS] ${lr.gcsError}`
+    }
+    opts?.onStdout?.(stdout)
+    opts?.onStderr?.(stderr)
+    return {
+      code: typeof lr.exitCode === "number" ? lr.exitCode : 1,
+      stdout,
+      stderr,
+    }
+  }
+
   const stdout = data.stdout ?? ""
   const stderr = data.stderr ?? ""
   opts?.onStdout?.(stdout)
@@ -179,24 +231,33 @@ function runOrchestrator(
 
     let child: ReturnType<typeof spawn>
     if (packagedRoot) {
-      const tsxCli = path.join(
-        packagedRoot,
-        "node_modules",
-        "tsx",
-        "dist",
-        "cli.mjs"
-      )
       const nodeBin = resolveNodeExecutable()
       const spawnEnv = { ...env } as Record<string, string | undefined>
       delete spawnEnv.ELECTRON_RUN_AS_NODE
-      child = spawn(nodeBin, [
-        tsxCli,
-        path.join(packagedRoot, "src", "orchestrator.ts"),
-        ...args,
-      ], {
-        cwd: packagedRoot,
-        env: spawnEnv as NodeJS.ProcessEnv,
-      })
+      /** נבנה ב־desktop:prepare — בלי tsx/esbuild (אחרת חסר @esbuild/darwin-* ב־.app) */
+      const bundledOrchestrator = path.join(
+        packagedRoot,
+        "dist",
+        "orchestrator.mjs"
+      )
+      if (existsSync(bundledOrchestrator)) {
+        child = spawn(nodeBin, [bundledOrchestrator, ...args], {
+          cwd: packagedRoot,
+          env: spawnEnv as NodeJS.ProcessEnv,
+        })
+      } else {
+        const tsxCli = path.join(
+          packagedRoot,
+          "node_modules",
+          "tsx",
+          "dist",
+          "cli.mjs"
+        )
+        child = spawn(nodeBin, [tsxCli, path.join(packagedRoot, "src", "orchestrator.ts"), ...args], {
+          cwd: packagedRoot,
+          env: spawnEnv as NodeJS.ProcessEnv,
+        })
+      }
     } else {
       const pnpmArgs = [
         "--filter",
@@ -268,23 +329,6 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     return NextResponse.json({ error: msg }, { status: 400 })
-  }
-
-  // בלי קבצים מקומיים (Cloud Run + SCRAPER_API_URL) אין routes-database בדיסק — הבדיקה תמיד "ריקה" ואסור לחסום.
-  if (
-    !getScraperApiBaseUrl() &&
-    touchesBusnearbyScan(cliArgs) &&
-    !cliArgs.includes("--refresh") &&
-    (await isBusnearbyRoutesDatabaseEmpty())
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "אין מסלולי Bus Nearby בקובץ routes-database.json. מהטרמינל: pnpm run init-routes. או בדשבורד הפעל סריקה עם «רענון מסלולים» (שולח refresh).",
-        code: "BUSNEARBY_ROUTES_REQUIRED",
-      },
-      { status: 400 }
-    )
   }
 
   if (streamMode) {

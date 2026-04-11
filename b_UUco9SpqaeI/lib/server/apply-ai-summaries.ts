@@ -49,20 +49,39 @@ export type AttachAiSummariesOptions = {
    * דורש apiKey; שימושי לדשבורד אחרי שינוי פורמט מזהים.
    */
   generateEggedMissing?: boolean
+  /**
+   * מקסימום קריאות Groq לבקשה אחת (דשבורד). 0 = ללא גבול (למשל שליחת מייל).
+   * ברירת מחדל: מ־GROQ_MAX_SUMMARIES_PER_REQUEST או 12.
+   */
+  maxGeneratePerRequest?: number
 }
 
 /**
  * ממלא aiSummary ממטמון הקובץ; אופציונלית יוצר חסרים ב-Groq.
  * אחרי כל סיכום מוצלח נשמר מיד ל־ai-summaries.json כדי שלא יאבדו בכשל בודד.
  */
+function resolveMaxGeneratePerRequest(options?: AttachAiSummariesOptions): number {
+  if (options?.maxGeneratePerRequest !== undefined) {
+    const n = options.maxGeneratePerRequest
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 12
+  }
+  const raw = process.env.GROQ_MAX_SUMMARIES_PER_REQUEST?.trim()
+  if (raw === "" || raw === undefined) return 12
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 12
+}
+
+/** @returns כמה סיכומים נוצרו בפועל בקריאות Groq (לא כולל מטמון / סיכום שכבר היה במיזוג) */
 export async function attachAiSummariesToAlerts(
   alerts: TransportAlert[],
   apiKey: string | undefined,
   structuredById?: Map<string, StructuredAlertForAi>,
   options?: AttachAiSummariesOptions
-): Promise<void> {
+): Promise<number> {
   const generateMissing = options?.generateMissing === true
   const key = apiKey?.trim()
+  const maxGen = resolveMaxGeneratePerRequest(options)
+  let generated = 0
 
   const cache = await readAiSummariesCache()
 
@@ -88,9 +107,19 @@ export async function attachAiSummariesToAlerts(
       continue
     }
 
+    const fromMerge = sanitizeAiSummaryOutput(alert.aiSummary ?? "").trim()
+    if (fromMerge) {
+      alert.aiSummary = fromMerge
+      continue
+    }
+
     const allowEggedGen =
       generateEggedMissing && isEggedPipelineAlert(alert) && Boolean(key)
     if ((!generateMissing && !allowEggedGen) || !key) {
+      continue
+    }
+
+    if (maxGen > 0 && generated >= maxGen) {
       continue
     }
 
@@ -122,6 +151,7 @@ export async function attachAiSummariesToAlerts(
         const wk = writeKeyForAlert(alert)
         cache.byId[wk] = clean
         await writeAiSummariesCache(cache)
+        generated++
       }
     } catch (e) {
       if (isTooManyRequests(e)) {
@@ -136,4 +166,5 @@ export async function attachAiSummariesToAlerts(
       console.error("[AI] Groq failed (no retry):", alert.id, e)
     }
   }
+  return generated
 }

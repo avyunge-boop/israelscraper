@@ -6,6 +6,7 @@ import {
   fetchScraperDataJson,
   getScraperApiBaseUrl,
 } from "@/lib/server/scraper-api"
+import { ensureDashboardEnvLoaded } from "@/lib/server/env-bootstrap"
 import {
   resolveCanonicalDataDir,
   resolveOrchestratorRepoRoot,
@@ -55,6 +56,7 @@ function routesDatabaseOk(j: unknown): boolean {
 }
 
 export async function GET() {
+  ensureDashboardEnvLoaded()
   const repoRoot = resolveOrchestratorRepoRoot()
   const dataDir = resolveCanonicalDataDir()
 
@@ -137,7 +139,7 @@ export async function GET() {
   }
   if (!scanJ && canRecoverOrScrape) {
     warnings.push(
-      "scan-export.json missing — optional; run full scan to create merged export"
+      "scan-export.json missing — optional; run any completed scan from the dashboard (one agency or “all”) so the orchestrator can write the merged export"
     )
   }
 

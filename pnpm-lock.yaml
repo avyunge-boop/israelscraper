@@ -664,6 +664,9 @@ importers:
       '@types/nodemailer':
         specifier: ^6.4.17
         version: 6.4.23
+      esbuild:
+        specifier: 0.27.3
+        version: 0.27.3
 
 packages:
 

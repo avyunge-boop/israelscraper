@@ -1,5 +1,6 @@
 /**
- * HTTP API for Cloud Run: POST /run-scrape triggers the orchestrator.
+ * HTTP API for Cloud Run: POST /run-scrape starts the orchestrator in the background (returns immediately;
+ * use GET /status and GET /last-result to track completion — avoids HTTP request timeouts on long runs).
  * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME (default israelscraper) to upload data/*.json after a successful run.
  *
  * Email: by default SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=1 (no emails from orchestrator/scrapers).
@@ -51,6 +52,35 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   }
   return argv;
 }
+
+/** Label for /status and POST responses (human-readable scope). */
+function scrapeLabel(body: RunScrapeBody): string {
+  if (body?.all === true) {
+    return body?.refresh === true ? "all (refresh)" : "all";
+  }
+  if (typeof body?.agency === "string" && body.agency.trim()) {
+    const a = body.agency.trim();
+    return body?.refresh === true ? `${a} (refresh)` : a;
+  }
+  return body?.refresh === true ? "all (refresh)" : "all";
+}
+
+type LastScrapeResult = {
+  exitCode: number;
+  gcsUploaded: string[];
+  stdout: string;
+  stderr: string;
+  completedAt: string;
+  gcsError?: string;
+};
+
+const scrapeJob = {
+  running: false,
+  agency: "",
+  startedAt: null as string | null,
+};
+
+let lastScrapeResult: LastScrapeResult | null = null;
 
 function runOrchestrator(argv: string[]): Promise<{
   code: number;
@@ -129,6 +159,21 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
 });
 
+app.get("/status", (_req, res) => {
+  res.status(200).json({
+    running: scrapeJob.running,
+    agency: scrapeJob.running ? scrapeJob.agency : "",
+    startedAt: scrapeJob.startedAt ?? "",
+  });
+});
+
+app.get("/last-result", (_req, res) => {
+  if (lastScrapeResult === null) {
+    return res.status(404).json({ error: "no completed scrape yet" });
+  }
+  return res.status(200).json(lastScrapeResult);
+});
+
 /** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
 app.get("/data/:name", async (req, res) => {
   const name = String(req.params.name ?? "");
@@ -166,39 +211,65 @@ app.get("/data/:name", async (req, res) => {
   }
 });
 
-app.post("/run-scrape", async (req, res) => {
+app.post("/run-scrape", (req, res) => {
   const body = (req.body ?? {}) as RunScrapeBody;
-  const argv = buildOrchestratorArgv(body);
-  try {
-    const { code, stdout, stderr } = await runOrchestrator(argv);
-    let uploaded: string[] = [];
-    const shouldUploadGcs =
-      process.env.SCRAPER_STORAGE === "gcs" &&
-      (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
-    if (shouldUploadGcs) {
-      try {
-        uploaded = await uploadDataArtifactsToGcs();
-      } catch (e) {
-        return res.status(500).json({
-          ok: false,
-          exitCode: code,
-          stdout,
-          stderr,
-          gcsError: String(e),
-        });
-      }
-    }
-    return res.status(code === 0 ? 200 : 500).json({
-      ok: code === 0,
-      exitCode: code,
-      argv,
-      stdout,
-      stderr,
-      gcsUploaded: uploaded,
+  if (scrapeJob.running) {
+    return res.status(409).json({
+      ok: false,
+      error: "scrape already running",
+      agency: scrapeJob.agency,
     });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e) });
   }
+  const argv = buildOrchestratorArgv(body);
+  const label = scrapeLabel(body);
+  scrapeJob.running = true;
+  scrapeJob.agency = label;
+  scrapeJob.startedAt = new Date().toISOString();
+
+  void (async () => {
+    try {
+      const { code, stdout, stderr } = await runOrchestrator(argv);
+      let uploaded: string[] = [];
+      let gcsError: string | undefined;
+      const shouldUploadGcs =
+        process.env.SCRAPER_STORAGE === "gcs" &&
+        (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+      if (shouldUploadGcs) {
+        try {
+          uploaded = await uploadDataArtifactsToGcs();
+        } catch (e) {
+          gcsError = String(e);
+        }
+      }
+      lastScrapeResult = {
+        exitCode: code,
+        gcsUploaded: uploaded,
+        stdout,
+        stderr,
+        completedAt: new Date().toISOString(),
+        ...(gcsError !== undefined ? { gcsError } : {}),
+      };
+      console.log(
+        `[server] scrape finished exit=${code} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
+      );
+    } catch (e) {
+      const msg = String(e);
+      lastScrapeResult = {
+        exitCode: 1,
+        gcsUploaded: [],
+        stdout: "",
+        stderr: msg,
+        completedAt: new Date().toISOString(),
+      };
+      console.error(`[server] scrape failed: ${msg}`);
+    } finally {
+      scrapeJob.running = false;
+      scrapeJob.startedAt = null;
+      scrapeJob.agency = "";
+    }
+  })();
+
+  return res.status(200).json({ ok: true, started: true, agency: label });
 });
 
 const port = Number(process.env.PORT || "8080");

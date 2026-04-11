@@ -16,9 +16,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Database } from "lucide-react"
 import { splitAlertsNewVsExisting } from "@/lib/alert-split"
 import { consumeProxyScanStream } from "@/lib/proxy-scan-stream"
+import { runScrapeRemotePoll } from "@/lib/scraper-remote-poll"
 import { transportAlertsToCsvString } from "@/lib/csv-export"
 import type { AlertProvider, TransportAlert } from "@/lib/transport-alert"
 import {
+  busnearbyScanRoutesOnlyMessage,
   filterTabLabel,
   getDashboardUiBundle,
   parseDashboardLang,
@@ -110,8 +112,18 @@ export function TransportDashboard() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
-  const [isScanning, setIsScanning] = useState(false)
-  const [scanningAgency, setScanningAgency] = useState<string | null>(null)
+  /** מפתחות פעילים: מזהה סוכנות, "all", או "initBnDb" — כל כפתור נעול רק על עצמו. */
+  const [scanningKeys, setScanningKeys] = useState<string[]>([])
+  const addScanKey = useCallback((k: string) => {
+    setScanningKeys((prev) => (prev.includes(k) ? prev : [...prev, k]))
+  }, [])
+  const removeScanKey = useCallback((k: string) => {
+    setScanningKeys((prev) => prev.filter((x) => x !== k))
+  }, [])
+  const isScanningKey = useCallback(
+    (k: string) => scanningKeys.includes(k),
+    [scanningKeys]
+  )
   const [scanInterval, setScanInterval] = useState("6")
 
   const [alerts, setAlerts] = useState<TransportAlert[]>([])
@@ -140,6 +152,24 @@ export function TransportDashboard() {
   const [healthWarnings, setHealthWarnings] = useState<string[]>([])
   const [routesDatabaseOk, setRoutesDatabaseOk] = useState<boolean | null>(null)
   const [routesDbNeedsInit, setRoutesDbNeedsInit] = useState<boolean | null>(null)
+
+  const [ephemeralBanner, setEphemeralBanner] = useState<{
+    text: string
+    tone: "default" | "destructive"
+  } | null>(null)
+
+  const showEphemeralBanner = useCallback(
+    (text: string, tone: "default" | "destructive" = "default") => {
+      setEphemeralBanner({ text, tone })
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!ephemeralBanner) return
+    const id = window.setTimeout(() => setEphemeralBanner(null), 3000)
+    return () => window.clearTimeout(id)
+  }, [ephemeralBanner])
 
   useEffect(() => {
     const fetchHealth = () => {
@@ -186,25 +216,45 @@ export function TransportDashboard() {
       .catch(() => {})
   }, [])
 
-  const refetchAlerts = useCallback((): Promise<void> => {
-    setLoading(true)
-    setLoadError(null)
-    return fetch("/api/transport-alerts")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<TransportAlertsResponse>
-      })
-      .then((data) => {
-        setAlerts(Array.isArray(data.alerts) ? data.alerts : [])
-        setDataLastUpdated(data.meta?.lastUpdated ?? new Date().toISOString())
-      })
-      .catch((e: unknown) => {
-        setLoadError(e instanceof Error ? e.message : "שגיאת טעינה")
-        setAlerts([])
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  /**
+   * טעינת התראות ממטמון (GCS): השרת מושך scan-export דרך GET /data/scan-export.json על שירות הסקרייפר.
+   * @param silent — אחרי סריקה, בלי מסך טעינה מלא.
+   */
+  const refetchAlerts = useCallback(
+    (opts?: { silent?: boolean }): Promise<void> => {
+      if (!opts?.silent) {
+        setLoading(true)
+      }
+      setLoadError(null)
+      return fetch("/api/transport-alerts")
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          return res.json() as Promise<TransportAlertsResponse>
+        })
+        .then((data) => {
+          setAlerts(Array.isArray(data.alerts) ? data.alerts : [])
+          setDataLastUpdated(data.meta?.lastUpdated ?? new Date().toISOString())
+        })
+        .catch((e: unknown) => {
+          setLoadError(e instanceof Error ? e.message : "שגיאת טעינה")
+          setAlerts([])
+        })
+        .finally(() => {
+          if (!opts?.silent) setLoading(false)
+        })
+    },
+    []
+  )
 
+  /** רענון אחרי סריקה: אימות מול GET /data/scan-export.json (פרוקסי) + מיזוג ב-transport-alerts. */
+  const reloadCachedAlertsAfterScrape = useCallback(async () => {
+    await fetch("/api/scraper-bridge/data/scan-export.json", {
+      cache: "no-store",
+    }).catch(() => {})
+    await refetchAlerts({ silent: true })
+  }, [refetchAlerts])
+
+  /** בעת טעינת הדף — טעינת התראות ממטמון (GCS) דרך /api/transport-alerts; לא מפעיל סריקה. */
   useEffect(() => {
     void refetchAlerts()
   }, [refetchAlerts])
@@ -262,21 +312,52 @@ export function TransportDashboard() {
     async (
       body:
         | { agency: string; refresh?: boolean }
-        | { all: true; refresh?: boolean }
+        | { all: true; refresh?: boolean },
+      opts?: { logPrefix?: string }
     ) => {
+      const p = opts?.logPrefix ? `[${opts.logPrefix}] ` : ""
       setDeskTab("ops")
       setScanLogs([])
       setScanProgress(null)
+
+      const cfgRes = await fetch("/api/scraper-bridge/config", {
+        cache: "no-store",
+      })
+      const cfg = (await cfgRes.json().catch(() => ({}))) as {
+        useRemoteScraper?: boolean
+      }
+
+      if (cfg.useRemoteScraper === true) {
+        const { ok, exitCode } = await runScrapeRemotePoll(body, {
+          onLog: (text) =>
+            setScanLogs((prev) => [...prev.slice(-400), `${p}${text.trimEnd()}`]),
+          onProgress: (pr) => {
+            setScanProgress({
+              agency: String(pr.agency ?? ""),
+              displayName: String(pr.displayName ?? pr.agency ?? ""),
+              current: Number(pr.current ?? 0),
+              total: Number(pr.total ?? 0),
+              alertsFound: Number(pr.alertsFound ?? 0),
+            })
+          },
+        })
+        setScanProgress(null)
+        if (!ok) {
+          throw new Error(`האורקסטרטור יצא עם קוד ${exitCode}`)
+        }
+        return
+      }
+
       await consumeProxyScanStream(body, {
         onLog: (text) =>
-          setScanLogs((prev) => [...prev.slice(-400), text.trimEnd()]),
-        onProgress: (p) => {
+          setScanLogs((prev) => [...prev.slice(-400), `${p}${text.trimEnd()}`]),
+        onProgress: (pr) => {
           setScanProgress({
-            agency: String(p.agency ?? ""),
-            displayName: String(p.displayName ?? p.agency ?? ""),
-            current: Number(p.current ?? 0),
-            total: Number(p.total ?? 0),
-            alertsFound: Number(p.alertsFound ?? 0),
+            agency: String(pr.agency ?? ""),
+            displayName: String(pr.displayName ?? pr.agency ?? ""),
+            current: Number(pr.current ?? 0),
+            total: Number(pr.total ?? 0),
+            alertsFound: Number(pr.alertsFound ?? 0),
           })
         },
       })
@@ -296,11 +377,15 @@ export function TransportDashboard() {
       const data = (await res.json().catch(() => ({}))) as {
         error?: string
         sent?: number
+        emailSkipped?: boolean
       }
       if (!res.ok) {
         throw new Error(data.error ?? res.statusText)
       }
-      return data.sent ?? 0
+      return {
+        sent: data.sent ?? 0,
+        emailSkipped: data.emailSkipped === true,
+      }
     },
     [recipientEmail]
   )
@@ -308,56 +393,88 @@ export function TransportDashboard() {
   const handleScanAgency = useCallback(
     async (agency: string) => {
       const filter = AGENCY_SCAN_MAP[agency] ?? "all"
-      setIsScanning(true)
-      setScanningAgency(agency)
+      addScanKey(agency)
       try {
-        await runProxyScan({ agency })
-        await refetchAlerts()
-        const n = await sendReportAfterScan(filter)
+        await runProxyScan({ agency }, { logPrefix: agency })
+        await reloadCachedAlertsAfterScrape()
+        if (agency === "busnearby") {
+          showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
+          return
+        }
+        const { sent, emailSkipped } = await sendReportAfterScan(filter)
         const scope = filterTabLabel(lang, filter)
-        window.alert(scanCompleteMessage(lang, n, scope))
+        showEphemeralBanner(
+          scanCompleteMessage(lang, sent, scope, { emailSkipped })
+        )
       } catch (e) {
-        window.alert(e instanceof Error ? e.message : scanOrEmailError(lang))
+        showEphemeralBanner(
+          e instanceof Error ? e.message : scanOrEmailError(lang),
+          "destructive"
+        )
       } finally {
-        setIsScanning(false)
-        setScanningAgency(null)
+        removeScanKey(agency)
       }
     },
-    [lang, refetchAlerts, runProxyScan, sendReportAfterScan]
+    [
+      addScanKey,
+      lang,
+      reloadCachedAlertsAfterScrape,
+      removeScanKey,
+      runProxyScan,
+      sendReportAfterScan,
+      showEphemeralBanner,
+    ]
   )
 
   const handleInitBusnearbyRoutesDb = useCallback(async () => {
-    setIsScanning(true)
-    setScanningAgency("initBnDb")
+    addScanKey("initBnDb")
     try {
-      await runProxyScan({ agency: "busnearby", refresh: true })
-      await refetchAlerts()
-      const n = await sendReportAfterScan("busnearby")
-      const scope = filterTabLabel(lang, "busnearby")
-      window.alert(scanCompleteMessage(lang, n, scope))
+      await runProxyScan({ agency: "busnearby", refresh: true }, {
+        logPrefix: "initBnDb",
+      })
+      await reloadCachedAlertsAfterScrape()
+      showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : scanOrEmailError(lang))
+      showEphemeralBanner(
+        e instanceof Error ? e.message : scanOrEmailError(lang),
+        "destructive"
+      )
     } finally {
-      setIsScanning(false)
-      setScanningAgency(null)
+      removeScanKey("initBnDb")
     }
-  }, [lang, refetchAlerts, runProxyScan, sendReportAfterScan])
+  }, [
+    addScanKey,
+    lang,
+    reloadCachedAlertsAfterScrape,
+    removeScanKey,
+    runProxyScan,
+    showEphemeralBanner,
+  ])
 
   const handleScanAll = useCallback(async () => {
-    setIsScanning(true)
-    setScanningAgency("all")
+    addScanKey("all")
     try {
-      await runProxyScan({ all: true })
-      await refetchAlerts()
-      const n = await sendReportAfterScan("all")
-      window.alert(scanAllCompleteMessage(lang, n))
+      await runProxyScan({ all: true }, { logPrefix: "all" })
+      await reloadCachedAlertsAfterScrape()
+      const { sent, emailSkipped } = await sendReportAfterScan("all")
+      showEphemeralBanner(scanAllCompleteMessage(lang, sent, { emailSkipped }))
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : scanOrEmailError(lang))
+      showEphemeralBanner(
+        e instanceof Error ? e.message : scanOrEmailError(lang),
+        "destructive"
+      )
     } finally {
-      setIsScanning(false)
-      setScanningAgency(null)
+      removeScanKey("all")
     }
-  }, [lang, refetchAlerts, runProxyScan, sendReportAfterScan])
+  }, [
+    addScanKey,
+    lang,
+    reloadCachedAlertsAfterScrape,
+    removeScanKey,
+    runProxyScan,
+    sendReportAfterScan,
+    showEphemeralBanner,
+  ])
 
   const handleExport = useCallback(() => {
     const csv = transportAlertsToCsvString(exportSlice)
@@ -410,6 +527,28 @@ export function TransportDashboard() {
 
   return (
     <div className="min-h-screen bg-background" dir={pageDir}>
+      {ephemeralBanner && (
+        <div
+          className="fixed top-4 left-1/2 z-[100] w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 px-1"
+          role="status"
+          aria-live="polite"
+        >
+          <Alert
+            variant={
+              ephemeralBanner.tone === "destructive" ? "destructive" : "default"
+            }
+            className={
+              ephemeralBanner.tone === "destructive"
+                ? "shadow-md"
+                : "border-border/80 bg-muted/90 text-foreground shadow-md backdrop-blur-sm"
+            }
+          >
+            <AlertDescription className="text-sm leading-snug">
+              {ephemeralBanner.text}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <DashboardHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -493,9 +632,8 @@ export function TransportDashboard() {
           onScanAgency={handleScanAgency}
           onScanAll={handleScanAll}
           onInitBusnearbyRoutesDb={handleInitBusnearbyRoutesDb}
-          isScanning={isScanning}
-          scanningAgency={scanningAgency}
-          scanProgress={isScanning ? scanProgress : null}
+          isScanningKey={isScanningKey}
+          scanProgress={scanProgress}
           scanInterval={scanInterval}
           onIntervalChange={setScanInterval}
           onExport={handleExport}

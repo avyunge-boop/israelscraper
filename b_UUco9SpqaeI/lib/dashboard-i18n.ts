@@ -122,7 +122,7 @@ const HE: DashboardUiStrings = {
   translateFailed: "התרגום נכשל",
   translationEnglish: "אנגלית",
   noSummaryYet:
-    "אין סיכום עדיין — סיכומים נטענים מ־data/ai-summaries.json לאחר יצירה (למשל בשליחת דוח למייל).",
+    "אין סיכום עדיין — רענן את הדף (נוצרים סיכומים בקבוצות) או שלח דוח למייל.",
   readMore: "קרא עוד",
   readLess: "הצג פחות",
   dateStart: "תאריך התחלה:",
@@ -204,7 +204,7 @@ const EN: DashboardUiStrings = {
   translateFailed: "Translation failed",
   translationEnglish: "English",
   noSummaryYet:
-    "No summary yet — summaries load from data/ai-summaries.json after generation (e.g. when sending an email report).",
+    "No summary yet — refresh the page (batch limit) or send an email report to generate more.",
   readMore: "Read more",
   readLess: "Show less",
   dateStart: "Start:",
@@ -289,18 +289,43 @@ export function filterTabLabel(
   return filter
 }
 
+/** Bus Nearby מעדכן בעיקר routes-database — לא scan-export; בלי הודעת "0 התראות". */
+export function busnearbyScanRoutesOnlyMessage(lang: DashboardLang): string {
+  if (lang === "en") {
+    return "Bus Nearby scan finished. Routes data was updated (routes-database.json)."
+  }
+  return "סריקת Bus Nearby הושלמה. נתוני מסלולים עודכנו (routes-database.json)."
+}
+
 export function scanCompleteMessage(
   lang: DashboardLang,
   n: number,
-  scope: string
+  scope: string,
+  opts?: { emailSkipped?: boolean }
 ): string {
+  if (opts?.emailSkipped) {
+    if (lang === "en") {
+      return `Done: scan completed. No email — set BUS_ALERTS_SMTP_HOST and BUS_ALERTS_EMAIL_FROM to send reports. Filter: ${scope}.`
+    }
+    return `הסתיים: הסריקה הושלמה. מייל לא נשלח — הגדר BUS_ALERTS_SMTP_HOST ו-BUS_ALERTS_EMAIL_FROM (למשל ב-.env או Cloud Run). מסנן: ${scope}.`
+  }
   if (lang === "en") {
     return `Done: email report sent with ${n} alert(s) (filter: ${scope}).`
   }
   return `הסתיים: נשלח מייל עם ${n} התראות (מסנן: ${scope})`
 }
 
-export function scanAllCompleteMessage(lang: DashboardLang, n: number): string {
+export function scanAllCompleteMessage(
+  lang: DashboardLang,
+  n: number,
+  opts?: { emailSkipped?: boolean }
+): string {
+  if (opts?.emailSkipped) {
+    if (lang === "en") {
+      return `Scan completed. No email — configure SMTP env vars to send reports (all operators).`
+    }
+    return `הסריקה הושלמה. מייל לא נשלח — להגדרת דוח במייל יש להגדיר משתני SMTP (כל המפעילים).`
+  }
   if (lang === "en") {
     return `Email report sent with ${n} alert(s) (all operators).`
   }

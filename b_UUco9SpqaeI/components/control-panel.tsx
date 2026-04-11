@@ -21,8 +21,8 @@ interface ControlPanelProps {
   onScanAgency: (agency: string) => void
   onScanAll: () => void
   onInitBusnearbyRoutesDb: () => void
-  isScanning: boolean
-  scanningAgency: string | null
+  /** רק הכפתור עם אותו מפתח נחסם — סריקות מקבילות לסוכנויות שונות אפשריות. */
+  isScanningKey: (key: string) => boolean
   scanProgress: ScanProgressPayload
   scanInterval: string
   onIntervalChange: (interval: string) => void
@@ -48,8 +48,7 @@ export function ControlPanel({
   onScanAgency,
   onScanAll,
   onInitBusnearbyRoutesDb,
-  isScanning,
-  scanningAgency,
+  isScanningKey,
   scanProgress,
   scanInterval,
   onIntervalChange,
@@ -68,15 +67,15 @@ export function ControlPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-bold">{ui.manualActions}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4" aria-busy={isScanning}>
+        <CardContent className="space-y-4" aria-busy={scanProgress !== null}>
           <div className="flex flex-wrap gap-2 justify-stretch sm:justify-start">
             {agencies.map((agency) => (
               <Button
                 key={agency.id}
                 variant="outline"
                 onClick={() => onScanAgency(agency.id)}
-                disabled={isScanning}
-                aria-busy={scanningAgency === agency.id}
+                disabled={isScanningKey(agency.id)}
+                aria-busy={isScanningKey(agency.id)}
                 title={ui.scanNow}
                 className="relative h-12 min-w-[9rem] shrink-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto border-border hover:bg-muted"
               >
@@ -84,8 +83,8 @@ export function ControlPanel({
                   className={`absolute start-2 top-1/2 -translate-y-1/2 size-2 rounded-full shrink-0 ${agency.color}`}
                 />
                 <span className="me-1 truncate">{agency.name}</span>
-                {(scanningAgency === agency.id ||
-                  (scanningAgency === "all" &&
+                {(isScanningKey(agency.id) ||
+                  (isScanningKey("all") &&
                     scanProgress?.agency === agency.id)) && (
                   <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
                     {scanProgress?.agency === agency.id
@@ -93,8 +92,8 @@ export function ControlPanel({
                       : "…"}
                   </span>
                 )}
-                {scanningAgency === agency.id ||
-                (scanningAgency === "all" &&
+                {isScanningKey(agency.id) ||
+                (isScanningKey("all") &&
                   scanProgress?.agency === agency.id) ? (
                   <Spinner className="size-4 shrink-0" />
                 ) : (
@@ -103,7 +102,7 @@ export function ControlPanel({
               </Button>
             ))}
           </div>
-          {scanProgress && isScanning && (
+          {scanProgress && (
             <p className="text-[11px] text-muted-foreground text-center w-full max-w-xl mx-auto" dir="ltr">
               {scanProgress.displayName} · {ui.scanProgressLabel}{" "}
               {scanProgress.current}/{scanProgress.total} · Found: {scanProgress.alertsFound}{" "}
@@ -116,30 +115,30 @@ export function ControlPanel({
               variant="secondary"
               size="sm"
               className="w-full max-w-md gap-2 text-xs border-dashed"
-              disabled={isScanning}
-              aria-busy={scanningAgency === "initBnDb"}
+              disabled={isScanningKey("initBnDb")}
+              aria-busy={isScanningKey("initBnDb")}
               title={ui.initRoutesDbHint}
               onClick={onInitBusnearbyRoutesDb}
             >
-              {scanningAgency === "initBnDb" ? (
+              {isScanningKey("initBnDb") ? (
                 <Spinner className="size-4 shrink-0" />
               ) : (
                 <Database className="size-4 shrink-0" />
               )}
-              {scanningAgency === "initBnDb" ? ui.initRoutesDbRunning : ui.initRoutesDb}
+              {isScanningKey("initBnDb") ? ui.initRoutesDbRunning : ui.initRoutesDb}
             </Button>
           </div>
           <div className="flex w-full justify-center pt-0.5">
             <Button
             onClick={onScanAll}
-            disabled={isScanning}
-            aria-busy={isScanning}
+            disabled={isScanningKey("all")}
+            aria-busy={isScanningKey("all")}
             className="w-full max-w-md mx-auto bg-primary text-primary-foreground hover:bg-primary/90 h-12 shrink-0"
           >
-            {isScanning ? (
+            {isScanningKey("all") ? (
               <>
                 <Spinner className="size-5 me-2 shrink-0" />
-                {scanningAgency === "all" ? ui.scanningAll : ui.scanningInProgress}
+                {ui.scanningAll}
               </>
             ) : (
               <>

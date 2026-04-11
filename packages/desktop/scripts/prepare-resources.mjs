@@ -84,6 +84,23 @@ execSync(
   }
 );
 
+/**
+ * האפליקציה המותקנת מריצה את האורקסטרטור עם node — לא tsx (tsx→esbuild חסר
+ * @esbuild/darwin-* אחרי pnpm deploy). קובץ ESM אחד, תלות ב-node_modules של ה-deploy.
+ */
+const scraperPkg = path.join(repoRoot, "packages", "scraper");
+const orchestratorBundle = path.join(scraperDest, "dist", "orchestrator.mjs");
+fs.mkdirSync(path.dirname(orchestratorBundle), { recursive: true });
+console.log("[desktop:prepare] Bundling orchestrator.mjs (no tsx/esbuild at runtime)…");
+execSync(
+  `pnpm exec esbuild src/orchestrator.ts --bundle --platform=node --format=esm --target=node20 --outfile="${orchestratorBundle}" --packages=external`,
+  {
+    cwd: scraperPkg,
+    stdio: "inherit",
+    env: { ...process.env },
+  }
+);
+
 const cacheDir = path.join(scraperDest, "chromium-cache");
 fs.mkdirSync(cacheDir, { recursive: true });
 console.log("[desktop:prepare] Puppeteer Chromium → chromium-cache…");
