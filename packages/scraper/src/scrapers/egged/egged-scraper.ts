@@ -14,7 +14,10 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { launchPuppeteerBrowser } from "../puppeteer-helpers";
+import {
+  getPuppeteerLaunchArgs,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -400,7 +403,11 @@ export async function runEggedScan(
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await launchPuppeteerBrowser();
+    browser = await puppeteer.launch({
+      headless: true,
+      ...(chromePath ? { executablePath: chromePath } : {}),
+      args: getPuppeteerLaunchArgs(chromePath),
+    });
 
     const page = await browser.newPage();
     await applyPageDefaults(page);

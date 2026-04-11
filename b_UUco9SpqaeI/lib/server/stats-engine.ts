@@ -1,10 +1,21 @@
 import { readFile } from "fs/promises"
 import path from "path"
 
-import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
+import { fetchScraperDataFileText } from "@/lib/server/scraper-api"
+import { resolveCanonicalDataDir } from "@/lib/server/workspace-paths"
 
 const SCAN_EXPORT = () =>
-  path.join(resolveOrchestratorRepoRoot(), "data", "scan-export.json")
+  path.join(resolveCanonicalDataDir(), "scan-export.json")
+
+async function readScanExportRaw(): Promise<string | null> {
+  const remote = await fetchScraperDataFileText("scan-export.json")
+  if (remote !== null) return remote
+  try {
+    return await readFile(SCAN_EXPORT(), "utf-8")
+  } catch {
+    return null
+  }
+}
 
 type SourceRow = {
   sourceId: string
@@ -50,7 +61,8 @@ export type DashboardStats = {
 export async function computeDashboardStats(): Promise<DashboardStats> {
   let sources: SourceRow[] = []
   try {
-    const raw = await readFile(SCAN_EXPORT(), "utf-8")
+    const raw = await readScanExportRaw()
+    if (raw === null) throw new Error("no scan-export")
     const j = JSON.parse(raw) as { sources?: SourceRow[] }
     sources = Array.isArray(j.sources) ? j.sources : []
   } catch {

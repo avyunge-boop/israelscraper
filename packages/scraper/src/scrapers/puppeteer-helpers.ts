@@ -5,53 +5,35 @@ import puppeteer, { type LaunchOptions } from "puppeteer";
 const MACOS_CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-/** Chromium מהחבילה `chromium` ב-Debian/Ubuntu וב-Docker של Cloud Run */
-export const LINUX_SYSTEM_CHROMIUM = "/usr/bin/chromium";
-
-/**
- * ארגומנטי launch לסביבות headless בקונטיינרים (Cloud Run וכו').
- * @see https://pptr.dev/troubleshooting
- */
-export const PUPPETEER_LAUNCH_ARGS_DEFAULT = [
+/** Headless/server-safe Chromium flags (no `--single-process`; deprecated). */
+export const DEFAULT_PUPPETEER_ARGS = [
   "--no-sandbox",
-  /** מפורש לקונטיינרים / Cloud Run — לצד `--no-sandbox` */
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
-  /**
-   * חובה לקונטיינרים: Puppeteer מסמן `pipe: true` רק אם הארגומנט הזה מופיע ב־args.
-   * בלי pipe, Node מחכה ל־WebSocket ב־stderr — ועם `dumpio` אותו stream כבר מנותב ל־process.stderr,
-   * כך ששורת `DevTools listening` לא מגיעה ל־readline ומתקבל TimeoutError אחרי 30s.
-   */
-  "--remote-debugging-pipe",
-  /**
-   * ללא `--single-process`: במצב single-process Chromium על לינוקס/קונטיינר לעיתים לא מדפיס
-   * את שורת ה-remote debugging ל-stdout בזמן, ו-Puppeteer נתקע עד timeout.
-   */
-  "--user-data-dir=/tmp/puppeteer_user_data",
   "--disable-gpu",
-  "--font-render-hinting=none",
-  "--disable-extensions",
+  "--no-first-run",
+  "--no-zygote",
 ] as const;
 
-function launchArgKey(flag: string): string {
-  const eq = flag.indexOf("=");
-  return eq === -1 ? flag : flag.slice(0, eq);
+/** Cloud Run sets `K_SERVICE`; Docker often has `/.dockerenv`. */
+export function isContainerRuntime(): boolean {
+  return Boolean(process.env.K_SERVICE) || existsSync("/.dockerenv");
 }
 
-/** מונע כפילות כשהקריאה מוסיפה ארגומנטים שכבר בברירת המחדל */
-function mergeLaunchArgs(
-  defaults: readonly string[],
-  extra: string[]
-): string[] {
-  const seen = new Set(defaults.map(launchArgKey));
-  const out = [...defaults];
-  for (const a of extra) {
-    const k = launchArgKey(a);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(a);
+/**
+ * Args for `puppeteer.launch({ args })`.
+ * - Bundled Chromium: full server defaults.
+ * - System Chrome/Chromium in a container (e.g. Cloud Run with `PUPPETEER_EXECUTABLE_PATH`): same defaults.
+ * - Local desktop Chrome path: minimal flags (avoid unnecessary sandbox disable).
+ */
+export function getPuppeteerLaunchArgs(chromePath: string | undefined): string[] {
+  if (!chromePath) {
+    return [...DEFAULT_PUPPETEER_ARGS];
   }
-  return out;
+  if (isContainerRuntime()) {
+    return [...DEFAULT_PUPPETEER_ARGS];
+  }
+  return ["--disable-dev-shm-usage"];
 }
 
 export function findChromiumExecutable(): string | undefined {

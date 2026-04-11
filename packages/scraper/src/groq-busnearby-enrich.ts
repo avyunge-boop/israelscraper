@@ -8,11 +8,7 @@ import { loadRootEnv } from "./repo-paths";
 
 const MODEL = "llama-3.1-8b-instant";
 
-const DISPATCHER_SYSTEM = `Role: Professional Transport Dispatcher & Hebrew Editor.
-Task: Create a single-sentence public transport alert in Hebrew from the raw text.
-Format: One continuous sentence. No periods. No line breaks. No colons except inside times (e.g. 22:00).
-Start with "עקב" when describing a reason. Be formal and concise.
-Return ONLY the Hebrew sentence.`;
+const DISPATCHER_SYSTEM = `אתה עוזר מקצועי לכתיבת הודעות שינוי מסלולי תחבורה ציבורית בעברית, במבנה קבוע, מדויק, זורם ומקצועי ביותר. כתוב תמיד הודעה אחת רציפה במשפט אחד בלבד (ללא שורות חדשות, ללא נקודותיים מיותרות וללא חזרות). כללים מחייבים: 1. פתח תמיד במילה "עקב" ומיד אחריה את סיבת ההפרעה. מיד לאחר הסיבה ציין את שם הרחוב והעיר בפורמט: ברחוב [שם הרחוב המלא] ב[שם העיר המלא], (פסיק אחרי שם העיר). אם שם העיר לא מופיע - אל תזכיר עיר כלל. 2. מיד אחרי הפסיק: אם יש 3 קווים או פחות: "קיים שינוי במסלול הקווים [מספר], [מספר] ו-[מספר]". אם יש 4 קווים או יותר: "קיים שינוי במסלול קווים נבחרים". אם השינוי לכיוון אחד בלבד - הוסף "לכיוון [צפון/דרום/מזרח/מערב]". 3. לעולם אל תציין רחובות חלופיים או תחנות חלופיות. 4. חבר פרטי תאריך ושעה: אם חוזר מדי לילה/יום - פתח ב"מדי לילה" או "מדי יום". תאריכים: "[יום בשבוע מלא], [מספר] [שם חודש מלא]". אם ההפרעה כבר התחילה - כתוב רק "עד [יום בשבוע], [מספר] [חודש]". שעות: "בין השעות [שעה] ועד [שעה]". 5. משפט אחד רציף וזורם בלבד, ללא נקודה באמצע. דוגמה לפלט: עקב עבודות תשתית ברחוב יפו בירושלים, קיים שינוי במסלול קווים נבחרים עד יום שישי, 11 באפריל בין השעות 22:00 ועד 05:00`;
 
 const TRANSLATE_SYSTEM =
   "Translate the following Hebrew transport alert to clear English. Output only the translation, no quotes.";
@@ -40,8 +36,19 @@ async function groqText(
   return String(completion.choices[0]?.message?.content ?? "").trim();
 }
 
+function hasCompleteGroqMeta(a: NormalizedAlert): boolean {
+  const he =
+    typeof a.meta?.dispatcherSummaryHe === "string"
+      ? a.meta.dispatcherSummaryHe.trim()
+      : "";
+  const en =
+    typeof a.meta?.summaryEn === "string" ? a.meta.summaryEn.trim() : "";
+  return he.length > 0 && en.length > 0;
+}
+
 /**
- * מעשיר כל התראה ב-meta.dispatcherSummaryHe ו-meta.summaryEn (ו-meta.fullDescription לתצוגה).
+ * מעשיר התראות ב-meta.dispatcherSummaryHe ו-meta.summaryEn.
+ * מדלג על התראות שכבר נשמרו (למשל מ־routes-database.json) — חוסך קריאות Groq.
  */
 export async function enrichBusnearbyAlertsWithGroq(
   alerts: NormalizedAlert[]
@@ -51,8 +58,24 @@ export async function enrichBusnearbyAlertsWithGroq(
   if (!key || alerts.length === 0) return alerts;
 
   const out: NormalizedAlert[] = [];
+  let skipped = 0;
   for (let i = 0; i < alerts.length; i++) {
     const a = alerts[i]!;
+    if (hasCompleteGroqMeta(a)) {
+      const he = String(a.meta?.dispatcherSummaryHe ?? "").trim();
+      out.push({
+        ...a,
+        meta: {
+          ...a.meta,
+          dispatcherSummaryHe: he,
+          summaryEn: String(a.meta?.summaryEn ?? "").trim(),
+          fullDescription: he || a.content,
+        },
+      });
+      skipped++;
+      continue;
+    }
+
     const raw = `${a.title}\n\n${a.content}`.trim();
     try {
       const he = await groqText(key, DISPATCHER_SYSTEM, `Raw alert:\n${raw}`);
@@ -74,6 +97,11 @@ export async function enrichBusnearbyAlertsWithGroq(
       out.push(a);
     }
     await sleep(200);
+  }
+  if (skipped > 0) {
+    console.log(
+      `[groq-busnearby] skipped ${skipped}/${alerts.length} (already had HE+EN); Groq for ${alerts.length - skipped}`
+    );
   }
   return out;
 }

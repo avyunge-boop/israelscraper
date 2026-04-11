@@ -20,6 +20,8 @@ interface DashboardHeaderProps {
   onLanguageChange: (lang: DashboardLang) => void
   healthOk?: boolean | null
   healthFailures?: string[]
+  /** אזהרות (למשל חסר scan-export) כשהמערכת עדיין "בריאה" */
+  healthWarnings?: string[]
 }
 
 export function DashboardHeader({
@@ -31,10 +33,18 @@ export function DashboardHeader({
   onLanguageChange,
   healthOk,
   healthFailures = [],
+  healthWarnings = [],
 }: DashboardHeaderProps) {
   const showHealth = healthOk !== null && healthOk !== undefined
+  const hasWarnings = healthOk && healthWarnings.length > 0
   const healthDot =
-    !showHealth ? "bg-muted-foreground" : healthOk ? "bg-emerald-500" : "bg-destructive"
+    !showHealth
+      ? "bg-muted-foreground"
+      : healthOk
+        ? hasWarnings
+          ? "bg-amber-500"
+          : "bg-emerald-500"
+        : "bg-destructive"
 
   return (
     <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -55,30 +65,51 @@ export function DashboardHeader({
                       <button
                         type="button"
                         className="flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted/60"
-                        title={healthOk ? ui.healthGood : ui.healthIssues}
+                        title={
+                          healthOk
+                            ? hasWarnings
+                              ? ui.healthWarningsHint
+                              : ui.healthGood
+                            : ui.healthIssues
+                        }
                       >
                         <span
                           className={`size-2 rounded-full shrink-0 ${healthDot}`}
                           aria-hidden
                         />
-                        {healthOk ? ui.healthGood : ui.healthBad}
-                        {!healthOk && healthFailures.length > 0 && (
+                        {healthOk
+                          ? hasWarnings
+                            ? ui.healthWarningsShort
+                            : ui.healthGood
+                          : ui.healthBad}
+                        {((!healthOk && healthFailures.length > 0) ||
+                          hasWarnings) && (
                           <AlertTriangle className="size-3.5 text-amber-600" />
                         )}
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="max-w-sm">
-                      {healthFailures.length === 0 ? (
-                        <DropdownMenuItem disabled>
-                          {ui.healthGood}
+                      {healthFailures.length > 0
+                        ? healthFailures.map((f, i) => (
+                            <DropdownMenuItem key={i} className="text-destructive">
+                              {f}
+                            </DropdownMenuItem>
+                          ))
+                        : null}
+                      {healthWarnings.map((w, i) => (
+                        <DropdownMenuItem
+                          key={`w-${i}`}
+                          className="text-amber-800 dark:text-amber-200 whitespace-normal"
+                        >
+                          {w}
                         </DropdownMenuItem>
-                      ) : (
-                        healthFailures.map((f, i) => (
-                          <DropdownMenuItem key={i} className="text-destructive">
-                            {f}
+                      ))}
+                      {healthFailures.length === 0 &&
+                        healthWarnings.length === 0 && (
+                          <DropdownMenuItem disabled>
+                            {ui.healthGood}
                           </DropdownMenuItem>
-                        ))
-                      )}
+                        )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}

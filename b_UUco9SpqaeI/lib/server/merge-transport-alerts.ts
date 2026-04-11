@@ -9,6 +9,7 @@ import path from "path"
 import {
   expandWorkspacePaths,
   resolveCanonicalDataDir,
+  resolveOrchestratorRepoRoot,
   tryReadJsonFirstExisting,
 } from "@/lib/server/workspace-paths"
 import {

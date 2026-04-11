@@ -3,9 +3,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootEnv = path.join(__dirname, '..', '.env')
-if (existsSync(rootEnv)) {
-  const text = readFileSync(rootEnv, 'utf-8')
+function mergeEnvFromFile(filePath) {
+  if (!existsSync(filePath)) return
+  const text = readFileSync(filePath, 'utf-8')
   for (const line of text.split('\n')) {
     const t = line.trim()
     if (!t || t.startsWith('#')) continue
@@ -22,6 +22,10 @@ if (existsSync(rootEnv)) {
     if (process.env[key] === undefined) process.env[key] = val
   }
 }
+
+mergeEnvFromFile(path.join(__dirname, '..', '.env'))
+mergeEnvFromFile(path.join(__dirname, '.env'))
+mergeEnvFromFile(path.join(__dirname, '.env.local'))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

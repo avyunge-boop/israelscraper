@@ -16,7 +16,10 @@ import {
   sendBusAlertsSummaryEmail,
   type SendBusAlertsEmailOptions,
 } from "../../email-notifier";
-import { launchPuppeteerBrowser } from "../puppeteer-helpers";
+import {
+  getPuppeteerLaunchArgs,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 const LIST_URL =
   process.env.DAN_ALERTS_URL?.trim() || "https://www.dan.co.il/updates";
@@ -214,7 +217,11 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await launchPuppeteerBrowser();
+    browser = await puppeteer.launch({
+      headless: true,
+      ...(chromePath ? { executablePath: chromePath } : {}),
+      args: getPuppeteerLaunchArgs(chromePath),
+    });
 
     const listPage = await browser.newPage();
     await applyPageDefaults(listPage);

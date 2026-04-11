@@ -2,27 +2,76 @@ import { existsSync, readFileSync } from "fs"
 import path from "path"
 import { NextResponse } from "next/server"
 
-import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
+import {
+  fetchScraperDataJson,
+  getScraperApiBaseUrl,
+} from "@/lib/server/scraper-api"
+import {
+  resolveCanonicalDataDir,
+  resolveOrchestratorRepoRoot,
+} from "@/lib/server/workspace-paths"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
-  const root = resolveOrchestratorRepoRoot()
-  const routesPath = path.join(root, "data", "routes-database.json")
-  const scanPath = path.join(root, "data", "scan-export.json")
+async function readDataJson(fileName: string): Promise<unknown | null> {
+  if (getScraperApiBaseUrl()) {
+    const j = await fetchScraperDataJson(fileName)
+    if (j !== null) return j
+  }
+  const p = path.join(resolveCanonicalDataDir(), fileName)
+  if (!existsSync(p)) return null
+  try {
+    return JSON.parse(readFileSync(p, "utf-8")) as unknown
+  } catch {
+    return null
+  }
+}
 
-  const routesOk =
-    existsSync(routesPath) &&
-    (() => {
-      try {
-        const raw = readFileSync(routesPath, "utf-8").trim()
-        if (!raw) return false
-        const j = JSON.parse(raw) as { routes?: unknown[] }
-        return Array.isArray(j.routes) && j.routes.length > 0
-      } catch {
-        return false
-      }
-    })()
+function hasBusAlertsJson(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const alerts = (j as { alerts?: unknown[] }).alerts
+  return Array.isArray(alerts) && alerts.length > 0
+}
+
+function hasEggedAlertsJson(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const bag = (j as { alerts?: Record<string, unknown> }).alerts
+  if (!bag || typeof bag !== "object") return false
+  return Object.keys(bag).length > 0
+}
+
+function scanExportHasAlerts(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const sources = (j as { sources?: Array<{ alerts?: unknown[] }> }).sources
+  return (sources ?? []).some(
+    (s) => Array.isArray(s.alerts) && s.alerts.length > 0
+  )
+}
+
+function routesDatabaseOk(j: unknown): boolean {
+  if (!j || typeof j !== "object") return false
+  const routes = (j as { routes?: unknown[] }).routes
+  return Array.isArray(routes) && routes.length > 0
+}
+
+export async function GET() {
+  const repoRoot = resolveOrchestratorRepoRoot()
+  const dataDir = resolveCanonicalDataDir()
+
+  const routesJ = await readDataJson("routes-database.json")
+  const routesOk = routesDatabaseOk(routesJ)
+
+  const busJ = await readDataJson("bus-alerts.json")
+  const eggedJ = await readDataJson("egged-alerts.json")
+  const scanJ = await readDataJson("scan-export.json")
+
+  const cachedAlertsOk =
+    hasBusAlertsJson(busJ) ||
+    hasEggedAlertsJson(eggedJ) ||
+    scanExportHasAlerts(scanJ)
+
+  const canRecoverOrScrape = routesOk || cachedAlertsOk
+  const routesDbNeedsInit = !canRecoverOrScrape
 
   const key = process.env.GROQ_API_KEY?.trim()
   let groqOk = !key
@@ -49,8 +98,8 @@ export async function GET() {
   const agencies: Record<string, { lastScrapedAt: string | null; ok: boolean }> =
     {}
   try {
-    if (existsSync(scanPath)) {
-      const raw = JSON.parse(readFileSync(scanPath, "utf-8")) as {
+    if (scanJ && typeof scanJ === "object") {
+      const raw = scanJ as {
         sources?: Array<{
           sourceId: string
           success?: boolean
@@ -68,20 +117,46 @@ export async function GET() {
     /* */
   }
 
+  const scanExportExists =
+    scanJ !== null ||
+    existsSync(path.join(dataDir, "scan-export.json"))
+
   const failures: string[] = []
   if (key && !groqOk) failures.push("Groq API unreachable or error")
-  if (!routesOk) failures.push("routes-database.json missing or empty")
-  if (!existsSync(scanPath)) failures.push("scan-export.json missing")
+  if (routesDbNeedsInit) {
+    failures.push(
+      "No routes DB and no cached alerts — run Bus Nearby init or a scan"
+    )
+  }
 
-  const healthy = failures.length === 0 && groqOk && routesOk && existsSync(scanPath)
+  const warnings: string[] = []
+  if (!routesOk && cachedAlertsOk) {
+    warnings.push(
+      "routes-database.json missing or empty — run Bus Nearby refresh to rebuild routes list"
+    )
+  }
+  if (!scanJ && canRecoverOrScrape) {
+    warnings.push(
+      "scan-export.json missing — optional; run full scan to create merged export"
+    )
+  }
+
+  const healthy =
+    failures.length === 0 && groqOk && canRecoverOrScrape
 
   return NextResponse.json({
     healthy,
     groqOk,
     routesDatabaseOk: routesOk,
-    scanExportExists: existsSync(scanPath),
+    routesDbNeedsInit,
+    cachedAlertsOk,
+    canRecoverOrScrape,
+    scanExportExists,
     agencies,
     failures,
-    dataRoot: path.join(root, "data"),
+    warnings,
+    dataRoot: dataDir,
+    repoRoot,
+    scraperApiUrl: getScraperApiBaseUrl() ?? null,
   })
 }

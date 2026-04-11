@@ -23,11 +23,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/ ./packages/
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
 RUN pnpm install --no-frozen-lockfile
-ENV PUPPETEER_LAUNCH_TIMEOUT_MS=120000
-# dumpio כבוי ב-production — מונע race עם WebSocket על stderr; PUPPETEER_DUMP_IO=1 לדיבוג
-ENV PUPPETEER_DUMP_IO=0
 ENV NODE_ENV=production
 EXPOSE 8080
 CMD ["tsx", "packages/scraper/src/server.ts"]

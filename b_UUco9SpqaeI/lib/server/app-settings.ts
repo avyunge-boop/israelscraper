@@ -1,6 +1,10 @@
 import { mkdir, readFile, writeFile } from "fs/promises"
 import path from "path"
 
+import {
+  fetchScraperDataJson,
+  getScraperApiBaseUrl,
+} from "@/lib/server/scraper-api"
 import { resolveCanonicalDataDir } from "@/lib/server/workspace-paths"
 
 function settingsPath(): string {
@@ -12,6 +16,15 @@ export interface AppSettings {
 }
 
 export async function readAppSettings(): Promise<AppSettings> {
+  if (getScraperApiBaseUrl()) {
+    const remote = await fetchScraperDataJson("settings.json")
+    if (remote !== null && typeof remote === "object") {
+      const j = remote as AppSettings
+      const email =
+        typeof j.recipientEmail === "string" ? j.recipientEmail.trim() : ""
+      return { recipientEmail: email || undefined }
+    }
+  }
   try {
     const raw = await readFile(settingsPath(), "utf-8")
     const j = JSON.parse(raw) as AppSettings

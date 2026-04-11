@@ -36,6 +36,11 @@ export const ROUTES_DATABASE_JSON = path.join(DATA_DIR, "routes-database.json");
 export const BUS_ALERTS_JSON = path.join(DATA_DIR, "bus-alerts.json");
 export const BUS_ALERTS_PREV_JSON = path.join(DATA_DIR, "bus-alerts-prev.json");
 export const AGENCIES_REGISTRY_JSON = path.join(DATA_DIR, "agencies-registry.json");
+/** סוכני agencyFilter ללא לינקים (אחרי ‎--refresh‎) — לא ייחפשו שוב עד ‎--restore-busnearby-agency-filters‎ */
+export const BUSNEARBY_AGENCY_EXCLUSIONS_JSON = path.join(
+  DATA_DIR,
+  "busnearby-agency-exclusions.json"
+);
 export const EGGED_ALERTS_JSON = path.join(DATA_DIR, "egged-alerts.json");
 
 /** מיקומים לפני איחוד ל־data/ */

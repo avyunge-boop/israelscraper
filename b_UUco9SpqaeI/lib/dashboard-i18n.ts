@@ -68,6 +68,8 @@ export type DashboardUiStrings = {
   healthGood: string
   healthBad: string
   healthIssues: string
+  healthWarningsShort: string
+  healthWarningsHint: string
   scanProgressLabel: string
   routesDbMissingTitle: string
   routesDbMissingDescription: string
@@ -146,6 +148,8 @@ const HE: DashboardUiStrings = {
   healthGood: "מערכת תקינה",
   healthBad: "בעיה במערכת",
   healthIssues: "לחץ לפרטים",
+  healthWarningsShort: "תקין — יש אזהרות",
+  healthWarningsHint: "המערכת עובדת; יש הודעות אזהרה (למשל קובץ export חסר)",
   scanProgressLabel: "התקדמות",
   routesDbMissingTitle: "מסד מסלולים חסר או ריק",
   routesDbMissingDescription:
@@ -226,6 +230,8 @@ const EN: DashboardUiStrings = {
   healthGood: "System healthy",
   healthBad: "System issue",
   healthIssues: "Click for details",
+  healthWarningsShort: "OK — warnings",
+  healthWarningsHint: "System is up; see warnings (e.g. missing scan export)",
   scanProgressLabel: "Progress",
   routesDbMissingTitle: "Routes database missing or empty",
   routesDbMissingDescription:

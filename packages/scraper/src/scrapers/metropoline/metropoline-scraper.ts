@@ -12,7 +12,10 @@ import type {
   ScraperRunContext,
   SourceScanResult,
 } from "../types";
-import { launchPuppeteerBrowser } from "../puppeteer-helpers";
+import {
+  getPuppeteerLaunchArgs,
+  resolveChromeExecutable,
+} from "../puppeteer-helpers";
 
 const LIST_URL =
   process.env.METROPOLINE_ALERTS_URL?.trim() || "https://www.metropoline.com/updates";
@@ -108,7 +111,11 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
   try {
-    browser = await launchPuppeteerBrowser();
+    browser = await puppeteer.launch({
+      headless: true,
+      ...(chromePath ? { executablePath: chromePath } : {}),
+      args: getPuppeteerLaunchArgs(chromePath),
+    });
 
     const page = await browser.newPage();
     await applyPageDefaults(page);

@@ -208,23 +208,6 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "israel-scraper" });
 });
 
-app.get("/status", (_req, res) => {
-  res.status(200).json({
-    running: scrapeJob.running,
-    agency: scrapeJob.running ? scrapeJob.agency : "",
-    startedAt: scrapeJob.startedAt ?? "",
-    logSnapshot: scrapeJob.running ? scrapeLiveLog : "",
-    logTruncated: scrapeJob.running && scrapeLiveLogTruncated,
-  });
-});
-
-app.get("/last-result", (_req, res) => {
-  if (lastScrapeResult === null) {
-    return res.status(404).json({ error: "no completed scrape yet" });
-  }
-  return res.status(200).json(lastScrapeResult);
-});
-
 /** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
 app.get("/data/:name", async (req, res) => {
   const name = String(req.params.name ?? "");
@@ -239,6 +222,49 @@ app.get("/data/:name", async (req, res) => {
           .status(200)
           .type("application/json; charset=utf-8")
           .send(fromGcs);
+      }
+    }
+    const fp = path.join(DATA_DIR, name);
+    if (!existsSync(fp)) {
+      const stub = EMPTY_JSON_STUBS[name];
+      if (stub !== undefined) {
+        return res
+          .status(200)
+          .type("application/json; charset=utf-8")
+          .send(stub);
+      }
+      return res.status(404).json({ error: "not found" });
+    }
+    const raw = readFileSync(fp, "utf-8");
+    return res
+      .status(200)
+      .type("application/json; charset=utf-8")
+      .send(raw);
+  } catch (e) {
+    return res.status(500).json({ error: String(e) });
+  }
+});
+
+app.post("/run-scrape", async (req, res) => {
+  const body = (req.body ?? {}) as RunScrapeBody;
+  const argv = buildOrchestratorArgv(body);
+  try {
+    const { code, stdout, stderr } = await runOrchestrator(argv);
+    let uploaded: string[] = [];
+    const shouldUploadGcs =
+      process.env.SCRAPER_STORAGE === "gcs" &&
+      (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+    if (shouldUploadGcs) {
+      try {
+        uploaded = await uploadDataArtifactsToGcs();
+      } catch (e) {
+        return res.status(500).json({
+          ok: false,
+          exitCode: code,
+          stdout,
+          stderr,
+          gcsError: String(e),
+        });
       }
     }
     const fp = path.join(DATA_DIR, name);

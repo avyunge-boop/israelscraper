@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "fs"
 import { readFile } from "fs/promises"
 import path from "path"
 
+import { fetchScraperDataJson, getScraperApiBaseUrl } from "@/lib/server/scraper-api"
+
 /**
  * שורשים אפשריים של ה-workspace (אפליקציית Next, שורש repo, וכו').
  * מאפשר קריאת data/*.json ו-scan-export ללא תלות ב-cwd.
@@ -78,28 +80,38 @@ export function resolveOrchestratorRepoRoot(): string {
   return path.resolve(cwd, "..")
 }
 
+function routesDatabaseJsonIsEmpty(j: unknown): boolean {
+  if (j === null || typeof j !== "object" || Array.isArray(j)) return true
+  const routes = (j as { routes?: unknown }).routes
+  if (!Array.isArray(routes)) return true
+  let valid = 0
+  for (const r of routes) {
+    if (r && typeof r === "object" && !Array.isArray(r)) {
+      const pid = String((r as { patternId?: string }).patternId ?? "").trim()
+      if (pid) valid++
+    }
+  }
+  return valid === 0
+}
+
 /**
  * true אם אין מסלולי Bus Nearby תקפים ב־data/routes-database.json
  * (חסר, JSON שבור, {}, routes ריק, או רשומות בלי patternId).
+ * עם SCRAPER_API_URL — קריאה מה-API של הסקרייפר.
  */
-export function isBusnearbyRoutesDatabaseEmpty(): boolean {
-  const p = path.join(resolveOrchestratorRepoRoot(), "data", "routes-database.json")
+export async function isBusnearbyRoutesDatabaseEmpty(): Promise<boolean> {
+  if (getScraperApiBaseUrl()) {
+    const j = await fetchScraperDataJson("routes-database.json")
+    if (j === null) return true
+    return routesDatabaseJsonIsEmpty(j)
+  }
+  const p = path.join(resolveCanonicalDataDir(), "routes-database.json")
   if (!existsSync(p)) return true
   try {
     const raw = readFileSync(p, "utf-8").trim()
     if (!raw) return true
     const j = JSON.parse(raw) as unknown
-    if (j === null || typeof j !== "object" || Array.isArray(j)) return true
-    const routes = (j as { routes?: unknown }).routes
-    if (!Array.isArray(routes)) return true
-    let valid = 0
-    for (const r of routes) {
-      if (r && typeof r === "object" && !Array.isArray(r)) {
-        const pid = String((r as { patternId?: string }).patternId ?? "").trim()
-        if (pid) valid++
-      }
-    }
-    return valid === 0
+    return routesDatabaseJsonIsEmpty(j)
   } catch {
     return true
   }
