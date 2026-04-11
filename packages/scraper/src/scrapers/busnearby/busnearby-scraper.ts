@@ -20,6 +20,7 @@
  * Israel Railways (agencyFilter=2) is blacklisted — never scanned; stripped from DB on load.
  *
  * Run refresh: pnpm --filter @workspace/scraper exec tsx ./src/scrape-bus-alerts.ts --refresh
+ * Cap routes per run (Cloud Run): --max-routes=100 (limits stale-queue visits only).
  *
  * Multi-source: implements AgencyScraper via runScan() → SourceScanResult.
  */
@@ -884,6 +885,25 @@ function cliArgv(context?: ScraperRunContext): string[] {
   return process.argv.slice(2);
 }
 
+/** Parse `--max-routes=N` from argv (Cloud Run / API cap). Returns undefined if unset or invalid. */
+function parseMaxRoutesFromArgv(argv: string[]): number | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    const eq = a.match(/^--max-routes=(\d+)$/i);
+    if (eq) {
+      const n = Number(eq[1]);
+      if (Number.isFinite(n) && n >= 1) return Math.min(Math.floor(n), 1_000_000);
+      return undefined;
+    }
+    if (/^--max-routes$/i.test(a) && argv[i + 1]) {
+      const n = Number(argv[i + 1]);
+      i++;
+      if (Number.isFinite(n) && n >= 1) return Math.min(Math.floor(n), 1_000_000);
+    }
+  }
+  return undefined;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function runBusnearbyInternal(
@@ -1032,13 +1052,22 @@ async function runBusnearbyInternal(
   );
 
   const nowMs = Date.now();
-  const scanQueue = fullScanMode
+  let scanQueue = fullScanMode
     ? routeList
     : routeList.filter((r) => routeNeedsRescan(r, nowMs));
   const skippedFresh = routeList.length - scanQueue.length;
 
+  const maxRoutesCap = parseMaxRoutesFromArgv(argv);
+  const queueBeforeCap = scanQueue.length;
+  if (maxRoutesCap != null && scanQueue.length > maxRoutesCap) {
+    scanQueue = scanQueue.slice(0, maxRoutesCap);
+    console.log(
+      `[busnearby] --max-routes=${maxRoutesCap}: capped queue ${queueBeforeCap} → ${scanQueue.length} (remaining stale routes wait for next run)`
+    );
+  }
+
   console.log(
-    `\n═══ Route scan queue: ${scanQueue.length} stale/missing (of ${routeList.length} in DB) ═══`
+    `\n═══ Route scan queue: ${scanQueue.length} to scan this run (${queueBeforeCap} stale/missing of ${routeList.length} in DB) ═══`
   );
   if (fullScanMode) {
     console.log(`  (--full-scan: ignoring ${SCAN_STALE_AFTER_H}h freshness)`);
@@ -1150,6 +1179,8 @@ async function runBusnearbyInternal(
     agencyFiltersWithRoutes: discoveryMode ? filtersWithRoutes : 0,
     uniqueRoutesInDatabase: routeList.length,
     routesScannedThisRun: scanQueue.length,
+    staleRoutesEligibleBeforeCap: queueBeforeCap,
+    maxRoutesPerRun: maxRoutesCap ?? null,
     routesSkippedFresh: skippedFresh,
     scanStaleAfterHours: SCAN_STALE_AFTER_H,
     fullScan: fullScanMode,
@@ -1311,6 +1342,8 @@ async function runBusnearbyInternal(
       outputFile: OUTPUT_FILE,
       uniqueRoutesInDatabase: routeList.length,
       routesScannedThisRun: scanQueue.length,
+      maxRoutesPerRun: maxRoutesCap ?? null,
+      staleRoutesEligibleBeforeCap: queueBeforeCap,
       routesSkippedFresh: skippedFresh,
       dedupedCount: deduped.length,
       addedVsPreviousRun: addedIds.length,
