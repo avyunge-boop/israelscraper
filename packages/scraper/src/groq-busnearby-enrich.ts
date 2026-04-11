@@ -13,8 +13,36 @@ const DISPATCHER_SYSTEM = `אתה עוזר מקצועי לכתיבת הודעו�
 const TRANSLATE_SYSTEM =
   "Translate the following Hebrew transport alert to clear English. Output only the translation, no quotes.";
 
+const DELAY_MS_BETWEEN_GROQ_ALERTS = 2000;
+const PER_ALERT_TIMEOUT_MS = 30_000;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
+
+function logTitleSnippet(title: string, maxLen = 72): string {
+  const t = title.replace(/\s+/g, " ").trim();
+  if (t.length <= maxLen) return t || "(no title)";
+  return `${t.slice(0, maxLen)}…`;
 }
 
 async function groqText(
@@ -36,6 +64,7 @@ async function groqText(
   return String(completion.choices[0]?.message?.content ?? "").trim();
 }
 
+/** True when routes-database.json (via dedupe meta) already has full Groq output */
 function hasCompleteGroqMeta(a: NormalizedAlert): boolean {
   const he =
     typeof a.meta?.dispatcherSummaryHe === "string"
@@ -48,7 +77,7 @@ function hasCompleteGroqMeta(a: NormalizedAlert): boolean {
 
 /**
  * מעשיר התראות ב-meta.dispatcherSummaryHe ו-meta.summaryEn.
- * מדלג על התראות שכבר נשמרו (למשל מ־routes-database.json) — חוסך קריאות Groq.
+ * רצף אחד-אחד, השהייה בין קריאות, timeout לכל התראה, מדלג על כאלה שכבר ב-cache (מ־routes-database).
  */
 export async function enrichBusnearbyAlertsWithGroq(
   alerts: NormalizedAlert[]
@@ -57,10 +86,18 @@ export async function enrichBusnearbyAlertsWithGroq(
   const key = process.env.GROQ_API_KEY?.trim();
   if (!key || alerts.length === 0) return alerts;
 
+  const needGroq = alerts.filter((a) => !hasCompleteGroqMeta(a)).length;
+  console.log(
+    `[groq] Groq enrich starting for ${alerts.length} alerts (${needGroq} need API, ${alerts.length - needGroq} cached in routes DB)`
+  );
+
   const out: NormalizedAlert[] = [];
   let skipped = 0;
   for (let i = 0; i < alerts.length; i++) {
     const a = alerts[i]!;
+    const n = alerts.length;
+    const idx = i + 1;
+
     if (hasCompleteGroqMeta(a)) {
       const he = String(a.meta?.dispatcherSummaryHe ?? "").trim();
       out.push({
@@ -76,13 +113,27 @@ export async function enrichBusnearbyAlertsWithGroq(
       continue;
     }
 
+    console.log(
+      `[groq] enriching alert ${idx}/${n}: ${logTitleSnippet(a.title)}`
+    );
+
     const raw = `${a.title}\n\n${a.content}`.trim();
     try {
-      const he = await groqText(key, DISPATCHER_SYSTEM, `Raw alert:\n${raw}`);
-      await sleep(400);
-      const en = he
-        ? await groqText(key, TRANSLATE_SYSTEM, he)
-        : "";
+      const { he, en } = await withTimeout(
+        (async () => {
+          const heOut = await groqText(
+            key,
+            DISPATCHER_SYSTEM,
+            `Raw alert:\n${raw}`
+          );
+          const enOut = heOut
+            ? await groqText(key, TRANSLATE_SYSTEM, heOut)
+            : "";
+          return { he: heOut, en: enOut };
+        })(),
+        PER_ALERT_TIMEOUT_MS,
+        "Groq enrich alert"
+      );
       out.push({
         ...a,
         meta: {
@@ -93,15 +144,23 @@ export async function enrichBusnearbyAlertsWithGroq(
         },
       });
     } catch (e) {
-      console.error(`[groq-busnearby] alert ${i + 1}/${alerts.length}:`, e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(
+        `[groq] alert ${idx}/${n} skipped after error/timeout: ${msg}`
+      );
       out.push(a);
     }
-    await sleep(200);
+
+    if (idx < n) {
+      await sleep(DELAY_MS_BETWEEN_GROQ_ALERTS);
+    }
   }
   if (skipped > 0) {
     console.log(
-      `[groq-busnearby] skipped ${skipped}/${alerts.length} (already had HE+EN); Groq for ${alerts.length - skipped}`
+      `[groq] done: used cache for ${skipped}/${alerts.length}; attempted Groq for ${alerts.length - skipped}`
     );
+  } else {
+    console.log(`[groq] done: processed ${alerts.length} alert(s)`);
   }
   return out;
 }
