@@ -1,6 +1,12 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from "react"
 import {
   ExternalLink,
   ChevronDown,
@@ -15,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { sanitizeAiSummaryOutput } from "@/lib/ai-summary-sanitize"
 import type { TransportAlert } from "@/lib/transport-alert"
 import type { DashboardUiStrings } from "@/lib/dashboard-i18n"
+import { cn } from "@/lib/utils"
 
 export type { TransportAlert as Alert }
 
@@ -141,10 +148,34 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
     }
   }, [alert.aiSummary, ui.translateFailed])
 
-  const shouldTruncate = alert.fullContent.length > 150
-  const displayContent = shouldTruncate && !isExpanded 
-    ? alert.fullContent.slice(0, 150) + "..." 
-    : alert.fullContent
+  const descriptionText =
+    alert.fullContent.trim().length > 0 ? alert.fullContent.trim() : "—"
+
+  const bodyRef = useRef<HTMLParagraphElement>(null)
+  const [showExpandToggle, setShowExpandToggle] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = bodyRef.current
+    if (!el || descriptionText === "—") {
+      setShowExpandToggle(false)
+      return
+    }
+    if (isExpanded) {
+      setShowExpandToggle(true)
+      return
+    }
+    const measure = () => {
+      requestAnimationFrame(() => {
+        const p = bodyRef.current
+        if (!p) return
+        setShowExpandToggle(p.scrollHeight > p.clientHeight + 2)
+      })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [descriptionText, alert.id, isExpanded])
 
   const providerStyle = providerStyles[alert.provider] || providerStyles["אגד"]
 
@@ -276,11 +307,19 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
             </p>
           )}
         </div>
-        <p className="text-muted-foreground leading-relaxed text-sm break-words">
-          {displayContent}
+        <p
+          ref={bodyRef}
+          dir="rtl"
+          className={cn(
+            "text-muted-foreground leading-relaxed text-sm break-words whitespace-pre-wrap",
+            !isExpanded && "line-clamp-4"
+          )}
+        >
+          {descriptionText}
         </p>
-        {shouldTruncate && (
+        {showExpandToggle && (
           <button
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="mt-2 text-primary text-sm font-medium flex items-center gap-1 hover:underline cursor-pointer"
           >

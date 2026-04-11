@@ -140,7 +140,7 @@ export function alertsFromEggedJson(data: unknown): TransportAlert[] {
   for (const [key, item] of Object.entries(bag)) {
     const title = (item.title ?? "").trim() || "עדכון אגד"
     const content = (item.content ?? "").trim()
-    const fullContent = content || title
+    const fullContent = scanExportMergedBody(content, "", title) || title
     const link = (item.detailUrl ?? "").trim() || "https://www.egged.co.il"
     const lines = Array.isArray(item.lineNumbers)
       ? item.lineNumbers.map((x) => String(x).trim()).filter(Boolean)
@@ -163,6 +163,26 @@ export function alertsFromEggedJson(data: unknown): TransportAlert[] {
     })
   }
   return out
+}
+
+/**
+ * מאחד content + meta.fullDescription מ־scan-export (במיוחד אגד) כדי שלא יוצג רק כותרת
+ * כשאחד השדות קצר והשני מכיל את גוף ההתראה המלא.
+ */
+function scanExportMergedBody(
+  rawContent: string,
+  metaFull: string,
+  title: string
+): string {
+  const c = rawContent.trim()
+  const m = metaFull.trim()
+  const t = title.trim()
+  if (c && m) {
+    if (c === m) return c
+    if (c.includes(m) || m.includes(c)) return c.length >= m.length ? c : m
+    return `${c.length >= m.length ? c : m}\n\n${c.length >= m.length ? m : c}`.trim()
+  }
+  return c || m || t || ""
 }
 
 /** scan-export.json — פלט orchestrator אחרי סריקה */
@@ -207,11 +227,11 @@ export function alertsFromScanExportJson(data: unknown): TransportAlert[] {
         typeof n.meta?.fullDescription === "string"
           ? String(n.meta.fullDescription).trim()
           : ""
-      /** תוכן מלא לתצוגה: קודם שדה content מהסורק, אחר כך תיאור מלא, אז סיכום דיספצ'ר */
+      const merged = scanExportMergedBody(rawContent, metaFull, title)
+      /** תוכן מלא לכרטיס: מיזוג content+meta; אם עדיין ריק/קצר — סיכום דיספצ'ר או כותרת */
       const fullContent =
-        rawContent ||
-        metaFull ||
-        dispatcherHe ||
+        merged ||
+        dispatcherHe.trim() ||
         title
       const rawLines = n.meta?.lineNumbers
       const lines = Array.isArray(rawLines)
