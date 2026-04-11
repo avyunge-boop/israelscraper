@@ -903,6 +903,25 @@ function cliArgv(context?: ScraperRunContext): string[] {
   return process.argv.slice(2);
 }
 
+/** Parse `--max-routes=N` from argv (Cloud Run / API cap). Returns undefined if unset or invalid. */
+function parseMaxRoutesFromArgv(argv: string[]): number | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    const eq = a.match(/^--max-routes=(\d+)$/i);
+    if (eq) {
+      const n = Number(eq[1]);
+      if (Number.isFinite(n) && n >= 1) return Math.min(Math.floor(n), 1_000_000);
+      return undefined;
+    }
+    if (/^--max-routes$/i.test(a) && argv[i + 1]) {
+      const n = Number(argv[i + 1]);
+      i++;
+      if (Number.isFinite(n) && n >= 1) return Math.min(Math.floor(n), 1_000_000);
+    }
+  }
+  return undefined;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function runBusnearbyInternal(
