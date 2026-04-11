@@ -14,6 +14,7 @@
  * Israel Railways (agencyFilter=2) is blacklisted — never scanned; stripped from DB on load.
  *
  * Run refresh: pnpm --filter @workspace/scraper exec tsx ./src/scrape-bus-alerts.ts --refresh
+ * Cap routes per run (Cloud Run): --max-routes=100 (limits stale-queue visits only).
  *
  * Multi-source: implements AgencyScraper via runScan() → SourceScanResult.
  */
@@ -84,6 +85,17 @@ const PUPPETEER_UA =
 
 const REFRESH_ARG = "--refresh";
 const FULL_SCAN_ARG = "--full-scan";
+const MAX_ROUTES_PREFIX = "--max-routes=";
+
+function parseMaxRoutesFromArgv(argv: string[]): number | undefined {
+  for (const a of argv) {
+    if (a.startsWith(MAX_ROUTES_PREFIX)) {
+      const n = parseInt(a.slice(MAX_ROUTES_PREFIX.length), 10);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+  }
+  return undefined;
+}
 
 /** Permanently excluded: Israel Railways — buses only */
 const ISRAEL_RAILWAYS_AGENCY_ID = "2";
@@ -825,13 +837,22 @@ async function runBusnearbyInternal(
   );
 
   const nowMs = Date.now();
-  const scanQueue = fullScanMode
+  let scanQueue = fullScanMode
     ? routeList
     : routeList.filter((r) => routeNeedsRescan(r, nowMs));
   const skippedFresh = routeList.length - scanQueue.length;
 
+  const maxRoutesCap = parseMaxRoutesFromArgv(argv);
+  const queueBeforeCap = scanQueue.length;
+  if (maxRoutesCap != null && scanQueue.length > maxRoutesCap) {
+    scanQueue = scanQueue.slice(0, maxRoutesCap);
+    console.log(
+      `[busnearby] --max-routes=${maxRoutesCap}: capped queue ${queueBeforeCap} → ${scanQueue.length} (remaining stale routes wait for next run)`
+    );
+  }
+
   console.log(
-    `\n═══ Route scan queue: ${scanQueue.length} stale/missing (of ${routeList.length} in DB) ═══`
+    `\n═══ Route scan queue: ${scanQueue.length} to scan this run (${queueBeforeCap} stale/missing of ${routeList.length} in DB) ═══`
   );
   if (fullScanMode) {
     console.log(`  (--full-scan: ignoring ${SCAN_STALE_AFTER_H}h freshness)`);
@@ -952,6 +973,8 @@ async function runBusnearbyInternal(
     agencyFiltersWithRoutes: discoveryMode ? filtersWithRoutes : 0,
     uniqueRoutesInDatabase: routeList.length,
     routesScannedThisRun: scanQueue.length,
+    staleRoutesEligibleBeforeCap: queueBeforeCap,
+    maxRoutesPerRun: maxRoutesCap ?? null,
     routesSkippedFresh: skippedFresh,
     scanStaleAfterHours: SCAN_STALE_AFTER_H,
     fullScan: fullScanMode,
@@ -1106,6 +1129,8 @@ async function runBusnearbyInternal(
       outputFile: OUTPUT_FILE,
       uniqueRoutesInDatabase: routeList.length,
       routesScannedThisRun: scanQueue.length,
+      maxRoutesPerRun: maxRoutesCap ?? null,
+      staleRoutesEligibleBeforeCap: queueBeforeCap,
       routesSkippedFresh: skippedFresh,
       dedupedCount: deduped.length,
       addedVsPreviousRun: addedIds.length,

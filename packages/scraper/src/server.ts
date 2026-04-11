@@ -31,6 +31,8 @@ type RunScrapeBody = {
   agency?: string;
   all?: boolean;
   refresh?: boolean;
+  /** Bus Nearby only: cap per-run route visits (e.g. 100) to fit memory/CPU time on Cloud Run */
+  maxRoutes?: number;
 };
 
 /** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
@@ -49,6 +51,13 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   }
   if (body?.refresh === true) {
     argv.push("--refresh");
+  }
+  const cap =
+    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
+      ? Math.floor(body.maxRoutes)
+      : NaN;
+  if (cap > 0) {
+    argv.push(`--max-routes=${cap}`);
   }
   return argv;
 }
