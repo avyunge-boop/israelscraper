@@ -20,7 +20,6 @@ export type ScanProgressPayload = {
 interface ControlPanelProps {
   onScanAgency: (agency: string) => void
   onInitBusnearbyRoutesDb: () => void
-  isScanning: boolean
   scanningAgency: string | null
   scanProgress: ScanProgressPayload
   scanInterval: string
@@ -46,7 +45,6 @@ const agencies = [
 export function ControlPanel({
   onScanAgency,
   onInitBusnearbyRoutesDb,
-  isScanning,
   scanningAgency,
   scanProgress,
   scanInterval,
@@ -60,20 +58,24 @@ export function ControlPanel({
   ui,
   intervals,
 }: ControlPanelProps) {
+  const agencyButtonDisabled = (id: string) =>
+    scanningAgency === id ||
+    (id === "busnearby" && scanningAgency === "initBnDb")
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card className="border-border/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-bold">{ui.manualActions}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4" aria-busy={isScanning}>
+        <CardContent className="space-y-4" aria-busy={scanningAgency !== null}>
           <div className="flex flex-wrap gap-2 justify-stretch sm:justify-start">
             {agencies.map((agency) => (
               <Button
                 key={agency.id}
                 variant="outline"
                 onClick={() => onScanAgency(agency.id)}
-                disabled={isScanning}
+                disabled={agencyButtonDisabled(agency.id)}
                 aria-busy={scanningAgency === agency.id}
                 title={ui.scanNow}
                 className="relative h-12 min-w-[9rem] shrink-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto border-border hover:bg-muted"
@@ -97,7 +99,7 @@ export function ControlPanel({
               </Button>
             ))}
           </div>
-          {scanProgress && isScanning && (
+          {scanProgress && scanningAgency !== null && (
             <p className="text-[11px] text-muted-foreground text-center w-full max-w-xl mx-auto" dir="ltr">
               {scanProgress.displayName} · {ui.scanProgressLabel}{" "}
               {scanProgress.current}/{scanProgress.total} · Found: {scanProgress.alertsFound}{" "}
@@ -110,7 +112,9 @@ export function ControlPanel({
               variant="secondary"
               size="sm"
               className="w-full max-w-md gap-2 text-xs border-dashed"
-              disabled={isScanning}
+              disabled={
+                scanningAgency === "initBnDb" || scanningAgency === "busnearby"
+              }
               aria-busy={scanningAgency === "initBnDb"}
               title={ui.initRoutesDbHint}
               onClick={onInitBusnearbyRoutesDb}

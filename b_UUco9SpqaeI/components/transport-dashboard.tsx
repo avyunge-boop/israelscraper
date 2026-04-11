@@ -27,6 +27,7 @@ import {
   scanOrEmailError,
   type DashboardLang,
 } from "@/lib/dashboard-i18n"
+import { mergeAiSummariesWithLocalCache } from "@/lib/ai-summary-local-cache"
 
 type FilterType = "all" | "busnearby" | AlertProvider
 
@@ -110,7 +111,6 @@ export function TransportDashboard() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
-  const [isScanning, setIsScanning] = useState(false)
   const [scanningAgency, setScanningAgency] = useState<string | null>(null)
   const [scanInterval, setScanInterval] = useState("6")
 
@@ -203,8 +203,10 @@ export function TransportDashboard() {
         return res.json() as Promise<TransportAlertsResponse>
       })
       .then((data) => {
-        setAlerts(Array.isArray(data.alerts) ? data.alerts : [])
-        setDataLastUpdated(data.meta?.lastUpdated ?? new Date().toISOString())
+        const raw = Array.isArray(data.alerts) ? data.alerts : []
+        const epoch = data.meta?.lastUpdated ?? new Date().toISOString()
+        setDataLastUpdated(epoch)
+        setAlerts(mergeAiSummariesWithLocalCache(raw, epoch))
       })
       .catch((e: unknown) => {
         setLoadError(e instanceof Error ? e.message : "שגיאת טעינה")
@@ -357,10 +359,13 @@ export function TransportDashboard() {
   const handleScanAgency = useCallback(
     async (agency: string) => {
       const filter = AGENCY_SCAN_MAP[agency] ?? "all"
-      setIsScanning(true)
       setScanningAgency(agency)
       try {
-        await runProxyScan({ agency })
+        const runBody =
+          agency === "busnearby"
+            ? { agency: "busnearby" as const, refresh: true as const }
+            : { agency }
+        await runProxyScan(runBody)
         await reloadCachedScanExportOnly()
         const n = await sendReportAfterScan(filter)
         const scope = filterTabLabel(lang, filter)
@@ -371,7 +376,6 @@ export function TransportDashboard() {
           "destructive"
         )
       } finally {
-        setIsScanning(false)
         setScanningAgency(null)
       }
     },
@@ -385,7 +389,6 @@ export function TransportDashboard() {
   )
 
   const handleInitBusnearbyRoutesDb = useCallback(async () => {
-    setIsScanning(true)
     setScanningAgency("initBnDb")
     try {
       await runProxyScan({ agency: "busnearby", refresh: true })
@@ -399,7 +402,6 @@ export function TransportDashboard() {
         "destructive"
       )
     } finally {
-      setIsScanning(false)
       setScanningAgency(null)
     }
   }, [
@@ -549,7 +551,7 @@ export function TransportDashboard() {
           <TabsContent value="stats" className="mt-4">
             <StatsView ui={ui} />
           </TabsContent>
-          <TabsContent value="ops" className="mt-4">
+          <TabsContent value="ops" className="mt-4" forceMount>
             <LogConsole
               lines={scanLogs}
               title={ui.logConsoleTitle}
@@ -562,9 +564,8 @@ export function TransportDashboard() {
         <ControlPanel
           onScanAgency={handleScanAgency}
           onInitBusnearbyRoutesDb={handleInitBusnearbyRoutesDb}
-          isScanning={isScanning}
           scanningAgency={scanningAgency}
-          scanProgress={isScanning ? scanProgress : null}
+          scanProgress={scanningAgency ? scanProgress : null}
           scanInterval={scanInterval}
           onIntervalChange={setScanInterval}
           onExport={handleExport}

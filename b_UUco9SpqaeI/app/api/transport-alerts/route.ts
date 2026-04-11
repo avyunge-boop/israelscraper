@@ -24,7 +24,8 @@ export async function GET() {
   // ממזג לכל התראה aiSummary מ-ai-summaries.json (byId[alert.id] → alert.aiSummary)
   await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
     generateMissing: false,
-    generateEggedMissing: Boolean(groqKey),
+    /** בלי יצירה בכל GET — מונע קריאות Groq חוזרות ברענון דף; מטמון בקובץ + localStorage בדשבורד */
+    generateEggedMissing: false,
   })
 
   return NextResponse.json({
