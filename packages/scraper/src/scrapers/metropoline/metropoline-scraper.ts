@@ -107,6 +107,7 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
   void context?.suppressEmail;
 
   const scrapedAt = new Date().toISOString();
+  const chromePath = resolveChromeExecutable();
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 

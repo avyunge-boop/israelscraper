@@ -399,6 +399,7 @@ export async function runEggedScan(
   _context?: ScraperRunContext
 ): Promise<EggedScrapingResult> {
   const scrapedAt = new Date().toISOString();
+  const chromePath = resolveChromeExecutable();
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 

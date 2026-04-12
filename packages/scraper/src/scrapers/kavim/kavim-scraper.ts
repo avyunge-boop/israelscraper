@@ -239,6 +239,7 @@ function effectiveDateFromList(datetime: string, displayDate: string): string | 
 export async function runScan(context?: ScraperRunContext): Promise<SourceScanResult> {
   const scrapedAt = new Date().toISOString();
   const suppressEmail = context?.suppressEmail === true;
+  const chromePath = resolveChromeExecutable();
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
 
