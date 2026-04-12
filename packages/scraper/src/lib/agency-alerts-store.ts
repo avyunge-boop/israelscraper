@@ -51,15 +51,17 @@ export function stableNormalizedAlertKey(
   return `${sourceId}:h:${h}`;
 }
 
+/**
+ * Latest website scan is the source of truth: only alerts returned in `incoming`
+ * are kept. Cached alerts whose keys are absent from the new scan are dropped
+ * (they are no longer published on the site).
+ */
 export function mergeNormalizedAlertsByKey(
-  existing: NormalizedAlert[],
+  _existing: NormalizedAlert[],
   incoming: NormalizedAlert[],
   sourceId: string
 ): NormalizedAlert[] {
   const map = new Map<string, NormalizedAlert>();
-  for (const a of existing) {
-    map.set(stableNormalizedAlertKey(sourceId, a), a);
-  }
   for (const a of incoming) {
     map.set(stableNormalizedAlertKey(sourceId, a), a);
   }
@@ -120,7 +122,9 @@ export async function mergeAndSaveAgencyAlertsFile(
         : {}),
   };
   await writeFile(fp, JSON.stringify(blob, null, 2), "utf-8");
-  console.log(`[agency-alerts] ${fileName} → ${merged.length} alert(s) merged`);
+  console.log(
+    `[agency-alerts] ${fileName} → ${merged.length} alert(s) (latest scan only; stale removed)`
+  );
 }
 
 export async function listAgencyAlertFilenamesInDataDir(): Promise<string[]> {
