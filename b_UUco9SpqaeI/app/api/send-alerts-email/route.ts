@@ -229,6 +229,16 @@ export async function POST(request: Request) {
   const user = process.env.BUS_ALERTS_SMTP_USER?.trim()
   const pass = process.env.BUS_ALERTS_SMTP_PASS ?? ""
 
+  console.log(
+    "[send-alerts-email] SMTP:",
+    `host=${host}`,
+    `port=${port}`,
+    `secure=${secure}`,
+    `authUser=${user ? "(set)" : "(none)"}`,
+    `from=${from}`,
+    `to=${recipient}`
+  )
+
   const transporter = nodemailer.createTransport({
     host,
     port,
@@ -254,7 +264,25 @@ export async function POST(request: Request) {
       html,
     })
   } catch (e) {
+    const err = e as NodeJS.ErrnoException & { responseCode?: string; command?: string }
     console.error("[send-alerts-email] sendMail failed:", e)
+    console.error(
+      "[send-alerts-email] nodemailer detail:",
+      "message=",
+      err?.message,
+      "code=",
+      err?.code,
+      "errno=",
+      err?.errno,
+      "syscall=",
+      err?.syscall,
+      "responseCode=",
+      err?.responseCode,
+      "command=",
+      err?.command,
+      "stack=",
+      e instanceof Error ? e.stack : undefined
+    )
     return NextResponse.json(
       {
         error:
@@ -265,6 +293,8 @@ export async function POST(request: Request) {
       { status: 502 }
     )
   }
+
+  console.log(`[send-alerts-email] ✅ מייל נשלח ל: ${recipient}`)
 
   return NextResponse.json({
     ok: true,

@@ -841,7 +841,7 @@ export function TransportDashboard() {
           <TabsContent value="stats" className="mt-4">
             <StatsView ui={ui} />
           </TabsContent>
-          <TabsContent value="ops" className="mt-4 space-y-4" forceMount>
+          <TabsContent value="ops" className="mt-4 space-y-4">
             <Card className="border-border/60">
               <CardHeader className="py-3 pb-2">
                 <CardTitle className="text-sm font-semibold">

@@ -10,11 +10,22 @@ interface LogConsoleProps {
   emptyHint?: string
 }
 
+/** אם המשתמש גלל למעלה — לא מזיזים אותו בחזרה לתחתית. */
+const SCROLL_NEAR_BOTTOM_PX = 100
+
 export function LogConsole({ lines, title, emptyHint }: LogConsoleProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [lines.length])
+    const el = scrollRef.current
+    if (!el) return
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight
+    if (distanceFromBottom <= SCROLL_NEAR_BOTTOM_PX) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [lines])
 
   if (lines.length === 0 && !emptyHint) return null
 
@@ -28,6 +39,7 @@ export function LogConsole({ lines, title, emptyHint }: LogConsoleProps) {
       </CardHeader>
       <CardContent className="pt-0">
         <div
+          ref={scrollRef}
           className="max-h-[min(24rem,50vh)] overflow-y-auto rounded-md bg-muted/40 p-3 whitespace-pre-wrap break-words text-muted-foreground"
           dir="ltr"
         >
