@@ -16,7 +16,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Database } from "lucide-react"
 import { splitAlertsNewVsExisting } from "@/lib/alert-split"
 import { consumeProxyScanStream } from "@/lib/proxy-scan-stream"
-import { runScrapeRemotePoll } from "@/lib/scraper-remote-poll"
+import {
+  isScraperBridgeMissingError,
+  runScrapeRemotePoll,
+} from "@/lib/scraper-remote-poll"
 import { transportAlertsToCsvString } from "@/lib/csv-export"
 import { mergeAiSummariesWithLocalCache } from "@/lib/ai-summary-local-cache"
 import type { AlertProvider, TransportAlert } from "@/lib/transport-alert"
@@ -50,6 +53,12 @@ interface TransportAlertsResponse {
     quick?: boolean
     scanSourceTimestamps?: ScanSourceTimestamp[]
   }
+}
+
+/** גוף POST ל-/run-scrape עבור Bus Nearby (מסלולים בלבד, מוגבל למהירות). */
+const BUSNEARBY_RUN_SCRAPE_BODY = {
+  agency: "busnearby" as const,
+  maxRoutes: 200,
 }
 
 /** כפתורי סריקה → מסנן לשליחת המייל */
@@ -96,6 +105,33 @@ const FILTER_ORDER: FilterType[] = [
   "מטרופולין",
   "אחר",
 ]
+
+/** Prefer /api/scraper-bridge/config; if missing (404) use /api/health-check (scraperApiUrl / useRemoteScraper). */
+async function resolveUseRemoteScraper(): Promise<boolean> {
+  try {
+    const cfgRes = await fetch("/api/scraper-bridge/config", {
+      cache: "no-store",
+    })
+    if (cfgRes.ok) {
+      const cfg = (await cfgRes.json()) as { useRemoteScraper?: boolean }
+      if (cfg.useRemoteScraper === true) return true
+    }
+  } catch {
+    /* */
+  }
+  try {
+    const hRes = await fetch("/api/health-check", { cache: "no-store" })
+    if (!hRes.ok) return false
+    const h = (await hRes.json()) as {
+      useRemoteScraper?: boolean
+      scraperApiUrl?: string | null
+    }
+    if (h.useRemoteScraper === true) return true
+    return typeof h.scraperApiUrl === "string" && h.scraperApiUrl.trim() !== ""
+  } catch {
+    return false
+  }
+}
 
 export function TransportDashboard() {
   const searchParams = useSearchParams()
@@ -382,31 +418,33 @@ export function TransportDashboard() {
       setScanLogs([])
       setScanProgress(null)
 
-      const cfgRes = await fetch("/api/scraper-bridge/config", {
-        cache: "no-store",
-      })
-      const cfg = (await cfgRes.json().catch(() => ({}))) as {
-        useRemoteScraper?: boolean
-      }
+      const useRemote = await resolveUseRemoteScraper()
 
-      if (cfg.useRemoteScraper === true) {
-        const { ok, exitCode } = await runScrapeRemotePoll(body, {
-          onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
-          onProgress: (pr) => {
-            setScanProgress({
-              agency: String(pr.agency ?? ""),
-              displayName: String(pr.displayName ?? pr.agency ?? ""),
-              current: Number(pr.current ?? 0),
-              total: Number(pr.total ?? 0),
-              alertsFound: Number(pr.alertsFound ?? 0),
-            })
-          },
-        })
-        setScanProgress(null)
-        if (!ok) {
-          throw new Error(`האורקסטרטור יצא עם קוד ${exitCode}`)
+      if (useRemote) {
+        try {
+          const { ok, exitCode } = await runScrapeRemotePoll(body, {
+            onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
+            onProgress: (pr) => {
+              setScanProgress({
+                agency: String(pr.agency ?? ""),
+                displayName: String(pr.displayName ?? pr.agency ?? ""),
+                current: Number(pr.current ?? 0),
+                total: Number(pr.total ?? 0),
+                alertsFound: Number(pr.alertsFound ?? 0),
+              })
+            },
+          })
+          setScanProgress(null)
+          if (!ok) {
+            throw new Error(`האורקסטרטור יצא עם קוד ${exitCode}`)
+          }
+          return
+        } catch (e) {
+          if (!isScraperBridgeMissingError(e)) throw e
+          appendScanLog(
+            `${p}scraper-bridge לא בפריסה — ממשיכים ב־/api/proxy-scan (עדיין דרך SCRAPER_API_URL בשרת אם מוגדר).`
+          )
         }
-        return
       }
 
       await consumeProxyScanStream(body, {
@@ -462,9 +500,7 @@ export function TransportDashboard() {
       addScanKey(agency)
       try {
         const runBody =
-          agency === "busnearby"
-            ? { agency: "busnearby" as const, maxRoutes: 200 as const }
-            : { agency }
+          agency === "busnearby" ? BUSNEARBY_RUN_SCRAPE_BODY : { agency }
         await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
         const { sent, emailSkipped } = await sendReportAfterScan(
@@ -545,7 +581,7 @@ export function TransportDashboard() {
     addScanKey("initBnDb")
     try {
       await runProxyScan(
-        { agency: "busnearby", refresh: true, maxRoutes: 200 },
+        { ...BUSNEARBY_RUN_SCRAPE_BODY, refresh: true },
         { logPrefix: "initBnDb" }
       )
       await reloadCachedAlertsAfterScrape()

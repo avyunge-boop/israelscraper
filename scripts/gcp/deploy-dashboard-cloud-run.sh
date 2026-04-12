@@ -29,6 +29,10 @@ ENV_VARS=(
   "SCRAPER_DATA_DIR=/tmp/israel-scraper-data"
 )
 
+if [[ -z "${SCRAPER_API_URL:-}" ]]; then
+  echo "WARNING: SCRAPER_API_URL is unset — agency scans from Cloud Run need it (dashboard has no local pnpm orchestrator)." >&2
+fi
+
 [[ -n "${GROQ_API_KEY:-}" ]] && ENV_VARS+=("GROQ_API_KEY=${GROQ_API_KEY}")
 [[ -n "${BUS_ALERTS_SMTP_HOST:-}" ]] && ENV_VARS+=("BUS_ALERTS_SMTP_HOST=${BUS_ALERTS_SMTP_HOST}")
 [[ -n "${BUS_ALERTS_SMTP_PORT:-}" ]] && ENV_VARS+=("BUS_ALERTS_SMTP_PORT=${BUS_ALERTS_SMTP_PORT}")

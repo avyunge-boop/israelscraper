@@ -16,6 +16,22 @@ type Handlers = {
   onProgress?: (p: Record<string, unknown>) => void
 }
 
+/** Thrown when GET/POST under /api/scraper-bridge/* is missing on the dashboard (stale image). */
+export const SCRAPER_BRIDGE_MISSING = "SCRAPER_BRIDGE_MISSING" as const
+
+export type ScraperBridgeMissingError = Error & {
+  code: typeof SCRAPER_BRIDGE_MISSING
+}
+
+export function isScraperBridgeMissingError(
+  e: unknown
+): e is ScraperBridgeMissingError {
+  return (
+    e instanceof Error &&
+    (e as ScraperBridgeMissingError).code === SCRAPER_BRIDGE_MISSING
+  )
+}
+
 export async function runScrapeRemotePoll(
   body: object,
   handlers: Handlers
@@ -30,6 +46,13 @@ export async function runScrapeRemotePoll(
     cache: "no-store",
   })
   const text = await res.text()
+  if (res.status === 404 || res.status === 405) {
+    const err = new Error(
+      `scraper-bridge/run returned HTTP ${res.status} (route not deployed on this dashboard)`
+    ) as ScraperBridgeMissingError
+    err.code = SCRAPER_BRIDGE_MISSING
+    throw err
+  }
   let data: {
     ok?: boolean
     started?: boolean

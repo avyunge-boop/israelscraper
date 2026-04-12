@@ -13,6 +13,11 @@ For this workload, Cloud Run is the best default path: easy autoscaling, lower o
 - Scraper/API image: root `Dockerfile` (Chromium + headless deps included).
 - Dashboard image: `Dockerfile.dashboard` (Next standalone runtime).
 
+## Cloud Build configs
+
+- `cloudbuild.yaml` — builds **`Dockerfile`** and deploys the **scraper-api** service (default `_SERVICE=scraper-api`). It does **not** build the Next dashboard.
+- `cloudbuild.dashboard.yaml` — builds **`Dockerfile.dashboard`** and deploys the **dashboard** Cloud Run service. Pass `_SCRAPER_API_URL` so the UI can call `POST /run-scrape` on the scraper service (same value as the scraper’s public base URL, no trailing slash).
+
 ## Deployment scripts
 
 - `scripts/gcp/deploy-scraper-cloud-run.sh`
@@ -24,6 +29,7 @@ Both scripts build with Cloud Build and deploy to Cloud Run.
 
 Set these in Cloud Run (prefer Secret Manager for secrets):
 
+- **Dashboard service:** `SCRAPER_API_URL` — base URL of the scraper Cloud Run service (e.g. `https://scraper-api-….run.app`). Without it, agency/Bus Nearby scans cannot run on the dashboard container (there is no bundled repo for `pnpm scan`).
 - `GCP_PROJECT_ID`
 - `GCS_BUCKET_NAME`
 - `SCRAPER_STORAGE=gcs`

@@ -146,6 +146,8 @@ export async function GET() {
   const healthy =
     failures.length === 0 && groqOk && canRecoverOrScrape
 
+  const scraperApiUrl = getScraperApiBaseUrl() ?? null
+
   return NextResponse.json({
     healthy,
     groqOk,
@@ -159,6 +161,8 @@ export async function GET() {
     warnings,
     dataRoot: dataDir,
     repoRoot,
-    scraperApiUrl: getScraperApiBaseUrl() ?? null,
+    scraperApiUrl,
+    /** Same as /api/scraper-bridge/config — lets UI pick remote poll if config route is missing on an old revision. */
+    useRemoteScraper: Boolean(scraperApiUrl),
   })
 }

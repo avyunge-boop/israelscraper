@@ -1,0 +1,62 @@
+# Next.js dashboard (Dockerfile.dashboard) → Artifact Registry → Cloud Run.
+#
+# From repo root (set _SCRAPER_API_URL to your scraper-api service URL, no trailing slash):
+#   gcloud builds submit --config=cloudbuild.dashboard.yaml \
+#     --substitutions=_SERVICE=dashboard,_SCRAPER_API_URL=https://scraper-api-PROJECT.REGION.run.app \
+#     --project=YOUR_PROJECT_ID .
+#
+# Note: root cloudbuild.yaml builds Dockerfile (scraper-api only), not the dashboard.
+
+substitutions:
+  _REGION: me-west1
+  _SERVICE: dashboard
+  _AR_REPO: cloud-run-source-deploy
+  _SCRAPER_API_URL: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  - id: build-dashboard
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}
+      - -f
+      - Dockerfile.dashboard
+      - .
+
+  - id: push-dashboard
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}
+    waitFor:
+      - build-dashboard
+
+  - id: deploy-dashboard
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        IMAGE="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}"
+        ENV_VARS="NODE_ENV=production,SCRAPER_DATA_DIR=/tmp/israel-scraper-data"
+        if [[ -n "${_SCRAPER_API_URL}" ]]; then
+          ENV_VARS="$${ENV_VARS},SCRAPER_API_URL=${_SCRAPER_API_URL}"
+        fi
+        gcloud run deploy "${_SERVICE}" \
+          --image="$${IMAGE}" \
+          --region="${_REGION}" \
+          --platform=managed \
+          --project="${PROJECT_ID}" \
+          --allow-unauthenticated \
+          --timeout=900 \
+          --cpu=2 \
+          --memory=2Gi \
+          --set-env-vars="$${ENV_VARS}" \
+          --quiet
+    waitFor:
+      - push-dashboard
