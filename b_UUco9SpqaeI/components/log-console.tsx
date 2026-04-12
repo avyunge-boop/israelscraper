@@ -28,14 +28,14 @@ export function LogConsole({ lines, title, emptyHint }: LogConsoleProps) {
       </CardHeader>
       <CardContent className="pt-0">
         <div
-          className="max-h-48 overflow-y-auto rounded-md bg-muted/40 p-3 whitespace-pre-wrap break-words text-muted-foreground"
+          className="max-h-[min(24rem,50vh)] overflow-y-auto rounded-md bg-muted/40 p-3 whitespace-pre-wrap break-words text-muted-foreground"
           dir="ltr"
         >
           {lines.length === 0 ? (
             <span className="opacity-60">{emptyHint}</span>
           ) : (
             lines.map((line, i) => (
-              <div key={`${i}-${line.slice(0, 24)}`}>{line}</div>
+              <div key={`log-line-${i}`}>{line}</div>
             ))
           )}
           <div ref={bottomRef} />

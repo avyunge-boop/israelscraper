@@ -26,9 +26,11 @@ function escapeCsvField(value: string): string {
 /** CSV עם BOM (UTF-8) לפתיחה תקינה ב-Excel בעברית */
 export function transportAlertsToCsvString(rows: TransportAlert[]): string {
   const header =
-    "מפעיל,מקור נתונים,כותרת,קווים,תאריך התחלה,תאריך סיום,קישור,תוכן מלא,סיכום AI"
-  const lines = rows.map((a) =>
-    [
+    "מפעיל,מקור נתונים,כותרת,קווים,תאריך התחלה,תאריך סיום,קישור,תיאור מלא (טקסט),תוכן מלא (כפול ל-Excel),כותרת ותוכן מאוחד,סיכום AI"
+  const lines = rows.map((a) => {
+    const full = String(a.fullContent ?? "").trim() || String(a.title ?? "").trim()
+    const titleBody = `${String(a.title ?? "").trim()}\n\n${full}`.trim()
+    return [
       a.provider,
       a.dataSource,
       a.title,
@@ -36,9 +38,13 @@ export function transportAlertsToCsvString(rows: TransportAlert[]): string {
       a.dateRange.start,
       a.dateRange.end,
       a.link,
-      a.fullContent,
+      full,
+      full,
+      titleBody,
       sanitizeAiSummaryOutput(a.aiSummary ?? ""),
-    ].map((cell) => escapeCsvField(String(cell))).join(",")
-  )
+    ]
+      .map((cell) => escapeCsvField(String(cell)))
+      .join(",")
+  })
   return BOM + [header, ...lines].join("\r\n")
 }

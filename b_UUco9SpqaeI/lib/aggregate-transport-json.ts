@@ -237,7 +237,25 @@ export function alertsFromScanExportJson(data: unknown): TransportAlert[] {
       const lines = Array.isArray(rawLines)
         ? rawLines.map((x) => String(x).trim()).filter(Boolean)
         : []
-      const lineNumbers = lines.length > 0 ? lines : ["—"]
+      const rawRoutes = n.meta?.routes
+      const routeTokens: string[] = []
+      if (Array.isArray(rawRoutes)) {
+        for (const r of rawRoutes) {
+          if (typeof r === "string") {
+            const t = r.trim()
+            if (t) routeTokens.push(t)
+          } else if (r && typeof r === "object") {
+            const o = r as { line?: string; pattern?: string; number?: string }
+            const t = String(o.line ?? o.pattern ?? o.number ?? "").trim()
+            if (t) routeTokens.push(t)
+          }
+        }
+      }
+      const mergedLines = [...lines]
+      for (const t of routeTokens) {
+        if (t && !mergedLines.includes(t)) mergedLines.push(t)
+      }
+      const lineNumbers = mergedLines.length > 0 ? mergedLines : ["—"]
       const link =
         (n.detailUrl ?? "").trim() ||
         (sourceId === "egged"

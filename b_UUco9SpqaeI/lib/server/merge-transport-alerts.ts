@@ -9,7 +9,6 @@ import path from "path"
 import {
   expandWorkspacePaths,
   resolveCanonicalDataDir,
-  resolveOrchestratorRepoRoot,
   tryReadJsonFirstExisting,
 } from "@/lib/server/workspace-paths"
 import {
@@ -48,11 +47,47 @@ function maxIso(a: string, b: string): string {
   return a > b ? a : b
 }
 
+/** זמני סריקה אחרונים לפי מקור — מ־scan-export.json */
+export type ScanSourceTimestamp = {
+  sourceId: string
+  displayName?: string
+  scrapedAt?: string
+  success?: boolean
+}
+
+export function scanSourceTimestampsFromScanExport(
+  raw: unknown
+): ScanSourceTimestamp[] {
+  if (!raw || typeof raw !== "object") return []
+  const root = raw as { sources?: unknown[] }
+  if (!Array.isArray(root.sources)) return []
+  return root.sources
+    .map((s) => {
+      const o = s as {
+        sourceId?: string
+        displayName?: string
+        scrapedAt?: string
+        success?: boolean
+      }
+      return {
+        sourceId: String(o.sourceId ?? "").trim(),
+        displayName:
+          typeof o.displayName === "string" ? o.displayName.trim() : undefined,
+        scrapedAt:
+          typeof o.scrapedAt === "string" ? o.scrapedAt.trim() : undefined,
+        success: o.success,
+      }
+    })
+    .filter((x) => x.sourceId.length > 0)
+}
+
 export interface MergeTransportResult {
   alerts: TransportAlert[]
   lastUpdated: string
   /** קבצים או מקור ששימשו לבניית הרשימה */
   sourcesUsed: string[]
+  /** מופיע כשהמקור הוא scan-export (לדשבורד) */
+  scanSourceTimestamps?: ScanSourceTimestamp[]
 }
 
 export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResult> {
@@ -75,6 +110,7 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
           alerts: fromScan,
           lastUpdated,
           sourcesUsed: ["scan-export.json (SCRAPER_API_URL)"],
+          scanSourceTimestamps: scanSourceTimestampsFromScanExport(rawRemote),
         }
       }
     }
@@ -106,6 +142,7 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
           scanPath === canonicalScanExport
             ? ["data/scan-export.json (repo root)"]
             : [scanPath],
+        scanSourceTimestamps: scanSourceTimestampsFromScanExport(raw),
       }
     }
   }

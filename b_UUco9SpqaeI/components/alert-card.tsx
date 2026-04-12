@@ -80,19 +80,6 @@ function canCopyAiSummary(raw: string | undefined): boolean {
   return true
 }
 
-/** Prefer AI summary; otherwise full alert text so Groq translate still works without a summary. */
-function translateSourceText(alert: TransportAlert): string {
-  if (canCopyAiSummary(alert.aiSummary)) {
-    return summaryDisplayText(alert.aiSummary)
-  }
-  return [alert.title, alert.fullContent].filter(Boolean).join("\n\n").trim()
-}
-
-function canTranslateAlert(alert: TransportAlert): boolean {
-  const t = translateSourceText(alert)
-  return t.length > 0 && t.length <= 12_000
-}
-
 export function AlertCard({ alert, ui }: AlertCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [summaryCopied, setSummaryCopied] = useState(false)
@@ -133,8 +120,8 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
   }, [alert.aiSummary])
 
   const handleTranslate = useCallback(async () => {
-    const text = translateSourceText(alert)
-    if (!text) return
+    if (!canCopyAiSummary(alert.aiSummary)) return
+    const text = summaryDisplayText(alert.aiSummary)
     setTranslating(true)
     setTranslateError(null)
     try {
@@ -159,7 +146,7 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
     } finally {
       setTranslating(false)
     }
-  }, [alert.aiSummary, alert.title, alert.fullContent, ui.translateFailed])
+  }, [alert.aiSummary, ui.translateFailed])
 
   const descriptionText =
     alert.fullContent.trim().length > 0 ? alert.fullContent.trim() : "—"
@@ -192,6 +179,12 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
 
   const providerStyle = providerStyles[alert.provider] || providerStyles["אגד"]
 
+  const headerLineBadges = (() => {
+    const raw = (alert.lineNumbers ?? []).map((x) => String(x).trim()).filter(Boolean)
+    const noDash = raw.filter((x) => x !== "—")
+    return noDash.length > 0 ? noDash : raw
+  })()
+
   return (
     <Card className="flex h-full min-h-[200px] w-full min-w-0 flex-col overflow-hidden transition-all duration-200 hover:shadow-md border-border/60">
       <CardHeader className="pb-3 min-w-0">
@@ -216,16 +209,16 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
                 </Badge>
               )}
             </div>
-            {/* Line Number Tags */}
+            {/* Line / route tags (lineNumbers + routes ממיזוג scan-export) */}
             <div className="flex w-full min-w-0 flex-wrap gap-2">
-            {alert.lineNumbers.map((line, idx) => (
-              <span
-                key={`${line}-${idx}`}
-                className="inline-flex min-h-8 min-w-0 max-w-full items-center justify-center rounded-full bg-primary px-2 py-1 text-primary-foreground text-sm font-semibold break-words text-center"
-              >
-                {line}
-              </span>
-            ))}
+              {headerLineBadges.map((line, idx) => (
+                <span
+                  key={`${line}-${idx}`}
+                  className="inline-flex min-h-8 min-w-0 max-w-full items-center justify-center rounded-full bg-primary px-2 py-1 text-primary-foreground text-sm font-semibold break-words text-center"
+                >
+                  {line}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -269,7 +262,9 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 text-xs border-primary/30"
-                disabled={!canTranslateAlert(alert) || translating}
+                disabled={
+                  !canCopyAiSummary(alert.aiSummary) || translating
+                }
                 onClick={handleTranslate}
                 aria-label={ui.translate}
               >

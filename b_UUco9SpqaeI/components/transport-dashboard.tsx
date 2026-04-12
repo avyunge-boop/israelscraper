@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/empty-state"
 import { LogConsole } from "@/components/log-console"
 import { StatsView } from "@/components/stats-view"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Database } from "lucide-react"
@@ -18,6 +18,7 @@ import { splitAlertsNewVsExisting } from "@/lib/alert-split"
 import { consumeProxyScanStream } from "@/lib/proxy-scan-stream"
 import { runScrapeRemotePoll } from "@/lib/scraper-remote-poll"
 import { transportAlertsToCsvString } from "@/lib/csv-export"
+import { mergeAiSummariesWithLocalCache } from "@/lib/ai-summary-local-cache"
 import type { AlertProvider, TransportAlert } from "@/lib/transport-alert"
 import {
   busnearbyScanRoutesOnlyMessage,
@@ -32,6 +33,13 @@ import {
 
 type FilterType = "all" | "busnearby" | AlertProvider
 
+type ScanSourceTimestamp = {
+  sourceId: string
+  displayName?: string
+  scrapedAt?: string
+  success?: boolean
+}
+
 interface TransportAlertsResponse {
   alerts: TransportAlert[]
   meta: {
@@ -39,6 +47,8 @@ interface TransportAlertsResponse {
     count: number
     sourcesTried: string[]
     aiEnabled?: boolean
+    quick?: boolean
+    scanSourceTimestamps?: ScanSourceTimestamp[]
   }
 }
 
@@ -125,6 +135,9 @@ export function TransportDashboard() {
     [scanningKeys]
   )
   const [scanInterval, setScanInterval] = useState("6")
+  const [scanSourceTimestamps, setScanSourceTimestamps] = useState<
+    ScanSourceTimestamp[]
+  >([])
 
   const [alerts, setAlerts] = useState<TransportAlert[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -216,32 +229,81 @@ export function TransportDashboard() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("dashboard-scan-interval-hours")
+      if (v && v.trim()) setScanInterval(v.trim())
+    } catch {
+      /* */
+    }
+  }, [])
+
+  const handleScanIntervalChange = useCallback((v: string) => {
+    setScanInterval(v)
+    try {
+      localStorage.setItem("dashboard-scan-interval-hours", v)
+    } catch {
+      /* */
+    }
+  }, [])
+
+  const appendScanLog = useCallback((line: string) => {
+    const t = line.trimEnd()
+    if (!t) return
+    console.log("[appendScanLog]", t)
+    setScanLogs((prev) => [...prev.slice(-3000), t])
+  }, [])
+
   /**
-   * טעינת התראות ממטמון (GCS): השרת מושך scan-export דרך GET /data/scan-export.json על שירות הסקרייפר.
-   * @param silent — אחרי סריקה, בלי מסך טעינה מלא.
+   * טעינת התראות: קודם ?quick=1 (ללא AI / פעילות) — תצוגה מהירה; אחר כך מלא ברקע.
+   * @param silent — אחרי סריקה: רק GET מלא (עם AI מקובץ).
    */
   const refetchAlerts = useCallback(
     (opts?: { silent?: boolean }): Promise<void> => {
+      const applyPayload = (data: TransportAlertsResponse) => {
+        const raw = Array.isArray(data.alerts) ? data.alerts : []
+        const epoch = data.meta?.lastUpdated ?? new Date().toISOString()
+        setAlerts(mergeAiSummariesWithLocalCache(raw, epoch))
+        setDataLastUpdated(epoch)
+        if (Array.isArray(data.meta?.scanSourceTimestamps)) {
+          setScanSourceTimestamps(data.meta.scanSourceTimestamps)
+        }
+      }
+
       if (!opts?.silent) {
         setLoading(true)
       }
       setLoadError(null)
-      return fetch("/api/transport-alerts")
-        .then(async (res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          return res.json() as Promise<TransportAlertsResponse>
-        })
-        .then((data) => {
-          setAlerts(Array.isArray(data.alerts) ? data.alerts : [])
-          setDataLastUpdated(data.meta?.lastUpdated ?? new Date().toISOString())
-        })
-        .catch((e: unknown) => {
+
+      const run = async () => {
+        try {
+          if (!opts?.silent) {
+            const qres = await fetch("/api/transport-alerts?quick=1")
+            if (!qres.ok) throw new Error(`HTTP ${qres.status}`)
+            const qdata = (await qres.json()) as TransportAlertsResponse
+            applyPayload(qdata)
+            setLoading(false)
+            void fetch("/api/transport-alerts")
+              .then(async (res) => {
+                if (!res.ok) return
+                const data = (await res.json()) as TransportAlertsResponse
+                applyPayload(data)
+              })
+              .catch(() => {})
+          } else {
+            const res = await fetch("/api/transport-alerts")
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data = (await res.json()) as TransportAlertsResponse
+            applyPayload(data)
+          }
+        } catch (e: unknown) {
           setLoadError(e instanceof Error ? e.message : "שגיאת טעינה")
           setAlerts([])
-        })
-        .finally(() => {
+        } finally {
           if (!opts?.silent) setLoading(false)
-        })
+        }
+      }
+      return run()
     },
     []
   )
@@ -329,8 +391,7 @@ export function TransportDashboard() {
 
       if (cfg.useRemoteScraper === true) {
         const { ok, exitCode } = await runScrapeRemotePoll(body, {
-          onLog: (text) =>
-            setScanLogs((prev) => [...prev.slice(-3000), `${p}${text.trimEnd()}`]),
+          onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
           onProgress: (pr) => {
             setScanProgress({
               agency: String(pr.agency ?? ""),
@@ -349,8 +410,7 @@ export function TransportDashboard() {
       }
 
       await consumeProxyScanStream(body, {
-        onLog: (text) =>
-          setScanLogs((prev) => [...prev.slice(-3000), `${p}${text.trimEnd()}`]),
+        onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
         onProgress: (pr) => {
           setScanProgress({
             agency: String(pr.agency ?? ""),
@@ -363,11 +423,12 @@ export function TransportDashboard() {
       })
       setScanProgress(null)
     },
-    []
+    [appendScanLog]
   )
 
   const sendReportAfterScan = useCallback(
-    async (filter: FilterType) => {
+    async (filter: FilterType, log?: (line: string) => void) => {
+      log?.("📧 שולח מייל...")
       const to = recipientEmail.trim() || undefined
       const res = await fetch("/api/send-alerts-email", {
         method: "POST",
@@ -381,6 +442,11 @@ export function TransportDashboard() {
       }
       if (!res.ok) {
         throw new Error(data.error ?? res.statusText)
+      }
+      if (data.emailSkipped === true) {
+        log?.("✅ מייל: אין התראות במסנן — דילוג על שליחה")
+      } else {
+        log?.(`✅ מייל נשלח (${String(data.sent ?? 0)} התראות)`)
       }
       return {
         sent: data.sent ?? 0,
@@ -401,12 +467,17 @@ export function TransportDashboard() {
             : { agency }
         await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
+        const { sent, emailSkipped } = await sendReportAfterScan(
+          filter,
+          appendScanLog
+        )
+        const scope = filterTabLabel(lang, filter)
         if (agency === "busnearby") {
-          showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
+          showEphemeralBanner(
+            `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+          )
           return
         }
-        const { sent, emailSkipped } = await sendReportAfterScan(filter)
-        const scope = filterTabLabel(lang, filter)
         showEphemeralBanner(
           scanCompleteMessage(lang, sent, scope, { emailSkipped })
         )
@@ -427,6 +498,7 @@ export function TransportDashboard() {
       runProxyScan,
       sendReportAfterScan,
       showEphemeralBanner,
+      appendScanLog,
     ]
   )
 
@@ -438,7 +510,14 @@ export function TransportDashboard() {
         { logPrefix: "initBnDb" }
       )
       await reloadCachedAlertsAfterScrape()
-      showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
+      const { sent, emailSkipped } = await sendReportAfterScan(
+        "busnearby",
+        appendScanLog
+      )
+      const scope = filterTabLabel(lang, "busnearby")
+      showEphemeralBanner(
+        `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+      )
     } catch (e) {
       showEphemeralBanner(
         e instanceof Error ? e.message : scanOrEmailError(lang),
@@ -453,7 +532,9 @@ export function TransportDashboard() {
     reloadCachedAlertsAfterScrape,
     removeScanKey,
     runProxyScan,
+    sendReportAfterScan,
     showEphemeralBanner,
+    appendScanLog,
   ])
 
   const handleScanAll = useCallback(async () => {
@@ -461,7 +542,10 @@ export function TransportDashboard() {
     try {
       await runProxyScan({ all: true }, { logPrefix: "all" })
       await reloadCachedAlertsAfterScrape()
-      const { sent, emailSkipped } = await sendReportAfterScan("all")
+      const { sent, emailSkipped } = await sendReportAfterScan(
+        "all",
+        appendScanLog
+      )
       showEphemeralBanner(scanAllCompleteMessage(lang, sent, { emailSkipped }))
     } catch (e) {
       showEphemeralBanner(
@@ -479,6 +563,7 @@ export function TransportDashboard() {
     runProxyScan,
     sendReportAfterScan,
     showEphemeralBanner,
+    appendScanLog,
   ])
 
   const handleExport = useCallback(() => {
@@ -529,6 +614,43 @@ export function TransportDashboard() {
   )
 
   const pageDir = lang === "en" ? "ltr" : "rtl"
+
+  const scanStatusLines = useMemo(() => {
+    const hours = Number(scanInterval)
+    const h = Number.isFinite(hours) && hours > 0 ? hours : 6
+    const times = scanSourceTimestamps
+      .map((s) => {
+        const t = s.scrapedAt ? Date.parse(s.scrapedAt) : NaN
+        return Number.isFinite(t) ? t : 0
+      })
+      .filter((t) => t > 0)
+    const lastMs = times.length > 0 ? Math.max(...times) : NaN
+    const nextMs = Number.isFinite(lastMs) ? lastMs + h * 3_600_000 : NaN
+    const fmt = (ms: number) =>
+      Number.isFinite(ms)
+        ? formatLastUpdated(new Date(ms).toISOString(), lang)
+        : "—"
+    const header =
+      lang === "en"
+        ? [
+            `Auto-scan interval (saved in this browser): every ${String(h)} h`,
+            `No server cron is wired to this dropdown — times below are estimates.`,
+            `Estimated next run (last source time + interval): ${fmt(nextMs)}`,
+            "Last scrape per agency (from scan-export):",
+          ]
+        : [
+            `מרווח סריקה אוטומטית (נשמר בדפדפן): כל ${String(h)} שעות`,
+            `אין כרגע קישור ל-Cron בענן — השדה להגדרה בלבד; השעות להערכה בלבד.`,
+            `הרצה משוערת הבאה (אחרון + מרווח): ${fmt(nextMs)}`,
+            "סריקה אחרונה לפי מקור (מ-scan-export):",
+          ]
+    const rows = scanSourceTimestamps.map((s) => {
+      const ok = s.success !== false
+      const st = s.scrapedAt ? formatLastUpdated(s.scrapedAt, lang) : "—"
+      return `  • ${s.sourceId}${s.displayName ? ` (${s.displayName})` : ""} — ${st}${ok ? "" : " (failed)"}`
+    })
+    return [...header, ...rows]
+  }, [scanSourceTimestamps, scanInterval, lang])
 
   return (
     <div className="min-h-screen bg-background" dir={pageDir}>
@@ -623,7 +745,22 @@ export function TransportDashboard() {
           <TabsContent value="stats" className="mt-4">
             <StatsView ui={ui} />
           </TabsContent>
-          <TabsContent value="ops" className="mt-4">
+          <TabsContent value="ops" className="mt-4 space-y-4" forceMount>
+            <Card className="border-border/60">
+              <CardHeader className="py-3 pb-2">
+                <CardTitle className="text-sm font-semibold">
+                  {lang === "en" ? "Scan schedule & last run" : "סטטוס סריקות ולוח זמנים"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <pre
+                  className="max-h-40 overflow-y-auto rounded-md bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap break-words font-mono"
+                  dir="ltr"
+                >
+                  {scanStatusLines.join("\n")}
+                </pre>
+              </CardContent>
+            </Card>
             <LogConsole
               lines={scanLogs}
               title={ui.logConsoleTitle}
@@ -640,7 +777,7 @@ export function TransportDashboard() {
           isScanningKey={isScanningKey}
           scanProgress={scanProgress}
           scanInterval={scanInterval}
-          onIntervalChange={setScanInterval}
+          onIntervalChange={handleScanIntervalChange}
           onExport={handleExport}
           exportButtonLabel={exportButtonLabel}
           recipientEmail={recipientEmail}
