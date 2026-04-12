@@ -114,7 +114,6 @@ export async function runScrapeRemotePoll(
     if (snap.length > lastLogLength) {
       const delta = snap.slice(lastLogLength)
       if (delta) {
-        console.log("[poll] new log delta:", delta.slice(0, 100))
         handlers.onLog?.(delta)
       }
       lastLogLength = snap.length
