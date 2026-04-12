@@ -8,6 +8,10 @@ import {
   buildStructuredMapForAlerts,
 } from "@/lib/server/apply-ai-summaries"
 import { readAppSettings } from "@/lib/server/app-settings"
+import {
+  createBusAlertsTransport,
+  readBusAlertsSmtpEnv,
+} from "@/lib/server/bus-alerts-smtp"
 import { mergeTransportAlertsFromDisk } from "@/lib/server/merge-transport-alerts"
 
 export const dynamic = "force-dynamic"
@@ -136,8 +140,9 @@ ${sections}
 }
 
 export async function POST(request: Request) {
-  const host = process.env.BUS_ALERTS_SMTP_HOST?.trim()
-  const from = process.env.BUS_ALERTS_EMAIL_FROM?.trim()
+  console.log("[send-alerts-email] POST start")
+  const smtpEnv = readBusAlertsSmtpEnv()
+  const { host, from } = smtpEnv
   const envTo = process.env.BUS_ALERTS_EMAIL_TO?.trim()
   const isLocalDev = process.env.NODE_ENV === "development"
 
@@ -186,24 +191,27 @@ export async function POST(request: Request) {
   }
 
   const { alerts, lastUpdated } = await mergeTransportAlertsFromDisk()
+  console.log(
+    "[send-alerts-email] merged alerts from disk, count=",
+    alerts.length
+  )
   const structuredById = buildStructuredMapForAlerts(alerts)
   const groqKey = process.env.GROQ_API_KEY?.trim()
+  /**
+   * לא קוראים ל-Groq לכל התראה חסרת סיכום — זה עלול לקחת שעות ולחרוג מ-timeout (המייל לא נשלח).
+   * משתמשים במטמון ובסיכומים שכבר קיימים על הדיסק (כמו GET /api/transport-alerts ללא generateMissing).
+   */
   try {
     await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
-      generateMissing: true,
+      generateMissing: false,
+      generateEggedMissing: false,
     })
+    console.log("[send-alerts-email] attachAiSummaries (cache-only) done")
   } catch (e) {
     console.error(
-      "[send-alerts-email] AI summaries step failed; applying cache-only and sending anyway:",
+      "[send-alerts-email] attachAiSummaries failed; sending with raw fields:",
       e
     )
-    try {
-      await attachAiSummariesToAlerts(alerts, undefined, structuredById, {
-        generateMissing: false,
-      })
-    } catch {
-      /* נמשיך לשליחה עם מה שיש בזיכרון */
-    }
   }
 
   const slice = filterAlerts(alerts, filter)
@@ -224,10 +232,7 @@ export async function POST(request: Request) {
     })
   }
 
-  const port = Number(process.env.BUS_ALERTS_SMTP_PORT ?? "587")
-  const secure = process.env.BUS_ALERTS_SMTP_SECURE === "1"
-  const user = process.env.BUS_ALERTS_SMTP_USER?.trim()
-  const pass = process.env.BUS_ALERTS_SMTP_PASS ?? ""
+  const { port, secure, user, pass } = smtpEnv
 
   console.log(
     "[send-alerts-email] SMTP:",
@@ -235,16 +240,26 @@ export async function POST(request: Request) {
     `port=${port}`,
     `secure=${secure}`,
     `authUser=${user ? "(set)" : "(none)"}`,
+    `passLen=${pass.length}`,
     `from=${from}`,
     `to=${recipient}`
   )
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    ...(user ? { auth: { user, pass } } : {}),
-  })
+  let transporter: ReturnType<typeof nodemailer.createTransport>
+  try {
+    transporter = createBusAlertsTransport()
+  } catch (e) {
+    console.error("[send-alerts-email] createTransport failed:", e)
+    return NextResponse.json(
+      {
+        error:
+          e instanceof Error
+            ? e.message
+            : "יצירת SMTP transport נכשלה (בדוק BUS_ALERTS_SMTP_HOST).",
+      },
+      { status: 503 }
+    )
+  }
 
   const html = buildHtmlEmail(slice, filter)
   const text = slice
@@ -256,13 +271,23 @@ export async function POST(request: Request) {
     .join("\n---\n")
 
   try {
-    await transporter.sendMail({
+    console.log(
+      "[send-alerts-email] invoking sendMail to=",
+      recipient,
+      "subject slice=",
+      slice.length
+    )
+    const info = await transporter.sendMail({
       from,
       to: recipient,
       subject: `[תחבורה] דוח התראות (${slice.length}) · ${filter} · ${lastUpdated.slice(0, 10)}`,
       text,
       html,
     })
+    console.log(
+      "[send-alerts-email] sendMail resolved, messageId=",
+      info?.messageId ?? "(none)"
+    )
   } catch (e) {
     const err = e as NodeJS.ErrnoException & { responseCode?: string; command?: string }
     console.error("[send-alerts-email] sendMail failed:", e)

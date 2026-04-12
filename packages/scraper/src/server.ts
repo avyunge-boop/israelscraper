@@ -55,12 +55,18 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   if (body?.refresh === true) {
     argv.push("--refresh");
   }
-  const cap =
-    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
-      ? Math.floor(body.maxRoutes)
-      : NaN;
-  if (cap > 0) {
-    argv.push(`--max-routes=${cap}`);
+  /** רק אם הלקוח שלח במפורש `maxRoutes` בגוף ה-JSON — בלי ברירת מחדל */
+  if (
+    body != null &&
+    typeof body === "object" &&
+    Object.prototype.hasOwnProperty.call(body, "maxRoutes") &&
+    typeof body.maxRoutes === "number" &&
+    Number.isFinite(body.maxRoutes)
+  ) {
+    const cap = Math.floor(body.maxRoutes);
+    if (cap > 0) {
+      argv.push(`--max-routes=${cap}`);
+    }
   }
   if (body?.fullScan === true) {
     argv.push("--full-scan");

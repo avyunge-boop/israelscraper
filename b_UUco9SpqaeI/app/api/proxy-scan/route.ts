@@ -83,15 +83,22 @@ function resolveNodeExecutable(): string {
   )
 }
 
+function maxRoutesFromBody(body: ScanBody): number | null {
+  if (!body || typeof body !== "object" || !("maxRoutes" in body)) {
+    return null
+  }
+  const v = body.maxRoutes
+  if (typeof v !== "number" || !Number.isFinite(v)) return null
+  const cap = Math.floor(v)
+  return cap > 0 ? cap : null
+}
+
 function buildCliArgs(body: ScanBody): string[] {
   const { all, agency, forceRefresh } = parseScanBody(body)
   let cliArgs = all ? ["--all"] : [`--agency=${agency}`]
   cliArgs = withBusnearbyRefreshIfNeeded(cliArgs, { all, agency, forceRefresh })
-  const cap =
-    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
-      ? Math.floor(body.maxRoutes)
-      : NaN
-  if (cap > 0) {
+  const cap = maxRoutesFromBody(body)
+  if (cap != null) {
     cliArgs = [...cliArgs, `--max-routes=${cap}`]
   }
   if (body?.fullScan === true) {
@@ -124,11 +131,8 @@ async function runOrchestratorViaScraperApi(
   else if (agency) payload.agency = agency
   else payload.all = true
   if (forceRefresh) payload.refresh = true
-  const cap =
-    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
-      ? Math.floor(body.maxRoutes)
-      : NaN
-  if (cap > 0) payload.maxRoutes = cap
+  const cap = maxRoutesFromBody(body)
+  if (cap != null) payload.maxRoutes = cap
   if (body?.fullScan === true) payload.fullScan = true
 
   const res = await fetch(`${base}/run-scrape`, {
@@ -368,6 +372,9 @@ export async function POST(request: Request) {
             else if (agency) payload.agency = agency
             else payload.all = true
             if (forceRefresh) payload.refresh = true
+            const capStream = maxRoutesFromBody(body)
+            if (capStream != null) payload.maxRoutes = capStream
+            if (body?.fullScan === true) payload.fullScan = true
 
             const upstream = await fetch(`${base}/run-scrape?stream=1`, {
               method: "POST",

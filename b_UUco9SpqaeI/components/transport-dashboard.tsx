@@ -58,12 +58,6 @@ interface TransportAlertsResponse {
   }
 }
 
-/** גוף POST ל-/run-scrape עבור Bus Nearby (מסלולים בלבד, מוגבל למהירות). */
-const BUSNEARBY_RUN_SCRAPE_BODY = {
-  agency: "busnearby" as const,
-  maxRoutes: 200,
-}
-
 /** כפתורי סריקה → מסנן לשליחת המייל */
 const AGENCY_SCAN_MAP: Record<string, FilterType> = {
   busnearby: "busnearby",
@@ -485,19 +479,38 @@ export function TransportDashboard() {
     async (filter: FilterType, log?: (line: string) => void) => {
       log?.("📧 שולח מייל...")
       const to = recipientEmail.trim() || undefined
-      const res = await fetch("/api/send-alerts-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filter, to }),
-      })
-      const data = (await res.json().catch(() => ({}))) as {
+      let res: Response
+      try {
+        res = await fetch("/api/send-alerts-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filter, to }),
+        })
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        log?.(`❌ מייל: שגיאת רשת — ${msg}`)
+        throw e
+      }
+      const rawText = await res.text()
+      let data = {} as {
         error?: string
         sent?: number
+        to?: string
         emailSkipped?: boolean
         skipReason?: string
       }
+      try {
+        data = JSON.parse(rawText) as typeof data
+      } catch {
+        log?.(
+          `❌ מייל: תשובה לא-JSON (HTTP ${res.status}) ${rawText.slice(0, 240)}`
+        )
+        throw new Error(`send-alerts-email: HTTP ${res.status}`)
+      }
       if (!res.ok) {
-        throw new Error(data.error ?? res.statusText)
+        const errMsg = data.error ?? res.statusText
+        log?.(`❌ מייל נכשל (HTTP ${res.status}): ${errMsg}`)
+        throw new Error(errMsg)
       }
       const emailSkipReason =
         typeof data.skipReason === "string" ? data.skipReason : undefined
@@ -508,7 +521,10 @@ export function TransportDashboard() {
           log?.("✅ מייל: אין התראות במסנן — דילוג על שליחה")
         }
       } else {
-        log?.(`✅ מייל נשלח (${String(data.sent ?? 0)} התראות)`)
+        const dest = typeof data.to === "string" ? data.to : to ?? "?"
+        log?.(
+          `✅ מייל נשלח ל: ${dest} (${String(data.sent ?? 0)} התראות בדוח)`
+        )
       }
       return {
         sent: data.sent ?? 0,
@@ -525,7 +541,7 @@ export function TransportDashboard() {
       addScanKey(agency)
       try {
         const runBody =
-          agency === "busnearby" ? BUSNEARBY_RUN_SCRAPE_BODY : { agency }
+          agency === "busnearby" ? { agency: "busnearby" as const } : { agency }
         await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
         const { sent, emailSkipped, emailSkipReason } =
@@ -567,7 +583,7 @@ export function TransportDashboard() {
       await runProxyScan(
         {
           agency: "busnearby",
-          maxRoutes: 200,
+          refresh: true,
           fullScan: true,
         },
         { logPrefix: "bn-deep" }
@@ -602,7 +618,7 @@ export function TransportDashboard() {
     addScanKey("initBnDb")
     try {
       await runProxyScan(
-        { ...BUSNEARBY_RUN_SCRAPE_BODY, refresh: true },
+        { agency: "busnearby", refresh: true },
         { logPrefix: "initBnDb" }
       )
       await reloadCachedAlertsAfterScrape()
