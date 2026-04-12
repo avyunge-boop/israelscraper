@@ -31,6 +31,10 @@ type RunScrapeBody = {
   agency?: string;
   all?: boolean;
   refresh?: boolean;
+  /** Bus Nearby only: cap per-run route visits (e.g. 100) to fit memory/CPU time on Cloud Run */
+  maxRoutes?: number;
+  /** Bus Nearby only: maps to --full-scan (ignore staleness window, queue all DB routes up to maxRoutes) */
+  fullScan?: boolean;
 };
 
 /** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
@@ -50,6 +54,16 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
   if (body?.refresh === true) {
     argv.push("--refresh");
   }
+  const cap =
+    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
+      ? Math.floor(body.maxRoutes)
+      : NaN;
+  if (cap > 0) {
+    argv.push(`--max-routes=${cap}`);
+  }
+  if (body?.fullScan === true) {
+    argv.push("--full-scan");
+  }
   return argv;
 }
 
@@ -60,6 +74,7 @@ function scrapeLabel(body: RunScrapeBody): string {
   }
   if (typeof body?.agency === "string" && body.agency.trim()) {
     const a = body.agency.trim();
+    if (body?.fullScan === true) return `${a} (full-scan)`;
     return body?.refresh === true ? `${a} (refresh)` : a;
   }
   return body?.refresh === true ? "all (refresh)" : "all";
@@ -82,6 +97,24 @@ const scrapeJob = {
 
 let lastScrapeResult: LastScrapeResult | null = null;
 
+/** Live orchestrator output for GET /status while scrapeJob.running (dashboard יומן סריקה). */
+let scrapeLiveLog = "";
+let scrapeLiveLogTruncated = false;
+const SCRAPE_LIVE_LOG_MAX = 120_000;
+
+function resetScrapeLiveLog(): void {
+  scrapeLiveLog = "";
+  scrapeLiveLogTruncated = false;
+}
+
+function appendScrapeLiveLog(chunk: string): void {
+  scrapeLiveLog += chunk;
+  if (scrapeLiveLog.length > SCRAPE_LIVE_LOG_MAX) {
+    scrapeLiveLog = scrapeLiveLog.slice(-(SCRAPE_LIVE_LOG_MAX - 24_000));
+    scrapeLiveLogTruncated = true;
+  }
+}
+
 function runOrchestrator(argv: string[]): Promise<{
   code: number;
   stdout: string;
@@ -103,25 +136,47 @@ function runOrchestrator(argv: string[]): Promise<{
     let child;
 
     if (isMonorepoWorkspace()) {
-      child = spawn(
-        "pnpm",
-        ["--filter", "@workspace/scraper", "run", "scan", "--", ...argv],
-        { cwd: REPO_ROOT, env, shell }
+      const pnpmArgs = [
+        "--filter",
+        "@workspace/scraper",
+        "run",
+        "scan",
+        "--",
+        ...argv,
+      ];
+      console.log(
+        `[server] spawn monorepo: pnpm ${pnpmArgs.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")} cwd=${REPO_ROOT}`
       );
+      child = spawn("pnpm", pnpmArgs, { cwd: REPO_ROOT, env, shell });
     } else {
+      const tsxCli = path.join(
+        SCRAPER_PKG_ROOT,
+        "node_modules",
+        "tsx",
+        "dist",
+        "cli.mjs"
+      );
+      const orch = path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts");
+      console.log(
+        `[server] spawn standalone: node tsx ${orch} ${argv.join(" ")} cwd=${SCRAPER_PKG_ROOT}`
+      );
       child = spawn(
         process.execPath,
-        [
-          path.join(SCRAPER_PKG_ROOT, "node_modules", "tsx", "dist", "cli.mjs"),
-          path.join(SCRAPER_PKG_ROOT, "src", "orchestrator.ts"),
-          ...argv,
-        ],
+        [tsxCli, orch, ...argv],
         { cwd: SCRAPER_PKG_ROOT, env }
       );
     }
 
-    child.stdout?.on("data", (c: Buffer) => out.push(Buffer.from(c)));
-    child.stderr?.on("data", (c: Buffer) => err.push(Buffer.from(c)));
+    child.stdout?.on("data", (c: Buffer) => {
+      const b = Buffer.from(c);
+      out.push(b);
+      appendScrapeLiveLog(b.toString("utf-8"));
+    });
+    child.stderr?.on("data", (c: Buffer) => {
+      const b = Buffer.from(c);
+      err.push(b);
+      appendScrapeLiveLog(`[stderr] ${b.toString("utf-8")}`);
+    });
     child.on("error", reject);
     child.on("close", (code) => {
       resolve({
@@ -145,11 +200,6 @@ const DATA_FILE_NAMES = new Set([
   "busnearby-agency-exclusions.json",
 ]);
 
-function isAllowedDataFile(name: string): boolean {
-  if (DATA_FILE_NAMES.has(name)) return true;
-  return /^alerts-[a-z0-9-]+\.json$/i.test(name);
-}
-
 /** כשאין קובץ ב-GCS ובדיסק — מחזירים JSON תקין כדי שהדשבורד לא יקבל 404 (אין קבצים אלה בקונטיינר). */
 const EMPTY_JSON_STUBS: Record<string, string> = {
   "ai-summaries.json": '{"byId":{}}',
@@ -169,6 +219,12 @@ app.get("/status", (_req, res) => {
     running: scrapeJob.running,
     agency: scrapeJob.running ? scrapeJob.agency : "",
     startedAt: scrapeJob.startedAt ?? "",
+    ...(scrapeJob.running
+      ? {
+          logSnapshot: scrapeLiveLog,
+          logTruncated: scrapeLiveLogTruncated,
+        }
+      : {}),
   });
 });
 
@@ -182,7 +238,7 @@ app.get("/last-result", (_req, res) => {
 /** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
 app.get("/data/:name", async (req, res) => {
   const name = String(req.params.name ?? "");
-  if (!isAllowedDataFile(name)) {
+  if (!DATA_FILE_NAMES.has(name)) {
     return res.status(404).json({ error: "not found" });
   }
   try {
@@ -227,6 +283,10 @@ app.post("/run-scrape", (req, res) => {
   }
   const argv = buildOrchestratorArgv(body);
   const label = scrapeLabel(body);
+  console.log(
+    `[server] POST /run-scrape label=${JSON.stringify(label)} argv=${JSON.stringify(argv)} body=${JSON.stringify(body)} monorepo=${isMonorepoWorkspace()} cwd=${REPO_ROOT}`
+  );
+  resetScrapeLiveLog();
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();

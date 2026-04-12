@@ -60,7 +60,9 @@ export async function runScrapeRemotePoll(
   const scrapeReportedStarted = data.started === true
   const minDoneAt = scrapeReportedStarted ? Date.now() + 5000 : 0
 
-  let prevLogSnapshot = ""
+  /** אינדקס תו ב-snapshot המצטבר מהשרת — תמיד שולחים רק את החלק החדש ל-onLog */
+  let lastLogLength = 0
+  let loggedTruncatedHint = false
 
   for (;;) {
     await sleep(POLL_MS)
@@ -82,30 +84,22 @@ export async function runScrapeRemotePoll(
 
     const running = st.running === true
     const snap =
-      running && typeof st.logSnapshot === "string" ? st.logSnapshot : ""
+      typeof st.logSnapshot === "string" ? st.logSnapshot : ""
 
-    if (running && st.logTruncated === true) {
-      if (snap.startsWith(prevLogSnapshot)) {
-        const delta = snap.slice(prevLogSnapshot.length)
-        if (delta) handlers.onLog?.(delta.trimEnd())
-      } else {
-        handlers.onLog?.(
-          "[יומן סריקה] (חיתוך לוג בשרת — מוצג סוף הזרם)\n" +
-            snap.slice(-16_000)
-        )
+    if (snap.length < lastLogLength) {
+      lastLogLength = 0
+    }
+    if (snap.length > lastLogLength) {
+      const delta = snap.slice(lastLogLength)
+      if (delta) {
+        console.log("[poll] new log delta:", delta.slice(0, 100))
+        handlers.onLog?.(delta)
       }
-      prevLogSnapshot = snap
-    } else if (
-      running &&
-      snap.length >= prevLogSnapshot.length &&
-      snap.startsWith(prevLogSnapshot)
-    ) {
-      const delta = snap.slice(prevLogSnapshot.length)
-      if (delta) handlers.onLog?.(delta.trimEnd())
-      prevLogSnapshot = snap
-    } else if (running && snap.length > 0) {
-      handlers.onLog?.(snap)
-      prevLogSnapshot = snap
+      lastLogLength = snap.length
+    }
+    if (st.logTruncated === true && running && !loggedTruncatedHint) {
+      loggedTruncatedHint = true
+      handlers.onLog?.("[יומן סריקה] logTruncated=true (השרת מחזיק רק סוף הזרם)")
     }
 
     const line = `[status] running=${String(st.running)} · agency=${String(st.agency ?? "")}`

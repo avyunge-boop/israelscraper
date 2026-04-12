@@ -21,6 +21,8 @@ type ScanBody = {
   agency?: string
   all?: boolean
   refresh?: boolean
+  maxRoutes?: number
+  fullScan?: boolean
 }
 
 function parseScanBody(b: ScanBody): {
@@ -85,6 +87,16 @@ function buildCliArgs(body: ScanBody): string[] {
   const { all, agency, forceRefresh } = parseScanBody(body)
   let cliArgs = all ? ["--all"] : [`--agency=${agency}`]
   cliArgs = withBusnearbyRefreshIfNeeded(cliArgs, { all, agency, forceRefresh })
+  const cap =
+    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
+      ? Math.floor(body.maxRoutes)
+      : NaN
+  if (cap > 0) {
+    cliArgs = [...cliArgs, `--max-routes=${cap}`]
+  }
+  if (body?.fullScan === true) {
+    cliArgs = [...cliArgs, "--full-scan"]
+  }
   return cliArgs
 }
 
@@ -112,6 +124,12 @@ async function runOrchestratorViaScraperApi(
   else if (agency) payload.agency = agency
   else payload.all = true
   if (forceRefresh) payload.refresh = true
+  const cap =
+    typeof body?.maxRoutes === "number" && Number.isFinite(body.maxRoutes)
+      ? Math.floor(body.maxRoutes)
+      : NaN
+  if (cap > 0) payload.maxRoutes = cap
+  if (body?.fullScan === true) payload.fullScan = true
 
   const res = await fetch(`${base}/run-scrape`, {
     method: "POST",

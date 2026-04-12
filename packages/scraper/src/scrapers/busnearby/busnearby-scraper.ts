@@ -1115,6 +1115,7 @@ async function runBusnearbyInternal(
 ): Promise<SourceScanResult> {
   const argv = cliArgv(context);
   const refreshFromCli = argv.includes(REFRESH_ARG);
+  /** --full-scan או JSON ‎fullScan:true‎ מ־POST /run-scrape (ממופה ב־server.ts) */
   const fullScanMode = argv.includes(FULL_SCAN_ARG);
   const restoreAgencyFilters = argv.includes(RESTORE_AGENCY_FILTERS_ARG);
   await ensureRepoDataDir();

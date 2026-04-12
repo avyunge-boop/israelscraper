@@ -19,6 +19,7 @@ export type ScanProgressPayload = {
 
 interface ControlPanelProps {
   onScanAgency: (agency: string) => void
+  onDeepScanBusnearby: () => void
   onScanAll: () => void
   onInitBusnearbyRoutesDb: () => void
   /** רק הכפתור עם אותו מפתח נחסם — סריקות מקבילות לסוכנויות שונות אפשריות. */
@@ -46,6 +47,7 @@ const agencies = [
 
 export function ControlPanel({
   onScanAgency,
+  onDeepScanBusnearby,
   onScanAll,
   onInitBusnearbyRoutesDb,
   isScanningKey,
@@ -69,38 +71,97 @@ export function ControlPanel({
         </CardHeader>
         <CardContent className="space-y-4" aria-busy={scanProgress !== null}>
           <div className="flex flex-wrap gap-2 justify-stretch sm:justify-start">
-            {agencies.map((agency) => (
-              <Button
-                key={agency.id}
-                variant="outline"
-                onClick={() => onScanAgency(agency.id)}
-                disabled={isScanningKey(agency.id)}
-                aria-busy={isScanningKey(agency.id)}
-                title={ui.scanNow}
-                className="relative h-12 min-w-[9rem] shrink-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto border-border hover:bg-muted"
-              >
-                <span
-                  className={`absolute start-2 top-1/2 -translate-y-1/2 size-2 rounded-full shrink-0 ${agency.color}`}
-                />
-                <span className="me-1 truncate">{agency.name}</span>
-                {(isScanningKey(agency.id) ||
+            {agencies.map((agency) =>
+              agency.id === "busnearby" ? (
+                <div
+                  key="busnearby-row"
+                  className="flex min-w-0 w-full flex-wrap gap-2 sm:w-auto sm:flex-1 sm:basis-[calc(50%-0.25rem)]"
+                >
+                  <Button
+                    variant="outline"
+                    onClick={() => onScanAgency("busnearby")}
+                    disabled={
+                      isScanningKey("busnearby") ||
+                      isScanningKey("busnearbyDeep") ||
+                      isScanningKey("initBnDb")
+                    }
+                    aria-busy={isScanningKey("busnearby")}
+                    title={ui.scanNow}
+                    className="relative h-12 min-w-[9rem] flex-1 border-border hover:bg-muted"
+                  >
+                    <span
+                      className={`absolute start-2 top-1/2 -translate-y-1/2 size-2 rounded-full shrink-0 ${agency.color}`}
+                    />
+                    <span className="me-1 truncate">{agency.name}</span>
+                    {(isScanningKey("busnearby") ||
+                      (isScanningKey("all") &&
+                        scanProgress?.agency === "busnearby")) && (
+                      <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
+                        {scanProgress?.agency === "busnearby"
+                          ? scanProgress.alertsFound
+                          : "…"}
+                      </span>
+                    )}
+                    {isScanningKey("busnearby") ||
+                    (isScanningKey("all") &&
+                      scanProgress?.agency === "busnearby") ? (
+                      <Spinner className="size-4 shrink-0" />
+                    ) : (
+                      <Play className="size-4 fill-current shrink-0" />
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onDeepScanBusnearby}
+                    disabled={
+                      isScanningKey("busnearby") ||
+                      isScanningKey("busnearbyDeep") ||
+                      isScanningKey("initBnDb")
+                    }
+                    aria-busy={isScanningKey("busnearbyDeep")}
+                    title="סריקה מעמיקה: כל המסלולים במסד (עד 200), ללא דילוג על סריקה בתוך 24 שעות"
+                    className="h-12 shrink-0 gap-2 border-violet-400/50 bg-violet-50 px-3 text-xs font-semibold text-violet-950 hover:bg-violet-100 dark:bg-violet-950/50 dark:text-violet-100 dark:hover:bg-violet-900/60"
+                  >
+                    {isScanningKey("busnearbyDeep") ? (
+                      <Spinner className="size-4 shrink-0" />
+                    ) : null}
+                    סריקה מעמיקה
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  key={agency.id}
+                  variant="outline"
+                  onClick={() => onScanAgency(agency.id)}
+                  disabled={isScanningKey(agency.id)}
+                  aria-busy={isScanningKey(agency.id)}
+                  title={ui.scanNow}
+                  className="relative h-12 min-w-[9rem] shrink-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto border-border hover:bg-muted"
+                >
+                  <span
+                    className={`absolute start-2 top-1/2 -translate-y-1/2 size-2 rounded-full shrink-0 ${agency.color}`}
+                  />
+                  <span className="me-1 truncate">{agency.name}</span>
+                  {(isScanningKey(agency.id) ||
+                    (isScanningKey("all") &&
+                      scanProgress?.agency === agency.id)) && (
+                    <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
+                      {scanProgress?.agency === agency.id
+                        ? scanProgress.alertsFound
+                        : "…"}
+                    </span>
+                  )}
+                  {isScanningKey(agency.id) ||
                   (isScanningKey("all") &&
-                    scanProgress?.agency === agency.id)) && (
-                  <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
-                    {scanProgress?.agency === agency.id
-                      ? scanProgress.alertsFound
-                      : "…"}
-                  </span>
-                )}
-                {isScanningKey(agency.id) ||
-                (isScanningKey("all") &&
-                  scanProgress?.agency === agency.id) ? (
-                  <Spinner className="size-4 shrink-0" />
-                ) : (
-                  <Play className="size-4 fill-current shrink-0" />
-                )}
-              </Button>
-            ))}
+                    scanProgress?.agency === agency.id) ? (
+                    <Spinner className="size-4 shrink-0" />
+                  ) : (
+                    <Play className="size-4 fill-current shrink-0" />
+                  )}
+                </Button>
+              )
+            )}
           </div>
           {scanProgress && (
             <p className="text-[11px] text-muted-foreground text-center w-full max-w-xl mx-auto" dir="ltr">
@@ -115,7 +176,11 @@ export function ControlPanel({
               variant="secondary"
               size="sm"
               className="w-full max-w-md gap-2 text-xs border-dashed"
-              disabled={isScanningKey("initBnDb")}
+              disabled={
+                isScanningKey("initBnDb") ||
+                isScanningKey("busnearby") ||
+                isScanningKey("busnearbyDeep")
+              }
               aria-busy={isScanningKey("initBnDb")}
               title={ui.initRoutesDbHint}
               onClick={onInitBusnearbyRoutesDb}

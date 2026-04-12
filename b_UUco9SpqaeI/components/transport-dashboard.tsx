@@ -373,7 +373,7 @@ export function TransportDashboard() {
   const runProxyScan = useCallback(
     async (
       body:
-        | { agency: string; refresh?: boolean; maxRoutes?: number }
+        | { agency: string; refresh?: boolean; maxRoutes?: number; fullScan?: boolean }
         | { all: true; refresh?: boolean },
       opts?: { logPrefix?: string }
     ) => {
@@ -501,6 +501,45 @@ export function TransportDashboard() {
       appendScanLog,
     ]
   )
+
+  const handleDeepScanBusnearby = useCallback(async () => {
+    addScanKey("busnearbyDeep")
+    try {
+      await runProxyScan(
+        {
+          agency: "busnearby",
+          maxRoutes: 200,
+          fullScan: true,
+        },
+        { logPrefix: "bn-deep" }
+      )
+      await reloadCachedAlertsAfterScrape()
+      const { sent, emailSkipped } = await sendReportAfterScan(
+        "busnearby",
+        appendScanLog
+      )
+      const scope = filterTabLabel(lang, "busnearby")
+      showEphemeralBanner(
+        `סריקה מעמיקה · ${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+      )
+    } catch (e) {
+      showEphemeralBanner(
+        e instanceof Error ? e.message : scanOrEmailError(lang),
+        "destructive"
+      )
+    } finally {
+      removeScanKey("busnearbyDeep")
+    }
+  }, [
+    addScanKey,
+    lang,
+    reloadCachedAlertsAfterScrape,
+    removeScanKey,
+    runProxyScan,
+    sendReportAfterScan,
+    showEphemeralBanner,
+    appendScanLog,
+  ])
 
   const handleInitBusnearbyRoutesDb = useCallback(async () => {
     addScanKey("initBnDb")
@@ -772,6 +811,7 @@ export function TransportDashboard() {
 
         <ControlPanel
           onScanAgency={handleScanAgency}
+          onDeepScanBusnearby={handleDeepScanBusnearby}
           onScanAll={handleScanAll}
           onInitBusnearbyRoutesDb={handleInitBusnearbyRoutesDb}
           isScanningKey={isScanningKey}
