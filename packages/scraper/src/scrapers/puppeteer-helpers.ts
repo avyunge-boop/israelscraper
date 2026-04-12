@@ -5,6 +5,17 @@ import puppeteer, { type LaunchOptions } from "puppeteer";
 const MACOS_CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
+/** Typical Debian/Ubuntu package path for `apt install chromium`. */
+const LINUX_SYSTEM_CHROMIUM = "/usr/bin/chromium";
+
+/** Cloud Run / production default when no env and no `which` hit (see Dockerfile). */
+const CLOUD_RUN_CHROME_FALLBACK = "/usr/bin/google-chrome-stable";
+
+function envChromePath(key: string): string | undefined {
+  const v = process.env[key]?.trim();
+  return v || undefined;
+}
+
 /** Headless/server-safe Chromium flags (no `--single-process`; deprecated). */
 export const DEFAULT_PUPPETEER_ARGS = [
   "--no-sandbox",
@@ -36,6 +47,33 @@ export function getPuppeteerLaunchArgs(chromePath: string | undefined): string[]
   return ["--disable-dev-shm-usage"];
 }
 
+function launchArgKey(flag: string): string {
+  const t = flag.trim();
+  if (!t) return "";
+  const m = t.match(/^(--[^\s=]+)/);
+  return (m?.[1] ?? t.split("=")[0] ?? t).trim();
+}
+
+/** מיזוג דגלים; כפילות לפי מפתח הדגל — ערך מ־`extra` דורס קודם. */
+function mergeLaunchArgs(base: string[], extra: string[]): string[] {
+  const order: string[] = [];
+  const keyToIndex = new Map<string, number>();
+  const push = (a: string) => {
+    const k = launchArgKey(a);
+    if (!k) return;
+    const existing = keyToIndex.get(k);
+    if (existing !== undefined) {
+      order[existing] = a;
+    } else {
+      keyToIndex.set(k, order.length);
+      order.push(a);
+    }
+  };
+  for (const a of base) push(a);
+  for (const a of extra) push(a);
+  return order;
+}
+
 export function findChromiumExecutable(): string | undefined {
   for (const cmd of [
     "chromium",
@@ -56,13 +94,14 @@ export function findChromiumExecutable(): string | undefined {
 }
 
 /**
- * סדר עדיפות: env → Chromium מערכת בלינוקס → Chrome ב-macOS → which.
- * ב-Cloud Run עם Dockerfile סטנדרטי: בדרך כלל `PUPPETEER_EXECUTABLE_PATH` או `/usr/bin/chromium`.
+ * סדר עדיפות: env (כולל BUS_ALERTS_CHROME_EXECUTABLE) → Chromium בלינוקס → Chrome ב-macOS → which (מקומי).
+ * ב-production בלבד: אחרון `/usr/bin/google-chrome-stable` (Cloud Run).
  */
 export function resolveChromeExecutable(): string | undefined {
   const fromEnv =
-    process.env.PUPPETEER_EXECUTABLE_PATH?.trim() ||
-    process.env.CHROME_PATH?.trim();
+    envChromePath("BUS_ALERTS_CHROME_EXECUTABLE") ??
+    envChromePath("CHROME_PATH") ??
+    envChromePath("PUPPETEER_EXECUTABLE_PATH");
   if (fromEnv) return fromEnv;
 
   if (process.platform === "linux" && existsSync(LINUX_SYSTEM_CHROMIUM)) {
@@ -73,7 +112,14 @@ export function resolveChromeExecutable(): string | undefined {
     return MACOS_CHROME;
   }
 
-  return findChromiumExecutable();
+  const fromWhich = findChromiumExecutable();
+  if (fromWhich) return fromWhich;
+
+  if (process.env.NODE_ENV === "production") {
+    return CLOUD_RUN_CHROME_FALLBACK;
+  }
+
+  return undefined;
 }
 
 function launchTimeoutMs(): number {
@@ -105,11 +151,15 @@ export function buildPuppeteerLaunchOptions(extraArgs: string[] = []): {
 } {
   const executablePath = resolveChromeExecutable();
   const dumpio = shouldDumpIo();
+  const defaultArgs = [
+    ...getPuppeteerLaunchArgs(executablePath),
+    "--remote-debugging-pipe",
+  ];
 
   return {
     headless: true,
     ...(executablePath ? { executablePath } : {}),
-    args: mergeLaunchArgs(PUPPETEER_LAUNCH_ARGS_DEFAULT, extraArgs),
+    args: mergeLaunchArgs(defaultArgs, extraArgs),
     timeout: launchTimeoutMs(),
     /**
      * עם `--remote-debugging-pipe` החיבור הוא דרך fd 3/4 — בטוח יחד עם dumpio.

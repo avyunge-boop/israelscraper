@@ -1,6 +1,7 @@
 /**
  * HTTP API for Cloud Run: POST /run-scrape starts the orchestrator in the background (returns immediately;
  * use GET /status and GET /last-result to track completion — avoids HTTP request timeouts on long runs).
+ * For live logs + `[SCRAPER_PROGRESS]` events: POST `/run-scrape?stream=1` with `Accept: text/event-stream` (holds connection until the run finishes).
  * Set SCRAPER_STORAGE=gcs and GCS_BUCKET_NAME (default israelscraper) to upload data/*.json after a successful run.
  *
  * Email: by default SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=1 (no emails from orchestrator/scrapers).
@@ -115,7 +116,15 @@ function appendScrapeLiveLog(chunk: string): void {
   }
 }
 
-function runOrchestrator(argv: string[]): Promise<{
+type RunOrchestratorStreamOpts = {
+  onStdoutChunk?: (chunk: string) => void;
+  onStderrChunk?: (chunk: string) => void;
+};
+
+function runOrchestrator(
+  argv: string[],
+  opts?: RunOrchestratorStreamOpts
+): Promise<{
   code: number;
   stdout: string;
   stderr: string;
@@ -168,14 +177,18 @@ function runOrchestrator(argv: string[]): Promise<{
     }
 
     child.stdout?.on("data", (c: Buffer) => {
-      const b = Buffer.from(c);
-      out.push(b);
-      appendScrapeLiveLog(b.toString("utf-8"));
+      const buf = Buffer.from(c);
+      out.push(buf);
+      const text = buf.toString("utf-8");
+      appendScrapeLiveLog(text);
+      opts?.onStdoutChunk?.(text);
     });
     child.stderr?.on("data", (c: Buffer) => {
-      const b = Buffer.from(c);
-      err.push(b);
-      appendScrapeLiveLog(`[stderr] ${b.toString("utf-8")}`);
+      const buf = Buffer.from(c);
+      err.push(buf);
+      const text = buf.toString("utf-8");
+      appendScrapeLiveLog(`[stderr] ${text}`);
+      opts?.onStderrChunk?.(text);
     });
     child.on("error", reject);
     child.on("close", (code) => {
@@ -186,6 +199,46 @@ function runOrchestrator(argv: string[]): Promise<{
       });
     });
   });
+}
+
+function parseProgressLine(line: string): unknown | null {
+  const m = line.match(/\[SCRAPER_PROGRESS\]\s*(.+)/);
+  if (!m?.[1]) return null;
+  try {
+    return JSON.parse(m[1]!);
+  } catch {
+    return null;
+  }
+}
+
+async function finalizeScrapeRun(
+  code: number,
+  stdout: string,
+  stderr: string
+): Promise<void> {
+  let uploaded: string[] = [];
+  let gcsError: string | undefined;
+  const shouldUploadGcs =
+    process.env.SCRAPER_STORAGE === "gcs" &&
+    (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
+  if (shouldUploadGcs) {
+    try {
+      uploaded = await uploadDataArtifactsToGcs();
+    } catch (e) {
+      gcsError = String(e);
+    }
+  }
+  lastScrapeResult = {
+    exitCode: code,
+    gcsUploaded: uploaded,
+    stdout,
+    stderr,
+    completedAt: new Date().toISOString(),
+    ...(gcsError !== undefined ? { gcsError } : {}),
+  };
+  console.log(
+    `[server] scrape finished exit=${code} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
+  );
 }
 
 const DATA_FILE_NAMES = new Set([
@@ -272,7 +325,7 @@ app.get("/data/:name", async (req, res) => {
   }
 });
 
-app.post("/run-scrape", (req, res) => {
+app.post("/run-scrape", async (req, res) => {
   const body = (req.body ?? {}) as RunScrapeBody;
   if (scrapeJob.running) {
     return res.status(409).json({
@@ -287,6 +340,88 @@ app.post("/run-scrape", (req, res) => {
     `[server] POST /run-scrape label=${JSON.stringify(label)} argv=${JSON.stringify(argv)} body=${JSON.stringify(body)} monorepo=${isMonorepoWorkspace()} cwd=${REPO_ROOT}`
   );
   resetScrapeLiveLog();
+
+  const streamMode =
+    String(req.query["stream"] ?? "") === "1" ||
+    (typeof req.headers.accept === "string" &&
+      req.headers.accept.includes("text/event-stream"));
+
+  if (streamMode) {
+    scrapeJob.running = true;
+    scrapeJob.agency = label;
+    scrapeJob.startedAt = new Date().toISOString();
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    const resWithFlush = res as express.Response & { flushHeaders?: () => void };
+    resWithFlush.flushHeaders?.();
+
+    const tail = 80_000;
+    const send = (obj: object) => {
+      res.write(`data: ${JSON.stringify(obj)}\n\n`);
+    };
+
+    let stdoutLineCarry = "";
+    const onStdoutChunk = (chunk: string) => {
+      const merged = stdoutLineCarry + chunk;
+      const parts = merged.split("\n");
+      stdoutLineCarry = parts.pop() ?? "";
+      for (const line of parts) {
+        send({ type: "log", channel: "stdout", text: `${line}\n` });
+        const ev = parseProgressLine(line);
+        if (ev !== null && typeof ev === "object") {
+          send({ type: "progress", payload: ev });
+        }
+      }
+    };
+    const onStderrChunk = (text: string) => {
+      send({ type: "log", channel: "stderr", text });
+    };
+
+    try {
+      const { code, stdout, stderr } = await runOrchestrator(argv, {
+        onStdoutChunk,
+        onStderrChunk,
+      });
+      if (stdoutLineCarry) {
+        send({ type: "log", channel: "stdout", text: stdoutLineCarry });
+        const ev = parseProgressLine(stdoutLineCarry);
+        if (ev !== null && typeof ev === "object") {
+          send({ type: "progress", payload: ev });
+        }
+      }
+      await finalizeScrapeRun(code, stdout, stderr);
+      const outT = stdout.length > tail ? stdout.slice(-tail) : stdout;
+      const errT = stderr.length > tail ? stderr.slice(-tail) : stderr;
+      send({
+        type: "done",
+        ok: code === 0,
+        exitCode: code,
+        stdout: outT,
+        stderr: errT,
+      });
+    } catch (e) {
+      const msg = String(e);
+      lastScrapeResult = {
+        exitCode: 1,
+        gcsUploaded: [],
+        stdout: "",
+        stderr: msg,
+        completedAt: new Date().toISOString(),
+      };
+      console.error(`[server] scrape failed: ${msg}`);
+      send({ type: "error", message: msg });
+    } finally {
+      scrapeJob.running = false;
+      scrapeJob.startedAt = null;
+      scrapeJob.agency = "";
+      res.end();
+    }
+    return;
+  }
+
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();
@@ -294,29 +429,7 @@ app.post("/run-scrape", (req, res) => {
   void (async () => {
     try {
       const { code, stdout, stderr } = await runOrchestrator(argv);
-      let uploaded: string[] = [];
-      let gcsError: string | undefined;
-      const shouldUploadGcs =
-        process.env.SCRAPER_STORAGE === "gcs" &&
-        (code === 0 || orchestratorHadAnySuccessfulAgent(stdout));
-      if (shouldUploadGcs) {
-        try {
-          uploaded = await uploadDataArtifactsToGcs();
-        } catch (e) {
-          gcsError = String(e);
-        }
-      }
-      lastScrapeResult = {
-        exitCode: code,
-        gcsUploaded: uploaded,
-        stdout,
-        stderr,
-        completedAt: new Date().toISOString(),
-        ...(gcsError !== undefined ? { gcsError } : {}),
-      };
-      console.log(
-        `[server] scrape finished exit=${code} gcs=${uploaded.length}${gcsError ? ` gcsError=${gcsError}` : ""}`
-      );
+      await finalizeScrapeRun(code, stdout, stderr);
     } catch (e) {
       const msg = String(e);
       lastScrapeResult = {

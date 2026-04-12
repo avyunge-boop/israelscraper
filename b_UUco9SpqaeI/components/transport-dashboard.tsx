@@ -4,7 +4,10 @@ import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatsBar } from "@/components/stats-bar"
-import { ControlPanel } from "@/components/control-panel"
+import {
+  ControlPanel,
+  type ScanPhasesByAgency,
+} from "@/components/control-panel"
 import { AlertCard } from "@/components/alert-card"
 import { EmptyState } from "@/components/empty-state"
 import { LogConsole } from "@/components/log-console"
@@ -195,7 +198,10 @@ export function TransportDashboard() {
     current: number
     total: number
     alertsFound: number
+    phase?: "running" | "done" | "error"
   } | null>(null)
+  const [scanPhasesByAgency, setScanPhasesByAgency] =
+    useState<ScanPhasesByAgency>({})
   const [healthOk, setHealthOk] = useState<boolean | null>(null)
   const [healthFailures, setHealthFailures] = useState<string[]>([])
   const [healthWarnings, setHealthWarnings] = useState<string[]>([])
@@ -406,6 +412,30 @@ export function TransportDashboard() {
     return `${ui.exportCsvPrefix} ${scope} (${exportSlice.length})`
   }, [activeFilter, exportSlice.length, lang, ui.exportCsvPrefix])
 
+  const applyStreamProgress = useCallback((pr: Record<string, unknown>) => {
+    const agency = String(pr.agency ?? "")
+    const ph = pr.phase
+    if (
+      agency &&
+      (ph === "running" || ph === "done" || ph === "error")
+    ) {
+      setScanPhasesByAgency((prev) => ({
+        ...prev,
+        [agency]: ph,
+      }))
+    }
+    setScanProgress({
+      agency,
+      displayName: String(pr.displayName ?? pr.agency ?? ""),
+      current: Number(pr.current ?? 0),
+      total: Number(pr.total ?? 0),
+      alertsFound: Number(pr.alertsFound ?? 0),
+      ...(ph === "running" || ph === "done" || ph === "error"
+        ? { phase: ph as "running" | "done" | "error" }
+        : {}),
+    })
+  }, [])
+
   const runProxyScan = useCallback(
     async (
       body:
@@ -417,6 +447,7 @@ export function TransportDashboard() {
       setDeskTab("ops")
       setScanLogs([])
       setScanProgress(null)
+      setScanPhasesByAgency({})
 
       const useRemote = await resolveUseRemoteScraper()
 
@@ -424,17 +455,10 @@ export function TransportDashboard() {
         try {
           const { ok, exitCode } = await runScrapeRemotePoll(body, {
             onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
-            onProgress: (pr) => {
-              setScanProgress({
-                agency: String(pr.agency ?? ""),
-                displayName: String(pr.displayName ?? pr.agency ?? ""),
-                current: Number(pr.current ?? 0),
-                total: Number(pr.total ?? 0),
-                alertsFound: Number(pr.alertsFound ?? 0),
-              })
-            },
+            onProgress: applyStreamProgress,
           })
           setScanProgress(null)
+          setScanPhasesByAgency({})
           if (!ok) {
             throw new Error(`האורקסטרטור יצא עם קוד ${exitCode}`)
           }
@@ -449,19 +473,12 @@ export function TransportDashboard() {
 
       await consumeProxyScanStream(body, {
         onLog: (text) => appendScanLog(`${p}${text.trimEnd()}`),
-        onProgress: (pr) => {
-          setScanProgress({
-            agency: String(pr.agency ?? ""),
-            displayName: String(pr.displayName ?? pr.agency ?? ""),
-            current: Number(pr.current ?? 0),
-            total: Number(pr.total ?? 0),
-            alertsFound: Number(pr.alertsFound ?? 0),
-          })
-        },
+        onProgress: applyStreamProgress,
       })
       setScanProgress(null)
+      setScanPhasesByAgency({})
     },
-    [appendScanLog]
+    [appendScanLog, applyStreamProgress]
   )
 
   const sendReportAfterScan = useCallback(
@@ -856,6 +873,9 @@ export function TransportDashboard() {
           onInitBusnearbyRoutesDb={handleInitBusnearbyRoutesDb}
           isScanningKey={isScanningKey}
           scanProgress={scanProgress}
+          scanPhasesByAgency={
+            isScanningKey("all") ? scanPhasesByAgency : undefined
+          }
           scanInterval={scanInterval}
           onIntervalChange={handleScanIntervalChange}
           onExport={handleExport}

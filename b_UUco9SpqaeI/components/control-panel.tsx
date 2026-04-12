@@ -15,7 +15,10 @@ export type ScanProgressPayload = {
   current: number
   total: number
   alertsFound: number
+  phase?: "running" | "done" | "error"
 } | null
+
+export type ScanPhasesByAgency = Record<string, "running" | "done" | "error">
 
 interface ControlPanelProps {
   onScanAgency: (agency: string) => void
@@ -25,6 +28,8 @@ interface ControlPanelProps {
   /** רק הכפתור עם אותו מפתח נחסם — סריקות מקבילות לסוכנויות שונות אפשריות. */
   isScanningKey: (key: string) => boolean
   scanProgress: ScanProgressPayload
+  /** בעת «סרוק הכל» — סטטוס לפי סוכנות (מזרם SSE). */
+  scanPhasesByAgency?: ScanPhasesByAgency
   scanInterval: string
   onIntervalChange: (interval: string) => void
   onExport: () => void
@@ -52,6 +57,7 @@ export function ControlPanel({
   onInitBusnearbyRoutesDb,
   isScanningKey,
   scanProgress,
+  scanPhasesByAgency,
   scanInterval,
   onIntervalChange,
   onExport,
@@ -98,7 +104,9 @@ export function ControlPanel({
                         scanProgress?.agency === "busnearby")) && (
                       <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
                         {scanProgress?.agency === "busnearby"
-                          ? scanProgress.alertsFound
+                          ? scanProgress.phase === "running"
+                            ? "…"
+                            : scanProgress.alertsFound
                           : "…"}
                       </span>
                     )}
@@ -148,7 +156,9 @@ export function ControlPanel({
                       scanProgress?.agency === agency.id)) && (
                     <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
                       {scanProgress?.agency === agency.id
-                        ? scanProgress.alertsFound
+                        ? scanProgress.phase === "running"
+                          ? "…"
+                          : scanProgress.alertsFound
                         : "…"}
                     </span>
                   )}
@@ -166,9 +176,26 @@ export function ControlPanel({
           {scanProgress && (
             <p className="text-[11px] text-muted-foreground text-center w-full max-w-xl mx-auto" dir="ltr">
               {scanProgress.displayName} · {ui.scanProgressLabel}{" "}
-              {scanProgress.current}/{scanProgress.total} · Found: {scanProgress.alertsFound}{" "}
-              alerts
+              {scanProgress.current}/{scanProgress.total}
+              {scanProgress.phase === "running"
+                ? ` · ${ui.scanningInProgress}`
+                : ` · Found: ${scanProgress.alertsFound} alerts`}
             </p>
+          )}
+          {isScanningKey("all") && scanPhasesByAgency && (
+            <ul
+              className="text-[10px] text-muted-foreground w-full max-w-xl mx-auto space-y-0.5 text-start"
+              dir="ltr"
+            >
+              {agencies.map((a) => (
+                <li key={a.id} className="flex justify-between gap-2">
+                  <span>{a.name}</span>
+                  <span className="tabular-nums shrink-0">
+                    {scanPhasesByAgency[a.id] ?? "pending"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
           <div className="flex flex-col items-center gap-2 w-full pt-1">
             <Button

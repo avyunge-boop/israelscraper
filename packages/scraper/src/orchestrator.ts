@@ -177,6 +177,14 @@ async function main() {
 
     agencyIndex++;
     console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
+    logScraperProgressLine({
+      agency: scraper.sourceId,
+      displayName: scraper.displayName,
+      current: agencyIndex,
+      total: ids.length,
+      alertsFound: 0,
+      phase: "running",
+    });
     const result = await scraper.runScan({
       forwardArgv: argv.slice(),
       suppressEmail: isFullRun || skipAllEmails,
@@ -194,6 +202,7 @@ async function main() {
       current: agencyIndex,
       total: ids.length,
       alertsFound: result.alerts.length,
+      phase: result.success ? "done" : "error",
     });
   }
 

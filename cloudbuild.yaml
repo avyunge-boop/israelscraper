@@ -69,6 +69,8 @@ steps:
       - --project=${PROJECT_ID}
       - --max-instances=1
       - --min-instances=1
+      - --timeout=3600s
+      - --update-env-vars=BUS_ALERTS_CHROME_EXECUTABLE=/usr/bin/google-chrome-stable
       - --quiet
     waitFor:
       - push-scraper

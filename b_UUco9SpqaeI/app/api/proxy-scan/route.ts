@@ -360,29 +360,65 @@ export async function POST(request: Request) {
           )
         }
         try {
-          const { code, stdout, stderr } = getScraperApiBaseUrl()
-            ? await runOrchestratorViaScraperApi(body, {
-                onStdout: (text) => {
-                  send({ type: "log", channel: "stdout", text })
-                  for (const ev of parseProgressLines(text)) {
-                    send({ type: "progress", payload: ev })
-                  }
-                },
-                onStderr: (text) => {
-                  send({ type: "log", channel: "stderr", text })
-                },
-              })
-            : await runOrchestrator(cliArgs, {
-                onStdout: (text) => {
-                  send({ type: "log", channel: "stdout", text })
-                  for (const ev of parseProgressLines(text)) {
-                    send({ type: "progress", payload: ev })
-                  }
-                },
-                onStderr: (text) => {
-                  send({ type: "log", channel: "stderr", text })
-                },
-              })
+          const base = getScraperApiBaseUrl()
+          if (base) {
+            const { all, agency, forceRefresh } = parseScanBody(body)
+            const payload: Record<string, unknown> = {}
+            if (all) payload.all = true
+            else if (agency) payload.agency = agency
+            else payload.all = true
+            if (forceRefresh) payload.refresh = true
+
+            const upstream = await fetch(`${base}/run-scrape?stream=1`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "text/event-stream",
+              },
+              body: JSON.stringify(payload),
+              cache: "no-store",
+            })
+            if (upstream.status === 409) {
+              const t = await upstream.text()
+              let msg = "scrape already running"
+              try {
+                const j = JSON.parse(t) as { error?: string; agency?: string }
+                msg = j.error ?? msg
+                if (j.agency) msg += ` (${j.agency})`
+              } catch {
+                /* */
+              }
+              throw new Error(`Scraper API: ${msg}`)
+            }
+            if (!upstream.ok) {
+              const t = await upstream.text()
+              throw new Error(
+                `Scraper API stream HTTP ${upstream.status}: ${t.slice(0, 200)}`
+              )
+            }
+            const reader = upstream.body?.getReader()
+            if (!reader) {
+              throw new Error("Scraper API stream: empty response body")
+            }
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              if (value) controller.enqueue(value)
+            }
+            return
+          }
+
+          const { code, stdout, stderr } = await runOrchestrator(cliArgs, {
+            onStdout: (text) => {
+              send({ type: "log", channel: "stdout", text })
+              for (const ev of parseProgressLines(text)) {
+                send({ type: "progress", payload: ev })
+              }
+            },
+            onStderr: (text) => {
+              send({ type: "log", channel: "stderr", text })
+            },
+          })
           send({
             type: "done",
             ok: code === 0,
