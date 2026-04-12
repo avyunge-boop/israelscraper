@@ -311,7 +311,7 @@ export function TransportDashboard() {
   const runProxyScan = useCallback(
     async (
       body:
-        | { agency: string; refresh?: boolean }
+        | { agency: string; refresh?: boolean; maxRoutes?: number }
         | { all: true; refresh?: boolean },
       opts?: { logPrefix?: string }
     ) => {
@@ -330,7 +330,7 @@ export function TransportDashboard() {
       if (cfg.useRemoteScraper === true) {
         const { ok, exitCode } = await runScrapeRemotePoll(body, {
           onLog: (text) =>
-            setScanLogs((prev) => [...prev.slice(-400), `${p}${text.trimEnd()}`]),
+            setScanLogs((prev) => [...prev.slice(-3000), `${p}${text.trimEnd()}`]),
           onProgress: (pr) => {
             setScanProgress({
               agency: String(pr.agency ?? ""),
@@ -350,7 +350,7 @@ export function TransportDashboard() {
 
       await consumeProxyScanStream(body, {
         onLog: (text) =>
-          setScanLogs((prev) => [...prev.slice(-400), `${p}${text.trimEnd()}`]),
+          setScanLogs((prev) => [...prev.slice(-3000), `${p}${text.trimEnd()}`]),
         onProgress: (pr) => {
           setScanProgress({
             agency: String(pr.agency ?? ""),
@@ -395,7 +395,11 @@ export function TransportDashboard() {
       const filter = AGENCY_SCAN_MAP[agency] ?? "all"
       addScanKey(agency)
       try {
-        await runProxyScan({ agency }, { logPrefix: agency })
+        const runBody =
+          agency === "busnearby"
+            ? { agency: "busnearby" as const, maxRoutes: 200 as const }
+            : { agency }
+        await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
         if (agency === "busnearby") {
           showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
@@ -429,9 +433,10 @@ export function TransportDashboard() {
   const handleInitBusnearbyRoutesDb = useCallback(async () => {
     addScanKey("initBnDb")
     try {
-      await runProxyScan({ agency: "busnearby", refresh: true }, {
-        logPrefix: "initBnDb",
-      })
+      await runProxyScan(
+        { agency: "busnearby", refresh: true, maxRoutes: 200 },
+        { logPrefix: "initBnDb" }
+      )
       await reloadCachedAlertsAfterScrape()
       showEphemeralBanner(busnearbyScanRoutesOnlyMessage(lang))
     } catch (e) {
