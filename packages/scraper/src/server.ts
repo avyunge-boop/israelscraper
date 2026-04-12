@@ -145,6 +145,11 @@ const DATA_FILE_NAMES = new Set([
   "busnearby-agency-exclusions.json",
 ]);
 
+function isAllowedDataFile(name: string): boolean {
+  if (DATA_FILE_NAMES.has(name)) return true;
+  return /^alerts-[a-z0-9-]+\.json$/i.test(name);
+}
+
 /** כשאין קובץ ב-GCS ובדיסק — מחזירים JSON תקין כדי שהדשבורד לא יקבל 404 (אין קבצים אלה בקונטיינר). */
 const EMPTY_JSON_STUBS: Record<string, string> = {
   "ai-summaries.json": '{"byId":{}}',
@@ -177,7 +182,7 @@ app.get("/last-result", (_req, res) => {
 /** קריאת קבצי data/ לדשבורד — עם SCRAPER_STORAGE=gcs קודם מ-GCS (אחרי איפוס קונטיינר אין דיסק). */
 app.get("/data/:name", async (req, res) => {
   const name = String(req.params.name ?? "");
-  if (!DATA_FILE_NAMES.has(name)) {
+  if (!isAllowedDataFile(name)) {
     return res.status(404).json({ error: "not found" });
   }
   try {

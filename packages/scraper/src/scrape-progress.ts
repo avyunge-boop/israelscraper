@@ -7,6 +7,8 @@ export type ScraperProgressPayload = {
   current: number;
   total: number;
   alertsFound: number;
+  /** Optional human line for dashboards / log tail (e.g. current route). */
+  detail?: string;
 };
 
 export function logScraperProgressLine(p: ScraperProgressPayload): void {

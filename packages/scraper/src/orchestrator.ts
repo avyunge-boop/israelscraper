@@ -12,7 +12,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "fs/promises";
+import { writeFile } from "fs/promises";
 
 import {
   mergeScanResultsForEmail,
@@ -21,10 +21,14 @@ import {
 import {
   ensureRepoDataDir,
   EGGED_ALERTS_JSON,
-  LEGACY_SCAN_EXPORT,
   loadRootEnv,
-  SCAN_EXPORT_JSON,
 } from "./repo-paths";
+import { rebuildScanExportAndMasterBusAlerts } from "./lib/alerts-collector.js";
+import { mergeAndSaveAgencyAlertsFile } from "./lib/agency-alerts-store.js";
+import {
+  hydrateAgencyAlertFilesFromGcs,
+  hydrateScanExportFromGcsIfConfigured,
+} from "./gcs-sync.js";
 import { logScraperProgressLine } from "./scrape-progress";
 import { ALL_AGENCY_IDS, type KnownAgencyId, type SourceScanResult } from "./scrapers/types";
 import { getScraper, isKnownAgencyId } from "./scrapers/registry";
@@ -68,36 +72,6 @@ function printSummary(r: SourceScanResult) {
   console.log(JSON.stringify(line, null, 2));
 }
 
-interface ScanExportSourceRow {
-  sourceId: string;
-  displayName: string;
-  success: boolean;
-  scrapedAt: string;
-  error: string | null;
-  alerts: SourceScanResult["alerts"];
-}
-
-async function readExistingScanExportSources(): Promise<Map<string, ScanExportSourceRow>> {
-  const byId = new Map<string, ScanExportSourceRow>();
-  const tryParse = async (file: string) => {
-    try {
-      const raw = JSON.parse(await readFile(file, "utf-8")) as {
-        sources?: ScanExportSourceRow[];
-      };
-      for (const s of raw.sources ?? []) {
-        byId.set(s.sourceId, s);
-      }
-    } catch {
-      /* */
-    }
-  };
-  await tryParse(SCAN_EXPORT_JSON);
-  if (byId.size === 0) {
-    await tryParse(LEGACY_SCAN_EXPORT);
-  }
-  return byId;
-}
-
 /** פורמט scripts/egged-alerts.json — כמו aggregate-transport-json alertsFromEggedJson */
 function buildEggedAlertsJsonBag(
   alerts: SourceScanResult["alerts"]
@@ -134,26 +108,17 @@ function buildEggedAlertsJsonBag(
   return bag;
 }
 
-/** מיזוג עם קובץ קיים; כתיבה ל־data/scan-export.json (קנוני) */
-async function persistScanExport(results: SourceScanResult[]): Promise<void> {
+/**
+ * Per-agency alerts-*.json merge + collector rebuild of scan-export.json + bus-alerts.json.
+ */
+async function persistAgencyIsolationAndMaster(
+  results: SourceScanResult[]
+): Promise<void> {
   await ensureRepoDataDir();
-  const byId = await readExistingScanExportSources();
   for (const r of results) {
-    byId.set(r.sourceId, {
-      sourceId: r.sourceId,
-      displayName: r.displayName,
-      success: r.success,
-      scrapedAt: r.scrapedAt,
-      error: r.error ?? null,
-      alerts: r.alerts,
-    });
+    await mergeAndSaveAgencyAlertsFile(r);
   }
-  const payload = {
-    scrapedAt: new Date().toISOString(),
-    sources: [...byId.values()],
-  };
-  await writeFile(SCAN_EXPORT_JSON, JSON.stringify(payload, null, 2), "utf-8");
-  console.log(`\nWrote scan export: ${SCAN_EXPORT_JSON}`);
+  await rebuildScanExportAndMasterBusAlerts();
 
   const egged = results.find((r) => r.sourceId === "egged" && r.success);
   if (egged) {
@@ -186,6 +151,10 @@ async function main() {
   }
 
   const ids: KnownAgencyId[] = all ? [...ALL_AGENCY_IDS] : [agency as KnownAgencyId];
+
+  await ensureRepoDataDir();
+  await hydrateScanExportFromGcsIfConfigured();
+  await hydrateAgencyAlertFilesFromGcs();
 
   /** סריקת --all: מייל מאוחד בסוף; סריקת סוכן יחיד: המייל יוצא מהסקרייפר (או מהאורקסטרטור עבור מקורות בלי מייל פנימי) */
   const isFullRun = all;
@@ -228,7 +197,7 @@ async function main() {
     });
   }
 
-  await persistScanExport(results);
+  await persistAgencyIsolationAndMaster(results);
 
   if (!skipAllEmails) {
     if (isFullRun) {
