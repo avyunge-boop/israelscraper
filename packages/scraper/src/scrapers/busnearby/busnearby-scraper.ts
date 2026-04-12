@@ -1536,7 +1536,14 @@ async function runBusnearbyInternal(
     },
     { lastContentIds: contentIds }
   );
-  await rebuildScanExportAndMasterBusAlerts();
+  try {
+    await rebuildScanExportAndMasterBusAlerts();
+  } catch (e) {
+    console.error(
+      "[busnearby] rebuildScanExportAndMasterBusAlerts failed (scan-export left unchanged if collector aborted):",
+      e
+    );
+  }
   await tryUploadAllArtifactsToGcs(
     "after Groq + agency file merge + collector (bus-alerts + scan-export)"
   );

@@ -1,6 +1,9 @@
 /**
  * Rebuilds scan-export.json + bus-alerts.json from all data/alerts-*.json (master merge).
  * With SCRAPER_STORAGE=gcs, unions GCS object names and prefers non-empty local copies, else GCS body.
+ *
+ * Safety: never replace scan-export with fewer sources than GCS baseline; never apply an agency file
+ * that would wipe a previously non-empty source with an empty list (e.g. Bus Nearby mid-crash).
  */
 import { access, readFile, writeFile } from "fs/promises";
 import path from "path";
@@ -26,26 +29,83 @@ interface ScanExportSourceRow {
   alerts: SourceScanResult["alerts"];
 }
 
+function alertCount(row: ScanExportSourceRow | undefined): number {
+  if (!row?.alerts) return 0;
+  return Array.isArray(row.alerts) ? row.alerts.length : 0;
+}
+
+/** Prefer the row that preserves more alert data; tie-breaker: newer scrapedAt. */
+function mergeScanExportSourceRows(
+  a: ScanExportSourceRow | undefined,
+  b: ScanExportSourceRow | undefined
+): ScanExportSourceRow | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  const ca = alertCount(a);
+  const cb = alertCount(b);
+  if (cb > ca) return b;
+  if (ca > cb) return a;
+  const ta = (a.scrapedAt ?? "").trim();
+  const tb = (b.scrapedAt ?? "").trim();
+  return tb > ta ? b : a;
+}
+
+async function mapFromScanExportJsonText(
+  text: string | null | undefined
+): Promise<Map<string, ScanExportSourceRow>> {
+  const byId = new Map<string, ScanExportSourceRow>();
+  if (!text?.trim()) return byId;
+  try {
+    const raw = JSON.parse(text) as { sources?: ScanExportSourceRow[] };
+    for (const s of raw.sources ?? []) {
+      if (s?.sourceId) byId.set(s.sourceId, s);
+    }
+  } catch {
+    /* */
+  }
+  return byId;
+}
+
+async function readScanExportBaselineFromGcs(): Promise<
+  Map<string, ScanExportSourceRow>
+> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") {
+    return new Map();
+  }
+  const text = await readDataArtifactFromGcs("scan-export.json");
+  return mapFromScanExportJsonText(text);
+}
+
+/**
+ * Baseline for merge: GCS scan-export (if gcs) ∪ local scan-export files.
+ * Prevents cold disk + single empty agency file from wiping multi-agency history.
+ */
 async function readExistingScanExportSources(): Promise<
   Map<string, ScanExportSourceRow>
 > {
   const byId = new Map<string, ScanExportSourceRow>();
-  const tryParse = async (file: string) => {
+
+  const gcsBaseline = await readScanExportBaselineFromGcs();
+  for (const [k, v] of gcsBaseline) {
+    byId.set(k, v);
+  }
+
+  const mergeLocalFile = async (file: string) => {
     try {
-      const raw = JSON.parse(await readFile(file, "utf-8")) as {
-        sources?: ScanExportSourceRow[];
-      };
-      for (const s of raw.sources ?? []) {
-        byId.set(s.sourceId, s);
+      const rawText = await readFile(file, "utf-8");
+      const localMap = await mapFromScanExportJsonText(rawText);
+      for (const [k, v] of localMap) {
+        byId.set(k, mergeScanExportSourceRows(byId.get(k), v)!);
       }
     } catch {
       /* */
     }
   };
-  await tryParse(SCAN_EXPORT_JSON);
+  await mergeLocalFile(SCAN_EXPORT_JSON);
   if (byId.size === 0) {
-    await tryParse(LEGACY_SCAN_EXPORT);
+    await mergeLocalFile(LEGACY_SCAN_EXPORT);
   }
+
   return byId;
 }
 
@@ -109,10 +169,34 @@ function normalizedToMasterBusAlertRow(
   };
 }
 
+function buildPayloadFromById(byId: Map<string, ScanExportSourceRow>): {
+  sources: ScanExportSourceRow[];
+  masterRows: Record<string, unknown>[];
+} {
+  const masterRows: Record<string, unknown>[] = [];
+  for (const row of byId.values()) {
+    const sid = row.sourceId;
+    for (const a of row.alerts ?? []) {
+      masterRows.push(normalizedToMasterBusAlertRow(a, sid));
+    }
+  }
+  return {
+    sources: [...byId.values()],
+    masterRows,
+  };
+}
+
 /**
  * Merge all alerts-*.json into scan-export (per-source rows) and bus-alerts.json (flat rows for dashboard fallback).
  */
 export async function rebuildScanExportAndMasterBusAlerts(): Promise<void> {
+  const gcsBaseline = await readScanExportBaselineFromGcs();
+  const baselineSourceCount = gcsBaseline.size;
+  let baselineTotalAlerts = 0;
+  for (const row of gcsBaseline.values()) {
+    baselineTotalAlerts += alertCount(row);
+  }
+
   const byId = await readExistingScanExportSources();
   const localFiles = await listAgencyAlertFilenamesInDataDir();
   const remoteFiles =
@@ -120,7 +204,6 @@ export async function rebuildScanExportAndMasterBusAlerts(): Promise<void> {
       ? await listAgencyAlertJsonBasenamesInGcs()
       : [];
   const files = [...new Set([...localFiles, ...remoteFiles])];
-  const masterRows: Record<string, unknown>[] = [];
 
   for (const fname of files) {
     const sid = parseSourceIdFromAgencyAlertsFile(fname);
@@ -136,6 +219,16 @@ export async function rebuildScanExportAndMasterBusAlerts(): Promise<void> {
     const displayName = raw.displayName ?? sid;
     const scrapedAt = raw.scrapedAt ?? new Date().toISOString();
     const alerts = Array.isArray(raw.alerts) ? raw.alerts : [];
+
+    const prevRow = byId.get(sid);
+    const prevN = alertCount(prevRow);
+    if (alerts.length === 0 && prevN > 0) {
+      console.warn(
+        `[collector] refuse empty alerts-${sid} overwrite (${prevN} previous alerts kept; possible crash/partial write)`
+      );
+      continue;
+    }
+
     byId.set(sid, {
       sourceId: sid,
       displayName,
@@ -144,14 +237,39 @@ export async function rebuildScanExportAndMasterBusAlerts(): Promise<void> {
       error: null,
       alerts,
     });
-    for (const a of alerts) {
-      masterRows.push(normalizedToMasterBusAlertRow(a, sid));
-    }
+  }
+
+  const scrapedAt = new Date().toISOString();
+  const { sources, masterRows } = buildPayloadFromById(byId);
+
+  const newSourceCount = sources.length;
+  const newTotalAlerts = masterRows.length;
+
+  if (
+    process.env.SCRAPER_STORAGE === "gcs" &&
+    baselineSourceCount > 0 &&
+    newSourceCount < baselineSourceCount
+  ) {
+    console.error(
+      `[collector] ABORT write scan-export.json: new sources=${newSourceCount} < GCS baseline sources=${baselineSourceCount} (data loss guard)`
+    );
+    return;
+  }
+
+  if (
+    process.env.SCRAPER_STORAGE === "gcs" &&
+    baselineTotalAlerts > 50 &&
+    newTotalAlerts < Math.floor(baselineTotalAlerts * 0.25)
+  ) {
+    console.error(
+      `[collector] ABORT write scan-export.json: unified rows ${newTotalAlerts} << baseline ${baselineTotalAlerts} (possible corrupt merge)`
+    );
+    return;
   }
 
   const payload = {
-    scrapedAt: new Date().toISOString(),
-    sources: [...byId.values()],
+    scrapedAt,
+    sources,
   };
   await writeFile(SCAN_EXPORT_JSON, JSON.stringify(payload, null, 2), "utf-8");
 
@@ -168,6 +286,6 @@ export async function rebuildScanExportAndMasterBusAlerts(): Promise<void> {
   );
 
   console.log(
-    `[collector] scan-export.json + bus-alerts.json ← ${files.length} agency file(s), ${masterRows.length} unified row(s)`
+    `[collector] scan-export.json + bus-alerts.json ← ${files.length} agency file(s), ${masterRows.length} unified row(s), ${newSourceCount} source(s)`
   );
 }
