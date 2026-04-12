@@ -1,6 +1,8 @@
 import Groq from "groq-sdk"
 import { NextResponse } from "next/server"
 
+import { ensureDashboardEnvLoaded } from "@/lib/server/env-bootstrap"
+
 export const dynamic = "force-dynamic"
 
 const MODEL = "llama-3.1-8b-instant"
@@ -10,6 +12,7 @@ const SYSTEM =
   "Output only the translation. No quotation marks, labels, or preamble."
 
 export async function POST(request: Request) {
+  ensureDashboardEnvLoaded()
   const apiKey = process.env.GROQ_API_KEY?.trim()
   if (!apiKey) {
     return NextResponse.json(

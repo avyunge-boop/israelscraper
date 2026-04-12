@@ -80,6 +80,19 @@ function canCopyAiSummary(raw: string | undefined): boolean {
   return true
 }
 
+/** Prefer AI summary; otherwise full alert text so Groq translate still works without a summary. */
+function translateSourceText(alert: TransportAlert): string {
+  if (canCopyAiSummary(alert.aiSummary)) {
+    return summaryDisplayText(alert.aiSummary)
+  }
+  return [alert.title, alert.fullContent].filter(Boolean).join("\n\n").trim()
+}
+
+function canTranslateAlert(alert: TransportAlert): boolean {
+  const t = translateSourceText(alert)
+  return t.length > 0 && t.length <= 12_000
+}
+
 export function AlertCard({ alert, ui }: AlertCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [summaryCopied, setSummaryCopied] = useState(false)
@@ -120,8 +133,8 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
   }, [alert.aiSummary])
 
   const handleTranslate = useCallback(async () => {
-    if (!canCopyAiSummary(alert.aiSummary)) return
-    const text = summaryDisplayText(alert.aiSummary)
+    const text = translateSourceText(alert)
+    if (!text) return
     setTranslating(true)
     setTranslateError(null)
     try {
@@ -146,7 +159,7 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
     } finally {
       setTranslating(false)
     }
-  }, [alert.aiSummary, ui.translateFailed])
+  }, [alert.aiSummary, alert.title, alert.fullContent, ui.translateFailed])
 
   const descriptionText =
     alert.fullContent.trim().length > 0 ? alert.fullContent.trim() : "—"
@@ -256,9 +269,7 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 text-xs border-primary/30"
-                disabled={
-                  !canCopyAiSummary(alert.aiSummary) || translating
-                }
+                disabled={!canTranslateAlert(alert) || translating}
                 onClick={handleTranslate}
                 aria-label={ui.translate}
               >

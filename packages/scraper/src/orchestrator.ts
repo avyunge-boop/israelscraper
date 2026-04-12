@@ -12,7 +12,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "fs/promises";
+import { writeFile } from "fs/promises";
 
 import {
   mergeScanResultsForEmail,
@@ -21,10 +21,14 @@ import {
 import {
   ensureRepoDataDir,
   EGGED_ALERTS_JSON,
-  LEGACY_SCAN_EXPORT,
   loadRootEnv,
-  SCAN_EXPORT_JSON,
 } from "./repo-paths";
+import { rebuildScanExportAndMasterBusAlerts } from "./lib/alerts-collector.js";
+import { mergeAndSaveAgencyAlertsFile } from "./lib/agency-alerts-store.js";
+import {
+  hydrateAgencyAlertFilesFromGcs,
+  hydrateScanExportFromGcsIfConfigured,
+} from "./gcs-sync.js";
 import { logScraperProgressLine } from "./scrape-progress";
 import { ALL_AGENCY_IDS, type KnownAgencyId, type SourceScanResult } from "./scrapers/types";
 import { getScraper, isKnownAgencyId } from "./scrapers/registry";
@@ -68,36 +72,6 @@ function printSummary(r: SourceScanResult) {
   console.log(JSON.stringify(line, null, 2));
 }
 
-interface ScanExportSourceRow {
-  sourceId: string;
-  displayName: string;
-  success: boolean;
-  scrapedAt: string;
-  error: string | null;
-  alerts: SourceScanResult["alerts"];
-}
-
-async function readExistingScanExportSources(): Promise<Map<string, ScanExportSourceRow>> {
-  const byId = new Map<string, ScanExportSourceRow>();
-  const tryParse = async (file: string) => {
-    try {
-      const raw = JSON.parse(await readFile(file, "utf-8")) as {
-        sources?: ScanExportSourceRow[];
-      };
-      for (const s of raw.sources ?? []) {
-        byId.set(s.sourceId, s);
-      }
-    } catch {
-      /* */
-    }
-  };
-  await tryParse(SCAN_EXPORT_JSON);
-  if (byId.size === 0) {
-    await tryParse(LEGACY_SCAN_EXPORT);
-  }
-  return byId;
-}
-
 /** פורמט scripts/egged-alerts.json — כמו aggregate-transport-json alertsFromEggedJson */
 function buildEggedAlertsJsonBag(
   alerts: SourceScanResult["alerts"]
@@ -134,26 +108,17 @@ function buildEggedAlertsJsonBag(
   return bag;
 }
 
-/** מיזוג עם קובץ קיים; כתיבה ל־data/scan-export.json (קנוני) */
-async function persistScanExport(results: SourceScanResult[]): Promise<void> {
+/**
+ * Per-agency alerts-*.json merge + collector rebuild of scan-export.json + bus-alerts.json.
+ */
+async function persistAgencyIsolationAndMaster(
+  results: SourceScanResult[]
+): Promise<void> {
   await ensureRepoDataDir();
-  const byId = await readExistingScanExportSources();
   for (const r of results) {
-    byId.set(r.sourceId, {
-      sourceId: r.sourceId,
-      displayName: r.displayName,
-      success: r.success,
-      scrapedAt: r.scrapedAt,
-      error: r.error ?? null,
-      alerts: r.alerts,
-    });
+    await mergeAndSaveAgencyAlertsFile(r);
   }
-  const payload = {
-    scrapedAt: new Date().toISOString(),
-    sources: [...byId.values()],
-  };
-  await writeFile(SCAN_EXPORT_JSON, JSON.stringify(payload, null, 2), "utf-8");
-  console.log(`\nWrote scan export: ${SCAN_EXPORT_JSON}`);
+  await rebuildScanExportAndMasterBusAlerts();
 
   const egged = results.find((r) => r.sourceId === "egged" && r.success);
   if (egged) {
@@ -167,114 +132,108 @@ async function persistScanExport(results: SourceScanResult[]): Promise<void> {
 }
 
 async function main() {
-  try {
-    const argv = process.argv.slice(2);
-    const { agency, all } = parseCli(argv);
+  const argv = process.argv.slice(2);
+  const { agency, all } = parseCli(argv);
 
-    if (!all && !agency) {
-      console.error(`Usage: --agency=<id> | --agency <id> | --all\n`);
-      console.error(`Known agencies: ${ALL_AGENCY_IDS.join(", ")}\n`);
-      console.error(
-        `Example: pnpm --filter @workspace/scraper run scan -- --agency=egged`
-      );
-      process.exit(1);
+  if (!all && !agency) {
+    console.error(`Usage: --agency=<id> | --agency <id> | --all\n`);
+    console.error(`Known agencies: ${ALL_AGENCY_IDS.join(", ")}\n`);
+    console.error(
+      `Example: pnpm --filter @workspace/scraper run scan -- --agency=egged`
+    );
+    process.exit(1);
+  }
+
+  if (!all && agency && !isKnownAgencyId(agency)) {
+    console.error(`Unknown agency id: ${agency}`);
+    console.error(`Known: ${ALL_AGENCY_IDS.join(", ")}`);
+    process.exit(1);
+  }
+
+  const ids: KnownAgencyId[] = all ? [...ALL_AGENCY_IDS] : [agency as KnownAgencyId];
+
+  await ensureRepoDataDir();
+  await hydrateScanExportFromGcsIfConfigured();
+  await hydrateAgencyAlertFilesFromGcs();
+
+  /** סריקת --all: מייל מאוחד בסוף; סריקת סוכן יחיד: המייל יוצא מהסקרייפר (או מהאורקסטרטור עבור מקורות בלי מייל פנימי) */
+  const isFullRun = all;
+  /** כשמופעל (למשל מ־Next proxy-scan) — אין מיילים מהאורקסטרטור/סקרייפרים */
+  const skipAllEmails =
+    process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "1" ||
+    process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "true";
+
+  let failures = 0;
+  const results: SourceScanResult[] = [];
+
+  let agencyIndex = 0;
+  for (const id of ids) {
+    const scraper = getScraper(id);
+    if (!scraper) {
+      console.error(`Unknown agency id: ${id}`);
+      failures++;
+      continue;
     }
 
-    if (!all && agency && !isKnownAgencyId(agency)) {
-      console.error(`Unknown agency id: ${agency}`);
-      console.error(`Known: ${ALL_AGENCY_IDS.join(", ")}`);
-      process.exit(1);
-    }
+    agencyIndex++;
+    console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
+    const result = await scraper.runScan({
+      forwardArgv: argv.slice(),
+      suppressEmail: isFullRun || skipAllEmails,
+    });
+    results.push(result);
+    printSummary(result);
+    if (!result.success) failures++;
+    const status = result.success ? "OK" : "FAILED";
+    console.log(
+      `[Orchestrator] Finished ${scraper.displayName} (${scraper.sourceId}) — ${status}`
+    );
+    logScraperProgressLine({
+      agency: scraper.sourceId,
+      displayName: scraper.displayName,
+      current: agencyIndex,
+      total: ids.length,
+      alertsFound: result.alerts.length,
+    });
+  }
 
-    const ids: KnownAgencyId[] = all ? [...ALL_AGENCY_IDS] : [agency as KnownAgencyId];
+  await persistAgencyIsolationAndMaster(results);
 
-    /** סריקת --all: מייל מאוחד בסוף; סריקת סוכן יחיד: המייל יוצא מהסקרייפר (או מהאורקסטרטור עבור מקורות בלי מייל פנימי) */
-    const isFullRun = all;
-    /** כשמופעל (למשל מ־Next proxy-scan) — אין מיילים מהאורקסטרטור/סקרייפרים */
-    const skipAllEmails =
-      process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "1" ||
-      process.env.SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL === "true";
-
-    let failures = 0;
-    const results: SourceScanResult[] = [];
-
-    let agencyIndex = 0;
-    for (const id of ids) {
-      const scraper = getScraper(id);
-      if (!scraper) {
-        console.error(`Unknown agency id: ${id}`);
-        failures++;
-        continue;
+  if (!skipAllEmails) {
+    if (isFullRun) {
+      const mergedEmail = mergeScanResultsForEmail(results);
+      if (mergedEmail) {
+        await sendBusAlertsSummaryEmail(mergedEmail, { groupCatalogByProvider: true });
       }
-
-      agencyIndex++;
-      console.log(`\n────────── ${scraper.displayName} (${scraper.sourceId}) ──────────`);
-      if (scraper.sourceId === "busnearby") {
+    } else {
+      const onlyId = ids[0];
+      if (onlyId === "busnearby") {
         console.log(
-          `[Orchestrator] busnearby forwardArgv to scraper: ${JSON.stringify(argv.slice())}`
+          "Orchestrator: single Bus Nearby run — the scraper sends the email (when SMTP is configured); orchestrator does not send a second message."
         );
-      }
-      const result = await scraper.runScan({
-        forwardArgv: argv.slice(),
-        suppressEmail: isFullRun || skipAllEmails,
-      });
-      results.push(result);
-      printSummary(result);
-      if (!result.success) failures++;
-      const status = result.success ? "OK" : "FAILED";
-      console.log(
-        `[Orchestrator] Finished ${scraper.displayName} (${scraper.sourceId}) — ${status}`
-      );
-      logScraperProgressLine({
-        agency: scraper.sourceId,
-        displayName: scraper.displayName,
-        current: agencyIndex,
-        total: ids.length,
-        alertsFound: result.alerts.length,
-      });
-    }
-
-    await persistScanExport(results);
-
-    if (!skipAllEmails) {
-      if (isFullRun) {
-        const mergedEmail = mergeScanResultsForEmail(results);
-        if (mergedEmail) {
-          await sendBusAlertsSummaryEmail(mergedEmail, { groupCatalogByProvider: true });
-        }
+      } else if (onlyId === "kavim") {
+        console.log(
+          "Orchestrator: single Kavim run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
+        );
+      } else if (onlyId === "dan") {
+        console.log(
+          "Orchestrator: single Dan run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
+        );
       } else {
-        const onlyId = ids[0];
-        if (onlyId === "busnearby") {
-          console.log(
-            "Orchestrator: single Bus Nearby run — the scraper sends the email (when SMTP is configured); orchestrator does not send a second message."
-          );
-        } else if (onlyId === "kavim") {
-          console.log(
-            "Orchestrator: single Kavim run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
-          );
-        } else if (onlyId === "dan") {
-          console.log(
-            "Orchestrator: single Dan run — the scraper sends its own email (when SMTP is configured); orchestrator does not send a second merged message."
-          );
-        } else {
-          const singleEmail = mergeScanResultsForEmail(results);
-          if (singleEmail) {
-            await sendBusAlertsSummaryEmail(singleEmail, { groupCatalogByProvider: false });
-          }
+        const singleEmail = mergeScanResultsForEmail(results);
+        if (singleEmail) {
+          await sendBusAlertsSummaryEmail(singleEmail, { groupCatalogByProvider: false });
         }
       }
     }
+  }
 
-    if (failures > 0) {
-      process.exit(1);
-    }
-  } catch (e) {
-    console.error("DETAILED_ERROR:", e);
+  if (failures > 0) {
     process.exit(1);
   }
 }
 
 main().catch((e) => {
-  console.error("DETAILED_ERROR:", e);
+  console.error(e);
   process.exit(1);
 });

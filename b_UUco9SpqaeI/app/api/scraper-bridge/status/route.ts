@@ -7,14 +7,15 @@ export const dynamic = "force-dynamic"
 export async function GET() {
   const base = getScraperApiBaseUrl()
   if (!base) {
-    return NextResponse.json({ error: "Remote scraper not configured" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Remote scraper not configured" },
+      { status: 400 }
+    )
   }
   const res = await fetch(`${base}/status`, { cache: "no-store" })
   const text = await res.text()
   return new NextResponse(text, {
     status: res.status,
-    headers: {
-      "Content-Type": res.headers.get("Content-Type") ?? "application/json",
-    },
+    headers: { "Content-Type": res.headers.get("Content-Type") ?? "application/json" },
   })
 }

@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const base = getScraperApiBaseUrl()
   if (!base) {
     return NextResponse.json(
-      { error: "Remote scraper not configured (set SCRAPER_API_URL or unset to use default)" },
+      { error: "Remote scraper not configured (SCRAPER_API_URL empty)" },
       { status: 400 }
     )
   }
@@ -27,8 +27,6 @@ export async function POST(request: Request) {
   const text = await res.text()
   return new NextResponse(text, {
     status: res.status,
-    headers: {
-      "Content-Type": res.headers.get("Content-Type") ?? "application/json",
-    },
+    headers: { "Content-Type": res.headers.get("Content-Type") ?? "application/json" },
   })
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { ensureDashboardEnvLoaded } from "@/lib/server/env-bootstrap"
 import {
   FILE_SPECS,
   mergeTransportAlertsFromDisk,
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 export async function GET() {
+  ensureDashboardEnvLoaded()
   const { alerts, lastUpdated, sourcesUsed } =
     await mergeTransportAlertsFromDisk()
 
@@ -21,12 +23,16 @@ export async function GET() {
 
   const structuredById = buildStructuredMapForAlerts(alerts)
   const groqKey = process.env.GROQ_API_KEY?.trim()
-  // ממזג לכל התראה aiSummary מ-ai-summaries.json (byId[alert.id] → alert.aiSummary)
-  await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
-    generateMissing: false,
-    /** בלי יצירה בכל GET — מונע קריאות Groq חוזרות ברענון דף; מטמון בקובץ + localStorage בדשבורד */
-    generateEggedMissing: false,
-  })
+  // מטמון ai-summaries.json; חסרים נוצרים ב-Groq עד תקרה (GROQ_MAX_SUMMARIES_PER_REQUEST)
+  const aiSummariesGenerated = await attachAiSummariesToAlerts(
+    alerts,
+    groqKey,
+    structuredById,
+    {
+      generateMissing: Boolean(groqKey),
+      generateEggedMissing: Boolean(groqKey),
+    }
+  )
 
   return NextResponse.json({
     alerts,
@@ -35,6 +41,7 @@ export async function GET() {
       count: alerts.length,
       sourcesTried: sourcesUsed.length > 0 ? sourcesUsed : FILE_SPECS.map((s) => s.file),
       aiEnabled: Boolean(groqKey),
+      aiSummariesGenerated,
     },
   })
 }

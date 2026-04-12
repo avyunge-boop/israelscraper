@@ -62,6 +62,13 @@ import {
   getPuppeteerLaunchArgs,
   resolveChromeExecutable,
 } from "../puppeteer-helpers";
+import { rebuildScanExportAndMasterBusAlerts } from "../../lib/alerts-collector.js";
+import {
+  agencyAlertsFileName,
+  agencyAlertsPath,
+  type AgencyAlertsFileV1,
+  mergeAndSaveAgencyAlertsFile,
+} from "../../lib/agency-alerts-store.js";
 import {
   hydrateRoutesDatabaseFromGcsIfConfigured,
   uploadDataArtifactsToGcs,
@@ -81,8 +88,11 @@ function readScanStaleAfterHours(): number {
 
 const OUTPUT_FILE = BUS_ALERTS_JSON;
 const PREV_OUTPUT_FILE = BUS_ALERTS_PREV_JSON;
+const AGENCY_ALERTS_FILE = agencyAlertsFileName("busnearby");
 const REGISTRY_FILE = AGENCIES_REGISTRY_JSON;
 const ROUTES_DB_FILE = ROUTES_DATABASE_JSON;
+/** Basename for GCS single-file uploads (must match repo data layout). */
+const ROUTES_DB_BASENAME = "routes-database.json";
 const BASE_URL = "https://www.busnearby.co.il";
 
 const AGENCY_FILTER_MIN = 0;
@@ -239,6 +249,155 @@ interface DedupedAlert {
 interface BusAlertsSnapshot {
   contentIds?: string[];
   alerts?: DedupedAlert[];
+}
+
+async function readPreviousBusnearbyContentIds(): Promise<string[]> {
+  const seen = new Set<string>();
+  const pushAll = (ids: unknown) => {
+    if (!Array.isArray(ids)) return;
+    for (const x of ids) {
+      const s = String(x ?? "").trim();
+      if (s) seen.add(s);
+    }
+  };
+
+  const agencyPath = agencyAlertsPath("busnearby");
+  if (existsSync(agencyPath)) {
+    try {
+      const raw = JSON.parse(
+        await fs.readFile(agencyPath, "utf-8")
+      ) as AgencyAlertsFileV1 & { lastContentIds?: unknown };
+      pushAll(raw.lastContentIds);
+      if (seen.size === 0) {
+        for (const a of raw.alerts ?? []) {
+          const cid =
+            typeof a.meta?.contentId === "string"
+              ? String(a.meta.contentId).trim()
+              : "";
+          if (cid) seen.add(cid);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (seen.size === 0 && existsSync(OUTPUT_FILE)) {
+    try {
+      const raw = JSON.parse(
+        await fs.readFile(OUTPUT_FILE, "utf-8")
+      ) as BusAlertsSnapshot & { format?: string };
+      if (raw.format !== "unified-dashboard") {
+        pushAll(raw.contentIds);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (seen.size === 0 && existsSync(PREV_OUTPUT_FILE)) {
+    try {
+      const raw = JSON.parse(
+        await fs.readFile(PREV_OUTPUT_FILE, "utf-8")
+      ) as BusAlertsSnapshot;
+      pushAll(raw.contentIds);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return [...seen];
+}
+
+function normalizedAlertToDedupedStub(
+  a: NormalizedAlert,
+  contentId: string
+): DedupedAlert {
+  const meta = a.meta && typeof a.meta === "object" ? a.meta : {};
+  const m = meta as Record<string, unknown>;
+  const stopRaw = m.stopConditions;
+  const stopConditions = Array.isArray(stopRaw)
+    ? stopRaw.map((x) => String(x))
+    : [];
+
+  return {
+    contentId,
+    title: a.title,
+    fullContent: a.content,
+    effectiveStart: a.effectiveStart,
+    effectiveEnd: a.effectiveEnd,
+    activeNow: Boolean(m.activeNow),
+    expired: Boolean(m.expired),
+    stopConditions,
+    affectedStop: undefined,
+    sourceAlertIds: [],
+    routes: [],
+    routeCount: typeof m.routeCount === "number" ? m.routeCount : 0,
+    cachedDispatcherHe:
+      typeof m.dispatcherSummaryHe === "string"
+        ? m.dispatcherSummaryHe
+        : undefined,
+    cachedSummaryEn:
+      typeof m.summaryEn === "string" ? m.summaryEn : undefined,
+  };
+}
+
+async function loadPreviousNormalizedByContentId(): Promise<
+  Map<string, NormalizedAlert>
+> {
+  const m = new Map<string, NormalizedAlert>();
+
+  const agencyPath = agencyAlertsPath("busnearby");
+  if (existsSync(agencyPath)) {
+    try {
+      const raw = JSON.parse(
+        await fs.readFile(agencyPath, "utf-8")
+      ) as AgencyAlertsFileV1;
+      for (const a of raw.alerts ?? []) {
+        const cid =
+          typeof a.meta?.contentId === "string"
+            ? String(a.meta.contentId).trim()
+            : "";
+        if (cid) m.set(cid, a);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (m.size === 0 && existsSync(OUTPUT_FILE)) {
+    try {
+      const raw = JSON.parse(
+        await fs.readFile(OUTPUT_FILE, "utf-8")
+      ) as BusAlertsSnapshot & { format?: string };
+      if (raw.format !== "unified-dashboard") {
+        for (const d of raw.alerts ?? []) {
+          if (!d?.contentId) continue;
+          m.set(d.contentId, {
+            title: d.title,
+            content: d.fullContent,
+            effectiveStart: d.effectiveStart,
+            effectiveEnd: d.effectiveEnd,
+            operatorLabel: "Bus Nearby (מספר מפעילים)",
+            detailUrl: d.routes?.[0]?.patternUrl,
+            meta: {
+              contentId: d.contentId,
+              activeNow: d.activeNow,
+              expired: d.expired,
+              stopConditions: d.stopConditions,
+              routeCount: d.routeCount,
+              dispatcherSummaryHe: d.cachedDispatcherHe,
+              summaryEn: d.cachedSummaryEn,
+            },
+          });
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return m;
 }
 
 // ── Registry & routes DB ────────────────────────────────────────────────────
@@ -841,6 +1000,31 @@ function routeNeedsRescan(rec: RouteRecord, nowMs: number): boolean {
   return nowMs - t > SCAN_STALE_AFTER_MS;
 }
 
+async function tryUploadJsonToGcs(
+  fileName: string,
+  label: string
+): Promise<void> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") return;
+  try {
+    const url = await uploadDataJsonFileToGcs(fileName);
+    if (url) console.log(`[busnearby/gcs] ${label}: ${url}`);
+  } catch (e) {
+    console.error(`[busnearby/gcs] ${label} (${fileName}) failed:`, e);
+  }
+}
+
+async function tryUploadAllArtifactsToGcs(label: string): Promise<void> {
+  if (process.env.SCRAPER_STORAGE !== "gcs") return;
+  try {
+    const uploaded = await uploadDataArtifactsToGcs();
+    if (uploaded.length) {
+      console.log(`[busnearby/gcs] ${label}: ${uploaded.length} object(s)`);
+    }
+  } catch (e) {
+    console.error(`[busnearby/gcs] ${label} failed:`, e);
+  }
+}
+
 /** Serialize DB writes so concurrent workers never corrupt JSON */
 const GCS_UPLOAD_EVERY_N_ROUTES = 50;
 
@@ -853,16 +1037,17 @@ function createDbPersistQueue() {
         await saveRoutesDatabase(routesByPattern);
         if (process.env.SCRAPER_STORAGE !== "gcs") return;
         savesSinceLastGcsUpload++;
-        if (savesSinceLastGcsUpload >= GCS_UPLOAD_EVERY_N_ROUTES) {
-          savesSinceLastGcsUpload = 0;
-          try {
-            await uploadDataJsonFileToGcs("routes-database.json");
+        if (savesSinceLastGcsUpload < GCS_UPLOAD_EVERY_N_ROUTES) return;
+        savesSinceLastGcsUpload = 0;
+        try {
+          const url = await uploadDataJsonFileToGcs(ROUTES_DB_BASENAME);
+          if (url) {
             console.log(
-              `[busnearby/gcs] incremental upload (every ${GCS_UPLOAD_EVERY_N_ROUTES} routes)`
+              `[busnearby/gcs] incremental routes DB (every ${GCS_UPLOAD_EVERY_N_ROUTES} saves): ${url}`
             );
-          } catch (e) {
-            console.error("[busnearby/gcs] incremental upload failed:", e);
           }
+        } catch (e) {
+          console.error("[busnearby/gcs] incremental routes DB upload failed:", e);
         }
       });
       return chain;
@@ -928,18 +1113,11 @@ function parseMaxRoutesFromArgv(argv: string[]): number | undefined {
 async function runBusnearbyInternal(
   context?: ScraperRunContext
 ): Promise<SourceScanResult> {
-  console.log("[busnearby:1] runBusnearbyInternal start");
   const argv = cliArgv(context);
   const refreshFromCli = argv.includes(REFRESH_ARG);
   const fullScanMode = argv.includes(FULL_SCAN_ARG);
   const restoreAgencyFilters = argv.includes(RESTORE_AGENCY_FILTERS_ARG);
   await ensureRepoDataDir();
-  const hydratedFromGcs = await hydrateRoutesDatabaseFromGcsIfConfigured();
-  if (hydratedFromGcs) {
-    console.log(
-      "[busnearby:2b] loaded routes-database.json from GCS before local merge/migrate"
-    );
-  }
   await migrateLegacyFileIfNeeded(LEGACY_ROUTES_DB, ROUTES_DB_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_ALERTS, OUTPUT_FILE, fs);
   await migrateLegacyFileIfNeeded(LEGACY_BUS_PREV, PREV_OUTPUT_FILE, fs);
@@ -947,9 +1125,6 @@ async function runBusnearbyInternal(
   await hydrateRoutesDatabaseFromGcsIfConfigured();
   const registryById = await loadAgenciesRegistry();
   const routesByPattern = await loadRoutesDatabase();
-  console.log(
-    `[busnearby:3] loaded registry agencies=${registryById.size} routesInDb=${routesByPattern.size}`
-  );
 
   if (restoreAgencyFilters) {
     await saveAgencyFilterExclusions(new Set());
@@ -989,9 +1164,6 @@ async function runBusnearbyInternal(
         "Discovered links are saved and reused forever unless you run --refresh again."
     );
   }
-  console.log(
-    `[busnearby:4] discoveryMode=${discoveryMode} (refresh flag or empty routes DB)`
-  );
 
 
   let excludedFilterIds = await loadAgencyFilterExclusions();
@@ -1077,19 +1249,7 @@ async function runBusnearbyInternal(
     await saveRoutesDatabase(routesByPattern);
     console.log(`\nRegistry saved: ${REGISTRY_FILE}`);
     console.log(`Routes DB saved: ${ROUTES_DB_FILE} (${routesByPattern.size} route(s))`);
-    if (process.env.SCRAPER_STORAGE === "gcs") {
-      try {
-        await uploadDataJsonFileToGcs("routes-database.json");
-        console.log("[busnearby/gcs] uploaded routes-database.json after discovery phase");
-      } catch (e) {
-        console.error("[busnearby/gcs] post-discovery upload failed:", e);
-      }
-    }
-    console.log(
-      `[busnearby:7] refresh discovery done: agency pages with links=${filtersWithRoutes} totalRoutesNow=${routesByPattern.size}`
-    );
-  } else {
-    console.log("[busnearby:7] skip discovery (fast mode, existing DB)");
+    await tryUploadJsonToGcs(ROUTES_DB_BASENAME, "after discovery");
   }
 
   const routeList = [...routesByPattern.values()].sort((a, b) =>
@@ -1131,18 +1291,26 @@ async function runBusnearbyInternal(
   } else {
     console.log("");
   }
-  if (scanQueue.length === 0) {
-    console.warn(
-      "[busnearby:8] WARNING: scan queue is EMPTY — no per-route Puppeteer scans this run (all routes fresh within stale window, or empty DB after discovery with zero links). bus-alerts.json will still be rebuilt from last_known_alerts."
-    );
-  } else {
-    console.log(`[busnearby:8] scan queue has ${scanQueue.length} route(s) to visit`);
-  }
 
   const dbPersist = createDbPersistQueue();
   const limit = pLimit(ROUTE_SCAN_CONCURRENCY);
   const queueTotal = scanQueue.length;
   let queueCompleted = 0;
+  let lastCompletedRoute: RouteRecord | undefined;
+
+  function agencyHumanForRoute(rec: RouteRecord | undefined): string {
+    if (!rec) return "—";
+    const ids =
+      rec.agencyIds.length > 0
+        ? rec.agencyIds
+        : rec.agencyId
+          ? [rec.agencyId]
+          : [];
+    if (ids.length === 0) return "—";
+    return ids
+      .map((id) => registryById.get(id)?.label ?? id)
+      .join(", ");
+  }
 
   function logQueueProgress() {
     if (queueTotal === 0) return;
@@ -1150,13 +1318,26 @@ async function runBusnearbyInternal(
     const isMilestone =
       queueCompleted % PROGRESS_LOG_EVERY === 0 || queueCompleted === queueTotal;
     if (isMilestone) {
-      console.log(`[${queueCompleted}/${queueTotal}] ${pct}% done....`);
+      const rec = lastCompletedRoute;
+      const lineNo =
+        rec?.lineNumber?.trim() ||
+        (rec?.patternId ? rec.patternId.split(":").pop() : "") ||
+        "—";
+      const agencyHuman = agencyHumanForRoute(rec);
+      const dest = rec?.alertUrl ?? "—";
+      const destShort =
+        dest.length > 96 ? `${dest.slice(0, 96)}…` : dest;
+      const detail = `Line [${lineNo}] (${agencyHuman}) to ${destShort}`;
+      console.log(
+        `[${queueCompleted}/${queueTotal}] (${pct}%) | Scanning: ${detail}`
+      );
       logScraperProgressLine({
         agency: "busnearby",
         displayName: BUSNEARBY_DISPLAY,
         current: queueCompleted,
         total: queueTotal,
         alertsFound: 0,
+        detail,
       });
     }
   }
@@ -1178,6 +1359,7 @@ async function runBusnearbyInternal(
                 }
                 await dbPersist.scheduleSave(routesByPattern);
                 queueCompleted++;
+                lastCompletedRoute = rec;
                 logQueueProgress();
                 return ok;
               } finally {
@@ -1189,13 +1371,11 @@ async function runBusnearbyInternal(
 
   await dbPersist.flush();
   await saveRoutesDatabase(routesByPattern);
-  if (process.env.SCRAPER_STORAGE === "gcs" && scanQueue.length > 0) {
-    try {
-      await uploadDataJsonFileToGcs("routes-database.json");
-      console.log("[busnearby/gcs] final upload after route queue (catch remainder < 50)");
-    } catch (e) {
-      console.error("[busnearby/gcs] final queue upload failed:", e);
-    }
+  if (scanQueue.length > 0) {
+    await tryUploadJsonToGcs(
+      ROUTES_DB_BASENAME,
+      "after route queue (remainder < incremental batch)"
+    );
   }
   console.log(`\nRoutes DB updated: ${ROUTES_DB_FILE}`);
 
@@ -1205,9 +1385,7 @@ async function runBusnearbyInternal(
     `  Queue finished: ${scanQueue.length} route(s) attempted, ok=${okCount}, fail=${failCount}`
   );
 
-  console.log("[busnearby:9] closing browser");
   await browser.close();
-  console.log("[busnearby:10] aggregating alerts from route records");
 
   const rawAlerts: RawScrapedAlert[] = [];
   for (const rec of routeList) {
@@ -1252,27 +1430,11 @@ async function runBusnearbyInternal(
     alerts: deduped,
   };
 
-  let previousSnapshot: BusAlertsSnapshot | null = null;
-  if (existsSync(OUTPUT_FILE)) {
-    try {
-      previousSnapshot = JSON.parse(
-        await fs.readFile(OUTPUT_FILE, "utf-8")
-      ) as BusAlertsSnapshot;
-    } catch {
-      previousSnapshot = null;
-    }
-    await fs.rename(OUTPUT_FILE, PREV_OUTPUT_FILE);
-    console.log(`\nPrevious snapshot renamed to: ${PREV_OUTPUT_FILE}`);
-  }
-
-  await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), "utf-8");
-
-  const prevIds = Array.isArray(previousSnapshot?.contentIds)
-    ? previousSnapshot!.contentIds!
-    : [];
+  const prevIds = await readPreviousBusnearbyContentIds();
+  const prevNormById = await loadPreviousNormalizedByContentId();
   const prevByContentId = new Map<string, DedupedAlert>();
-  for (const a of previousSnapshot?.alerts ?? []) {
-    if (a?.contentId) prevByContentId.set(a.contentId, a);
+  for (const [cid, a] of prevNormById) {
+    prevByContentId.set(cid, normalizedAlertToDedupedStub(a, cid));
   }
   const prevSet = new Set(prevIds);
   const newSet = new Set(contentIds);
@@ -1341,61 +1503,42 @@ async function runBusnearbyInternal(
   console.log(`Queue ok / fail        : ${okCount} / ${failCount}`);
   console.log(`Raw alert rows         : ${rawAlerts.length}`);
   console.log(`Deduped alerts         : ${deduped.length}`);
-  console.log(`Saved to               : ${OUTPUT_FILE}`);
+  console.log(`Saved to               : ${AGENCY_ALERTS_FILE} (+ master via collector)`);
 
-  console.log(`\n═══ Resume from where you stopped ═══`);
   console.log(
-    `  routes-database.json stores last_scanned_at; the next run only queues stale/missing routes (<${SCAN_STALE_AFTER_H}h), unless you use --full-scan.`
+    `\n═══ Next run ═══ stale window ${SCAN_STALE_AFTER_H}h; use --full-scan or --refresh as needed (see package scripts).`
   );
-  console.log(`  npm run --prefix scripts scrape-bus-alerts`);
-  console.log(
-    `  pnpm --filter @workspace/scraper run scrape-bus-alerts   (from repo root)`
-  );
-  console.log(
-    `  npm run --prefix scripts scrape-bus-alerts:refresh   (re-discover agencies + same queue rules)`
-  );
-  console.log(
-    `  npm run --prefix scripts scrape-bus-alerts:full   (scan every route in DB, ignore freshness)`
-  );
-
-  if (deduped.length > 0) {
-    console.log("\nSample deduped alerts:");
-    for (const s of deduped.slice(0, 3)) {
-      console.log(`\n  contentId : ${s.contentId.slice(0, 16)}…`);
-      console.log(
-        `  Routes    : ${s.routeCount} (e.g. ${s.routes.slice(0, 3).map((r) => r.apiRouteId).join(", ")}${s.routeCount > 3 ? ", …" : ""})`
-      );
-      console.log(`  Title     : ${s.title}`);
-      if (s.effectiveStart) console.log(`  From      : ${s.effectiveStart}`);
-      if (s.effectiveEnd) console.log(`  To        : ${s.effectiveEnd}`);
-      console.log(
-        `  Status    : ${s.activeNow ? "Active now" : s.expired ? "Expired" : "Upcoming"}`
-      );
-      if (s.stopConditions.length) console.log(`  Type      : ${s.stopConditions.join(", ")}`);
-      console.log(
-        `  Content   : ${s.fullContent.slice(0, 200)}${s.fullContent.length > 200 ? "…" : ""}`
-      );
-    }
-  }
 
   let normalizedAlerts = dedupedToNormalized(deduped);
-  console.log(
-    `[busnearby:11] Groq enrich starting for ${normalizedAlerts.length} alert(s)`
-  );
-  normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
-  applyGroqEnrichmentToRouteRecords(routesByPattern, normalizedAlerts);
-  await saveRoutesDatabase(routesByPattern);
-  if (process.env.SCRAPER_STORAGE === "gcs") {
-    try {
-      const uploaded = await uploadDataArtifactsToGcs();
-      const routesUpload = uploaded.find((u) => u.includes("routes-database.json"));
-      if (routesUpload) {
-        console.log(`[busnearby/gcs] ${routesUpload} (after Groq enrich)`);
-      }
-    } catch (e) {
-      console.error("[busnearby/gcs] upload after Groq enrich failed:", e);
-    }
+  try {
+    normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
+  } catch (e) {
+    console.error(
+      "[busnearby/groq] enrichment failed; continuing with alerts as-is:",
+      e
+    );
   }
+  try {
+    applyGroqEnrichmentToRouteRecords(routesByPattern, normalizedAlerts);
+    await saveRoutesDatabase(routesByPattern);
+  } catch (e) {
+    console.error("[busnearby] failed to persist Groq fields to routes DB:", e);
+  }
+
+  await mergeAndSaveAgencyAlertsFile(
+    {
+      sourceId: "busnearby",
+      displayName: BUSNEARBY_DISPLAY,
+      success: true,
+      scrapedAt,
+      alerts: normalizedAlerts,
+    },
+    { lastContentIds: contentIds }
+  );
+  await rebuildScanExportAndMasterBusAlerts();
+  await tryUploadAllArtifactsToGcs(
+    "after Groq + agency file merge + collector (bus-alerts + scan-export)"
+  );
 
   return {
     sourceId: "busnearby",
@@ -1404,7 +1547,7 @@ async function runBusnearbyInternal(
     scrapedAt,
     alerts: normalizedAlerts,
     meta: {
-      outputFile: OUTPUT_FILE,
+      outputFile: AGENCY_ALERTS_FILE,
       uniqueRoutesInDatabase: routeList.length,
       routesScannedThisRun: scanQueue.length,
       maxRoutesPerRun: maxRoutesCap ?? null,
@@ -1421,13 +1564,9 @@ async function runBusnearbyInternal(
 export async function runScan(
   context?: ScraperRunContext
 ): Promise<SourceScanResult> {
-  console.log(
-    `[busnearby:0] runScan invoked suppressEmail=${context?.suppressEmail === true}`
-  );
   try {
     return await runBusnearbyInternal(context);
   } catch (err) {
-    console.error("DETAILED_ERROR:", err);
     const msg = err instanceof Error ? err.message : String(err);
     console.error("Scraper failed:", err);
     return {

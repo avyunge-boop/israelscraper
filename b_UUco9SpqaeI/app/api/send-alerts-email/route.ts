@@ -2,6 +2,7 @@ import nodemailer from "nodemailer"
 import { NextResponse } from "next/server"
 
 import { sanitizeAiSummaryOutput } from "@/lib/ai-summary-sanitize"
+import { ensureDashboardEnvLoaded } from "@/lib/server/env-bootstrap"
 import type { AlertProvider, TransportAlert } from "@/lib/transport-alert"
 import {
   attachAiSummariesToAlerts,
@@ -136,18 +137,20 @@ ${sections}
 }
 
 export async function POST(request: Request) {
+  ensureDashboardEnvLoaded()
   const host = process.env.BUS_ALERTS_SMTP_HOST?.trim()
   const from = process.env.BUS_ALERTS_EMAIL_FROM?.trim()
   const envTo = process.env.BUS_ALERTS_EMAIL_TO?.trim()
 
   if (!host || !from) {
-    return NextResponse.json(
-      {
-        error:
-          "SMTP לא מוגדר: נדרשים BUS_ALERTS_SMTP_HOST ו-BUS_ALERTS_EMAIL_FROM ב-.env",
-      },
-      { status: 503 }
-    )
+    return NextResponse.json({
+      ok: true,
+      sent: 0,
+      emailSkipped: true,
+      reason: "smtp_not_configured",
+      message:
+        "SMTP not configured — set BUS_ALERTS_SMTP_HOST and BUS_ALERTS_EMAIL_FROM (e.g. in .env or Cloud Run). Scan still succeeded.",
+    })
   }
 
   let filter: FilterPayload = "all"
@@ -181,6 +184,7 @@ export async function POST(request: Request) {
   try {
     await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
       generateMissing: true,
+      maxGeneratePerRequest: 0,
     })
   } catch (e) {
     console.error(

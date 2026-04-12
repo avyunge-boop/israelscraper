@@ -12,6 +12,7 @@
     "scan": "tsx ./src/orchestrator.ts",
     "scan:metropoline": "tsx ./src/orchestrator.ts -- --agency=metropoline",
     "scan:kavim": "tsx ./src/orchestrator.ts -- --agency=kavim",
+    "build:orchestrator-bundle": "esbuild src/orchestrator.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/orchestrator.mjs --packages=external",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test-groq": "tsx ./src/test-groq.ts",
     "consolidate-data": "tsx ./src/consolidate-nested-data.ts"
@@ -27,6 +28,7 @@
     "tsx": "catalog:"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "@types/express": "^4.17.21",
     "@types/node": "catalog:",
     "@types/nodemailer": "^6.4.17"

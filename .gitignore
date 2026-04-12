@@ -49,3 +49,6 @@ project.tgz
 
 # === Optional: huge migration mirror (uncomment to ignore) ===
 # cloud_migration_backup/
+
+# Accidental copy of gcloud with a malformed top-level path name (never track)
+exec -l /

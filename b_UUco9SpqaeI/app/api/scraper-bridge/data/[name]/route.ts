@@ -4,13 +4,17 @@ import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
 
 export const dynamic = "force-dynamic"
 
+/** Proxy: GET /data/:name על שירות הסקרייפר (מטמון GCS), ללא סריקה חדשה. */
 export async function GET(
   _req: Request,
   context: { params: Promise<{ name: string }> }
 ) {
   const base = getScraperApiBaseUrl()
   if (!base) {
-    return NextResponse.json({ error: "Remote scraper not configured" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Remote scraper not configured" },
+      { status: 400 }
+    )
   }
   const { name } = await context.params
   if (!name || name.includes("..") || name.includes("/")) {

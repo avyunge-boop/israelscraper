@@ -48,6 +48,31 @@ function userDataDir() {
   return dir;
 }
 
+/** KEY=VALUE — משמש ל־GROQ ולמפתחות נוספים באפליקציה המותקנת (לא בתוך ה־.app) */
+function mergeEnvFileInto(target, filePath) {
+  if (!fs.existsSync(filePath)) return;
+  try {
+    const text = fs.readFileSync(filePath, "utf8");
+    for (const line of text.split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const eq = t.indexOf("=");
+      if (eq <= 0) continue;
+      const key = t.slice(0, eq).trim();
+      let val = t.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      target[key] = val;
+    }
+  } catch {
+    /* */
+  }
+}
+
 function macSystemChrome() {
   if (process.platform !== "darwin") return null;
   const p = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -128,6 +153,26 @@ function buildChildEnv(port) {
     const cache = path.join(sroot, "chromium-cache");
     if (fs.existsSync(cache)) {
       env.PUPPETEER_CACHE_DIR = cache;
+    }
+  }
+
+  mergeEnvFileInto(env, path.join(app.getPath("userData"), "config.env"));
+
+  const pathPrefix = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"].filter(
+    (p) => fs.existsSync(p)
+  );
+  env.PATH = [...pathPrefix, env.PATH || process.env.PATH || ""]
+    .filter(Boolean)
+    .join(path.delimiter);
+
+  for (const nodeCandidate of [
+    "/opt/homebrew/bin/node",
+    "/usr/local/bin/node",
+    "/usr/bin/node",
+  ]) {
+    if (fs.existsSync(nodeCandidate)) {
+      env.NODE_BINARY = nodeCandidate;
+      break;
     }
   }
 
