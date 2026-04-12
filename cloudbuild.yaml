@@ -70,6 +70,9 @@ steps:
       - --max-instances=1
       - --min-instances=1
       - --timeout=3600s
+      - --concurrency=10
+      - --cpu=2
+      - --memory=4Gi
       - --update-env-vars=BUS_ALERTS_CHROME_EXECUTABLE=/usr/bin/google-chrome-stable
       - --quiet
     waitFor:
@@ -83,7 +86,7 @@ steps:
       - |
         set -euo pipefail
         IMAGE="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DASHBOARD_SERVICE}:${BUILD_ID}"
-        ENV_VARS="NODE_ENV=production,SCRAPER_DATA_DIR=/tmp/israel-scraper-data,SCRAPER_API_URL=${_SCRAPER_API_URL}"
+        ENV_VARS="NODE_ENV=production,SCRAPER_API_URL=${_SCRAPER_API_URL}"
         gcloud run deploy "${_DASHBOARD_SERVICE}" \
           --image="$${IMAGE}" \
           --region="${_REGION}" \
@@ -93,7 +96,7 @@ steps:
           --timeout=900 \
           --cpu=2 \
           --memory=2Gi \
-          --set-env-vars="$${ENV_VARS}" \
+          --update-env-vars="$${ENV_VARS}" \
           --quiet
     waitFor:
       - push-dashboard
