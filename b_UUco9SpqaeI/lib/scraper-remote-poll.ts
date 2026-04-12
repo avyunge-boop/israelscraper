@@ -7,6 +7,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 const POLL_MS = 3000
+const INITIAL_DELAY_AFTER_START_MS = 5000
+const MIN_MS_SINCE_POST_BEFORE_EXIT = 8000
+const MAX_POLL_MS = 10 * 60 * 1000
 
 type Handlers = {
   onLog?: (text: string) => void
@@ -58,14 +61,30 @@ export async function runScrapeRemotePoll(
   )
 
   const scrapeReportedStarted = data.started === true
-  const minDoneAt = scrapeReportedStarted ? Date.now() + 5000 : 0
+  const postTime = Date.now()
+  const minExitAt = postTime + MIN_MS_SINCE_POST_BEFORE_EXIT
+  const maxPollUntil = postTime + MAX_POLL_MS
+
+  if (scrapeReportedStarted) {
+    handlers.onLog?.(
+      `ממתין ${INITIAL_DELAY_AFTER_START_MS / 1000}s לפני בדיקת /status ראשונה (למנוע פספוס סריקה מהירה)…`
+    )
+    await sleep(INITIAL_DELAY_AFTER_START_MS)
+  }
 
   /** אינדקס תו ב-snapshot המצטבר מהשרת — תמיד שולחים רק את החלק החדש ל-onLog */
   let lastLogLength = 0
   let loggedTruncatedHint = false
+  /** עותק מלא אחרון של logSnapshot (לסיכום בסוף) */
+  let latestFullSnapshot = ""
 
   for (;;) {
-    await sleep(POLL_MS)
+    if (Date.now() >= maxPollUntil) {
+      handlers.onLog?.(
+        `[poll] timeout: ${MAX_POLL_MS / 60000} דקות מה-POST — עוצר ניטור /status`
+      )
+      break
+    }
 
     const stRes = await fetch("/api/scraper-bridge/status", { cache: "no-store" })
     const stText = await stRes.text()
@@ -85,6 +104,9 @@ export async function runScrapeRemotePoll(
     const running = st.running === true
     const snap =
       typeof st.logSnapshot === "string" ? st.logSnapshot : ""
+    if (snap.length > 0) {
+      latestFullSnapshot = snap
+    }
 
     if (snap.length < lastLogLength) {
       lastLogLength = 0
@@ -114,14 +136,22 @@ export async function runScrapeRemotePoll(
     })
 
     if (!running) {
-      if (scrapeReportedStarted && Date.now() < minDoneAt) {
+      if (Date.now() < minExitAt) {
         handlers.onLog?.(
-          "[status] running=false בתוך חלון ההמתנה (5s) — ממשיך לבדוק…"
+          `[status] running=false אבל עדיין פחות מ-${MIN_MS_SINCE_POST_BEFORE_EXIT / 1000}s מה-POST — ממשיך (${POLL_MS / 1000}s)…`
         )
+        await sleep(POLL_MS)
         continue
       }
       break
     }
+
+    await sleep(POLL_MS)
+  }
+
+  if (latestFullSnapshot.trim()) {
+    handlers.onLog?.("— לוג מלא אחרון מ־/status (סיום ניטור) —")
+    handlers.onLog?.(latestFullSnapshot)
   }
 
   const lrRes = await fetch("/api/scraper-bridge/last-result", { cache: "no-store" })
