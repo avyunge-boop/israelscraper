@@ -1,47 +1,69 @@
-# Build root Dockerfile, push to Artifact Registry, deploy to Cloud Run.
+# Build scraper-api (Dockerfile) and dashboard (Dockerfile.dashboard), push to Artifact Registry,
+# deploy both Cloud Run services.
 #
-# Prereqs: Artifact Registry repo exists (e.g. cloud-run-source-deploy in the region).
-# Run from repo root:
+# From repo root:
 #   gcloud builds submit --config=cloudbuild.yaml --project=YOUR_PROJECT_ID .
 #
-# Override service/region:
-#   gcloud builds submit --config=cloudbuild.yaml --substitutions=_REGION=me-west1,_SERVICE=scraper-api .
+# Optional substitutions:
+#   _REGION, _AR_REPO, _SCRAPER_SERVICE, _DASHBOARD_SERVICE, _SCRAPER_API_URL
 
 substitutions:
   _REGION: me-west1
-  _SERVICE: scraper-api
+  _SCRAPER_SERVICE: scraper-api
+  _DASHBOARD_SERVICE: dashboard
   _AR_REPO: cloud-run-source-deploy
+  _SCRAPER_API_URL: https://scraper-api-522107007688.me-west1.run.app
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - id: build
+  - id: build-scraper
     name: gcr.io/cloud-builders/docker
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SCRAPER_SERVICE}:${BUILD_ID}
       - -f
       - Dockerfile
       - .
 
-  - id: push
+  - id: build-dashboard
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DASHBOARD_SERVICE}:${BUILD_ID}
+      - -f
+      - Dockerfile.dashboard
+      - .
+    waitFor:
+      - "-"
+
+  - id: push-scraper
     name: gcr.io/cloud-builders/docker
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SCRAPER_SERVICE}:${BUILD_ID}
     waitFor:
-      - build
+      - build-scraper
 
-  - id: deploy
+  - id: push-dashboard
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DASHBOARD_SERVICE}:${BUILD_ID}
+    waitFor:
+      - build-dashboard
+
+  - id: deploy-scraper
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     entrypoint: gcloud
     args:
       - run
       - deploy
-      - ${_SERVICE}
-      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${BUILD_ID}
+      - ${_SCRAPER_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SCRAPER_SERVICE}:${BUILD_ID}
       - --region=${_REGION}
       - --platform=managed
       - --project=${PROJECT_ID}
@@ -49,4 +71,27 @@ steps:
       - --min-instances=1
       - --quiet
     waitFor:
-      - push
+      - push-scraper
+
+  - id: deploy-dashboard
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        IMAGE="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DASHBOARD_SERVICE}:${BUILD_ID}"
+        ENV_VARS="NODE_ENV=production,SCRAPER_DATA_DIR=/tmp/israel-scraper-data,SCRAPER_API_URL=${_SCRAPER_API_URL}"
+        gcloud run deploy "${_DASHBOARD_SERVICE}" \
+          --image="$${IMAGE}" \
+          --region="${_REGION}" \
+          --platform=managed \
+          --project="${PROJECT_ID}" \
+          --allow-unauthenticated \
+          --timeout=900 \
+          --cpu=2 \
+          --memory=2Gi \
+          --set-env-vars="$${ENV_VARS}" \
+          --quiet
+    waitFor:
+      - push-dashboard

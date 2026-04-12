@@ -477,18 +477,26 @@ export function TransportDashboard() {
         error?: string
         sent?: number
         emailSkipped?: boolean
+        skipReason?: string
       }
       if (!res.ok) {
         throw new Error(data.error ?? res.statusText)
       }
+      const emailSkipReason =
+        typeof data.skipReason === "string" ? data.skipReason : undefined
       if (data.emailSkipped === true) {
-        log?.("✅ מייל: אין התראות במסנן — דילוג על שליחה")
+        if (emailSkipReason === "smtp_not_configured") {
+          log?.("✅ מייל: לא הוגדר SMTP — מדלגים (מצב מקומי)")
+        } else {
+          log?.("✅ מייל: אין התראות במסנן — דילוג על שליחה")
+        }
       } else {
         log?.(`✅ מייל נשלח (${String(data.sent ?? 0)} התראות)`)
       }
       return {
         sent: data.sent ?? 0,
         emailSkipped: data.emailSkipped === true,
+        emailSkipReason,
       }
     },
     [recipientEmail]
@@ -503,19 +511,17 @@ export function TransportDashboard() {
           agency === "busnearby" ? BUSNEARBY_RUN_SCRAPE_BODY : { agency }
         await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
-        const { sent, emailSkipped } = await sendReportAfterScan(
-          filter,
-          appendScanLog
-        )
+        const { sent, emailSkipped, emailSkipReason } =
+          await sendReportAfterScan(filter, appendScanLog)
         const scope = filterTabLabel(lang, filter)
         if (agency === "busnearby") {
           showEphemeralBanner(
-            `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+            `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped, emailSkipReason })}`
           )
           return
         }
         showEphemeralBanner(
-          scanCompleteMessage(lang, sent, scope, { emailSkipped })
+          scanCompleteMessage(lang, sent, scope, { emailSkipped, emailSkipReason })
         )
       } catch (e) {
         showEphemeralBanner(
@@ -550,13 +556,11 @@ export function TransportDashboard() {
         { logPrefix: "bn-deep" }
       )
       await reloadCachedAlertsAfterScrape()
-      const { sent, emailSkipped } = await sendReportAfterScan(
-        "busnearby",
-        appendScanLog
-      )
+      const { sent, emailSkipped, emailSkipReason } =
+        await sendReportAfterScan("busnearby", appendScanLog)
       const scope = filterTabLabel(lang, "busnearby")
       showEphemeralBanner(
-        `סריקה מעמיקה · ${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+        `סריקה מעמיקה · ${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped, emailSkipReason })}`
       )
     } catch (e) {
       showEphemeralBanner(
@@ -585,13 +589,11 @@ export function TransportDashboard() {
         { logPrefix: "initBnDb" }
       )
       await reloadCachedAlertsAfterScrape()
-      const { sent, emailSkipped } = await sendReportAfterScan(
-        "busnearby",
-        appendScanLog
-      )
+      const { sent, emailSkipped, emailSkipReason } =
+        await sendReportAfterScan("busnearby", appendScanLog)
       const scope = filterTabLabel(lang, "busnearby")
       showEphemeralBanner(
-        `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped })}`
+        `${busnearbyScanRoutesOnlyMessage(lang)} · ${scanCompleteMessage(lang, sent, scope, { emailSkipped, emailSkipReason })}`
       )
     } catch (e) {
       showEphemeralBanner(
@@ -617,11 +619,13 @@ export function TransportDashboard() {
     try {
       await runProxyScan({ all: true }, { logPrefix: "all" })
       await reloadCachedAlertsAfterScrape()
-      const { sent, emailSkipped } = await sendReportAfterScan(
+      const { sent, emailSkipped, emailSkipReason } = await sendReportAfterScan(
         "all",
         appendScanLog
       )
-      showEphemeralBanner(scanAllCompleteMessage(lang, sent, { emailSkipped }))
+      showEphemeralBanner(
+        scanAllCompleteMessage(lang, sent, { emailSkipped, emailSkipReason })
+      )
     } catch (e) {
       showEphemeralBanner(
         e instanceof Error ? e.message : scanOrEmailError(lang),

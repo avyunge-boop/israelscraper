@@ -18,6 +18,9 @@ node_modules/
 *.crdownload
 .cache/
 
+# Local Chromium / Pulse noise (never commit)
+.config/
+
 # === OS & editors ===
 .DS_Store
 Thumbs.db

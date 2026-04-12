@@ -301,9 +301,21 @@ export function scanCompleteMessage(
   lang: DashboardLang,
   n: number,
   scope: string,
-  opts?: { emailSkipped?: boolean }
+  opts?: { emailSkipped?: boolean; emailSkipReason?: string }
 ): string {
   if (opts?.emailSkipped) {
+    if (opts.emailSkipReason === "smtp_not_configured") {
+      if (lang === "en") {
+        return `Done: scan completed. Filter: ${scope}.`
+      }
+      return `הסתיים: הסריקה הושלמה. מסנן: ${scope}.`
+    }
+    if (opts.emailSkipReason === "no_alerts_for_filter") {
+      if (lang === "en") {
+        return `Done: scan completed. No alerts to email for this filter (${scope}).`
+      }
+      return `הסתיים: הסריקה הושלמה. אין התראות לשליחה במסנן (${scope}).`
+    }
     if (lang === "en") {
       return `Done: scan completed. No email — set BUS_ALERTS_SMTP_HOST and BUS_ALERTS_EMAIL_FROM to send reports. Filter: ${scope}.`
     }
@@ -318,9 +330,21 @@ export function scanCompleteMessage(
 export function scanAllCompleteMessage(
   lang: DashboardLang,
   n: number,
-  opts?: { emailSkipped?: boolean }
+  opts?: { emailSkipped?: boolean; emailSkipReason?: string }
 ): string {
   if (opts?.emailSkipped) {
+    if (opts.emailSkipReason === "smtp_not_configured") {
+      if (lang === "en") {
+        return `Scan completed (all operators).`
+      }
+      return `הסריקה הושלמה (כל המפעילים).`
+    }
+    if (opts.emailSkipReason === "no_alerts_for_filter") {
+      if (lang === "en") {
+        return `Scan completed. No alerts to email for this filter (all operators).`
+      }
+      return `הסריקה הושלמה. אין התראות לשליחה במסנן (כל המפעילים).`
+    }
     if (lang === "en") {
       return `Scan completed. No email — configure SMTP env vars to send reports (all operators).`
     }
