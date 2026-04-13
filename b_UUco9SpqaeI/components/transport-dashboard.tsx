@@ -541,7 +541,9 @@ export function TransportDashboard() {
       addScanKey(agency)
       try {
         const runBody =
-          agency === "busnearby" ? { agency: "busnearby" as const } : { agency }
+          agency === "busnearby"
+            ? { agency: "busnearby" as const, maxRoutes: 200 }
+            : { agency }
         await runProxyScan(runBody, { logPrefix: agency })
         await reloadCachedAlertsAfterScrape()
         const { sent, emailSkipped, emailSkipReason } =
@@ -583,7 +585,7 @@ export function TransportDashboard() {
       await runProxyScan(
         {
           agency: "busnearby",
-          refresh: true,
+          maxRoutes: 200,
           fullScan: true,
         },
         { logPrefix: "bn-deep" }

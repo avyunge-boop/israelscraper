@@ -68,6 +68,9 @@ function buildOrchestratorArgv(body: RunScrapeBody): string[] {
       argv.push(`--max-routes=${cap}`);
     }
   }
+  if (body?.agency === "busnearby" && !body?.maxRoutes) {
+    argv.push("--max-routes=200");
+  }
   if (body?.fullScan === true) {
     argv.push("--full-scan");
   }
