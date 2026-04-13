@@ -167,6 +167,7 @@ export function TransportDashboard() {
     (k: string) => scanningKeys.includes(k),
     [scanningKeys]
   )
+  const isScanning = scanningKeys.length > 0
   const [scanInterval, setScanInterval] = useState("6")
   const [scanSourceTimestamps, setScanSourceTimestamps] = useState<
     ScanSourceTimestamp[]
@@ -680,6 +681,26 @@ export function TransportDashboard() {
     appendScanLog,
   ])
 
+  const handleStopScan = useCallback(async () => {
+    try {
+      const res = await fetch("/api/scraper-bridge/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (!res.ok) {
+        const t = await res.text()
+        throw new Error(t || `HTTP ${res.status}`)
+      }
+      showEphemeralBanner("בקשת עצירה נשלחה")
+      appendScanLog("⏹️ בקשת עצירה נשלחה לסקרייפר")
+    } catch (e) {
+      showEphemeralBanner(
+        e instanceof Error ? e.message : scanOrEmailError(lang),
+        "destructive"
+      )
+    }
+  }, [appendScanLog, lang, showEphemeralBanner])
+
   const handleExport = useCallback(() => {
     const csv = transportAlertsToCsvString(exportSlice)
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
@@ -905,6 +926,13 @@ export function TransportDashboard() {
           ui={ui}
           intervals={intervals}
         />
+        {isScanning && (
+          <div className="flex justify-end">
+            <Button variant="destructive" onClick={handleStopScan}>
+              עצור סריקה
+            </Button>
+          </div>
+        )}
 
         <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
           <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap">

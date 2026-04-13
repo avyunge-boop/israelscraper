@@ -1108,6 +1108,47 @@ function parseMaxRoutesFromArgv(argv: string[]): number | undefined {
   return undefined;
 }
 
+type AutoContinueRunBody = {
+  agency: "busnearby";
+  refresh?: boolean;
+  maxRoutes?: number;
+  fullScan?: boolean;
+};
+
+async function tryAutoContinueBusnearbyBatch(
+  body: AutoContinueRunBody,
+  remainingRoutes: number
+): Promise<void> {
+  const base = process.env.SCRAPER_API_URL?.trim();
+  if (!base) {
+    console.log(
+      "[busnearby] auto-continue skipped: SCRAPER_API_URL is not set"
+    );
+    return;
+  }
+  await sleep(5000);
+  console.log(
+    `[busnearby] auto-continuing: ${remainingRoutes} routes remaining, triggering next batch...`
+  );
+  try {
+    const res = await fetch(`${base.replace(/\/+$/, "")}/run-scrape`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const txt = await res.text();
+    if (!res.ok) {
+      console.error(
+        `[busnearby] auto-continue failed: HTTP ${res.status} ${txt.slice(0, 300)}`
+      );
+      return;
+    }
+    console.log(`[busnearby] auto-continue accepted: ${txt.slice(0, 300)}`);
+  } catch (e) {
+    console.error("[busnearby] auto-continue request failed:", e);
+  }
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function runBusnearbyInternal(
@@ -1258,6 +1299,9 @@ async function runBusnearbyInternal(
   );
 
   const nowMs = Date.now();
+  const hadAnyFreshRouteBeforeRun = routeList.some(
+    (r) => !routeNeedsRescan(r, nowMs)
+  );
   let scanQueue = fullScanMode
     ? routeList
     : routeList.filter((r) => routeNeedsRescan(r, nowMs));
@@ -1547,6 +1591,22 @@ async function runBusnearbyInternal(
   await tryUploadAllArtifactsToGcs(
     "after Groq + agency file merge + collector (bus-alerts + scan-export)"
   );
+
+  const remainingRoutes = Math.max(queueBeforeCap - (maxRoutesCap ?? Infinity), 0);
+  const isFirstBatch = !hadAnyFreshRouteBeforeRun;
+  if (
+    queueBeforeCap > (maxRoutesCap ?? Infinity) &&
+    maxRoutesCap != null &&
+    (deduped.length > 0 || isFirstBatch)
+  ) {
+    const nextBody: AutoContinueRunBody = {
+      agency: "busnearby",
+      ...(refreshFromCli ? { refresh: true } : {}),
+      ...(maxRoutesCap != null ? { maxRoutes: maxRoutesCap } : {}),
+      ...(fullScanMode ? { fullScan: true } : {}),
+    };
+    await tryAutoContinueBusnearbyBatch(nextBody, remainingRoutes);
+  }
 
   return {
     sourceId: "busnearby",

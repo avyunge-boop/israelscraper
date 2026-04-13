@@ -7,7 +7,7 @@
  * Email: by default SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=1 (no emails from orchestrator/scrapers).
  * On Cloud Run, set SCRAPER_ORCHESTRATOR_SKIP_ALL_EMAIL=0 and BUS_ALERTS_SMTP_* + BUS_ALERTS_EMAIL_* to send reports.
  */
-import { spawn } from "child_process";
+import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
 import express from "express";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
@@ -103,9 +103,11 @@ const scrapeJob = {
   running: false,
   agency: "",
   startedAt: null as string | null,
+  stopRequested: false,
 };
 
 let lastScrapeResult: LastScrapeResult | null = null;
+let runningOrchestratorChild: ChildProcessWithoutNullStreams | null = null;
 
 /** Live orchestrator output for GET /status while scrapeJob.running (dashboard יומן סריקה). */
 let scrapeLiveLog = "";
@@ -151,7 +153,7 @@ function runOrchestrator(
     const err: Buffer[] = [];
 
     const shell = process.platform === "win32";
-    let child;
+    let child: ChildProcessWithoutNullStreams;
 
     if (isMonorepoWorkspace()) {
       const pnpmArgs = [
@@ -165,7 +167,11 @@ function runOrchestrator(
       console.log(
         `[server] spawn monorepo: pnpm ${pnpmArgs.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ")} cwd=${REPO_ROOT}`
       );
-      child = spawn("pnpm", pnpmArgs, { cwd: REPO_ROOT, env, shell });
+      child = spawn("pnpm", pnpmArgs, {
+        cwd: REPO_ROOT,
+        env,
+        shell,
+      }) as ChildProcessWithoutNullStreams;
     } else {
       const tsxCli = path.join(
         SCRAPER_PKG_ROOT,
@@ -182,8 +188,9 @@ function runOrchestrator(
         process.execPath,
         [tsxCli, orch, ...argv],
         { cwd: SCRAPER_PKG_ROOT, env }
-      );
+      ) as ChildProcessWithoutNullStreams;
     }
+    runningOrchestratorChild = child;
 
     child.stdout?.on("data", (c: Buffer) => {
       const buf = Buffer.from(c);
@@ -201,6 +208,7 @@ function runOrchestrator(
     });
     child.on("error", reject);
     child.on("close", (code) => {
+      runningOrchestratorChild = null;
       resolve({
         code: code ?? 1,
         stdout: Buffer.concat(out).toString("utf-8"),
@@ -208,6 +216,21 @@ function runOrchestrator(
       });
     });
   });
+}
+
+function tryStopRunningScrape(reason: string): boolean {
+  const child = runningOrchestratorChild;
+  if (!child) return false;
+  try {
+    const sent = child.kill("SIGTERM");
+    if (sent) {
+      console.log(`[server] stop requested (${reason}) → sent SIGTERM to pid=${child.pid}`);
+    }
+    return sent;
+  } catch (e) {
+    console.error(`[server] failed to stop scrape (${reason}):`, e);
+    return false;
+  }
 }
 
 function parseProgressLine(line: string): unknown | null {
@@ -279,6 +302,7 @@ app.get("/health", (_req, res) => {
 app.get("/status", (_req, res) => {
   res.status(200).json({
     running: scrapeJob.running,
+    stopRequested: scrapeJob.stopRequested,
     agency: scrapeJob.running ? scrapeJob.agency : "",
     startedAt: scrapeJob.startedAt ?? "",
     ...(scrapeJob.running
@@ -288,6 +312,12 @@ app.get("/status", (_req, res) => {
         }
       : {}),
   });
+});
+
+app.post("/stop-scrape", (_req, res) => {
+  scrapeJob.stopRequested = true;
+  void tryStopRunningScrape("api:/stop-scrape");
+  return res.status(200).json({ ok: true, stopped: true });
 });
 
 app.get("/last-result", (_req, res) => {
@@ -345,6 +375,7 @@ app.post("/run-scrape", async (req, res) => {
   }
   const argv = buildOrchestratorArgv(body);
   const label = scrapeLabel(body);
+  scrapeJob.stopRequested = false;
   console.log(
     `[server] POST /run-scrape label=${JSON.stringify(label)} argv=${JSON.stringify(argv)} body=${JSON.stringify(body)} monorepo=${isMonorepoWorkspace()} cwd=${REPO_ROOT}`
   );
@@ -426,6 +457,7 @@ app.post("/run-scrape", async (req, res) => {
       scrapeJob.running = false;
       scrapeJob.startedAt = null;
       scrapeJob.agency = "";
+      scrapeJob.stopRequested = false;
       res.end();
     }
     return;
@@ -453,6 +485,7 @@ app.post("/run-scrape", async (req, res) => {
       scrapeJob.running = false;
       scrapeJob.startedAt = null;
       scrapeJob.agency = "";
+      scrapeJob.stopRequested = false;
     }
   })();
 
