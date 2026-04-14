@@ -60,6 +60,24 @@ function formatIsoHe(iso?: string): string {
   }
 }
 
+function extractBusnearbyAgencyIds(meta: Record<string, unknown> | undefined): string[] {
+  const routes = meta?.routes
+  if (!Array.isArray(routes)) return []
+  const ids = new Set<string>()
+  for (const r of routes) {
+    if (!r || typeof r !== "object") continue
+    const arr = (r as { agencyFilterIds?: unknown }).agencyFilterIds
+    if (!Array.isArray(arr)) continue
+    for (const id of arr) {
+      const s = String(id ?? "").trim()
+      if (s) ids.add(s)
+    }
+  }
+  return [...ids].sort(
+    (a, b) => (Number(a) || 0) - (Number(b) || 0) || a.localeCompare(b)
+  )
+}
+
 /** bus-alerts.json (Bus Nearby) */
 export function alertsFromBusNearbyJson(data: unknown): TransportAlert[] {
   if (!data || typeof data !== "object") return []
@@ -103,6 +121,8 @@ export function alertsFromBusNearbyJson(data: unknown): TransportAlert[] {
       isNew: item.activeNow === true,
       sourceScrapedAt: item.scrapedAt ?? scraped,
       dataSource: "busnearby",
+      discoveryDate: item.scrapedAt ?? scraped,
+      alertDate: item.effectiveStart,
     })
   })
   return out
@@ -223,6 +243,8 @@ export function alertsFromScanExportJson(data: unknown): TransportAlert[] {
           ? String(n.meta.summaryEn).trim()
           : ""
       const rawContent = (n.content ?? "").trim()
+      const busnearbyAgencyIds =
+        sourceId === "busnearby" ? extractBusnearbyAgencyIds(n.meta) : []
       const metaFull =
         typeof n.meta?.fullDescription === "string"
           ? String(n.meta.fullDescription).trim()
@@ -296,6 +318,11 @@ export function alertsFromScanExportJson(data: unknown): TransportAlert[] {
         dataSource,
         scanSourceId: sourceId,
         agencyGroupLabel: groupLabel,
+        ...(busnearbyAgencyIds.length > 0
+          ? { busnearbyAgencyIds }
+          : {}),
+        discoveryDate: src.scrapedAt ?? root.scrapedAt,
+        alertDate: n.effectiveStart,
       })
     }
   }

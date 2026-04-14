@@ -38,6 +38,7 @@ import {
 } from "@/lib/dashboard-i18n"
 
 type FilterType = "all" | "busnearby" | AlertProvider
+type SortMode = "discoveryDate" | "alertDate" | "agency"
 
 type ScanSourceTimestamp = {
   sourceId: string
@@ -91,6 +92,21 @@ function alertsMatchingFilter(
   if (filter === "all") return list
   if (filter === "busnearby") return list.filter((a) => a.dataSource === "busnearby")
   return list.filter((a) => a.provider === filter)
+}
+
+function toMs(v?: string): number {
+  if (!v) return 0
+  const t = Date.parse(v)
+  return Number.isFinite(t) ? t : 0
+}
+
+function agencyKeyForSort(a: TransportAlert): string {
+  if (a.dataSource === "busnearby") {
+    const first = a.busnearbyAgencyLabels?.[0]?.trim()
+    if (first) return first
+    if (a.agencyGroupLabel?.trim()) return a.agencyGroupLabel.trim()
+  }
+  return (a.agencyGroupLabel ?? a.provider ?? "").trim()
 }
 
 const FILTER_ORDER: FilterType[] = [
@@ -169,6 +185,7 @@ export function TransportDashboard() {
   )
   const isScanning = scanningKeys.length > 0
   const [scanInterval, setScanInterval] = useState("6")
+  const [sortMode, setSortMode] = useState<SortMode>("discoveryDate")
   const [scanSourceTimestamps, setScanSourceTimestamps] = useState<
     ScanSourceTimestamp[]
   >([])
@@ -387,6 +404,30 @@ export function TransportDashboard() {
     })
   }, [searchQuery, activeFilter, alerts])
 
+  const sortedFilteredAlerts = useMemo(() => {
+    const list = [...filteredAlerts]
+    list.sort((a, b) => {
+      const byAgency = agencyKeyForSort(a).localeCompare(agencyKeyForSort(b), "he")
+      if (activeFilter === "busnearby" && byAgency !== 0) return byAgency
+      if (sortMode === "agency") {
+        if (byAgency !== 0) return byAgency
+        return toMs(b.alertDate ?? b.dateRange.start) - toMs(a.alertDate ?? a.dateRange.start)
+      }
+      if (sortMode === "alertDate") {
+        const byAlert =
+          toMs(b.alertDate ?? b.dateRange.start) - toMs(a.alertDate ?? a.dateRange.start)
+        if (byAlert !== 0) return byAlert
+        return byAgency
+      }
+      const byDiscovery =
+        toMs(b.discoveryDate ?? b.firstSeenAt ?? b.sourceScrapedAt) -
+        toMs(a.discoveryDate ?? a.firstSeenAt ?? a.sourceScrapedAt)
+      if (byDiscovery !== 0) return byDiscovery
+      return byAgency
+    })
+    return list
+  }, [activeFilter, filteredAlerts, sortMode])
+
   const stats = useMemo(
     () => ({
       totalAlerts: alerts.length,
@@ -472,8 +513,9 @@ export function TransportDashboard() {
       })
       setScanProgress(null)
       setScanPhasesByAgency({})
+      await refetchAlerts({ silent: true })
     },
-    [appendScanLog, applyStreamProgress]
+    [appendScanLog, applyStreamProgress, refetchAlerts]
   )
 
   const sendReportAfterScan = useCallback(
@@ -713,6 +755,27 @@ export function TransportDashboard() {
     URL.revokeObjectURL(url)
   }, [exportSlice, activeFilter, lang])
 
+  const handleOpenAllAgencyLinks = useCallback(
+    (filter: FilterType) => {
+      const list = alertsMatchingFilter(alerts, filter)
+      const links = [...new Set(list.map((a) => a.link).filter((x) => x && x.trim()))]
+      if (links.length === 0) {
+        showEphemeralBanner("לא נמצאו קישורים לפתיחה", "destructive")
+        return
+      }
+      if (
+        links.length > 10 &&
+        !window.confirm(`עומדים להיפתח ${String(links.length)} טאבים. להמשיך?`)
+      ) {
+        return
+      }
+      for (const link of links) {
+        window.open(link, "_blank", "noopener,noreferrer")
+      }
+    },
+    [alerts, showEphemeralBanner]
+  )
+
   const handleSaveRecipient = useCallback(() => {
     setSettingsSaveState("saving")
     fetch("/api/settings", {
@@ -735,8 +798,8 @@ export function TransportDashboard() {
   }, [recipientEmail])
 
   const { newToday: filteredNew, existing: filteredExisting } = useMemo(
-    () => splitAlertsNewVsExisting(filteredAlerts),
-    [filteredAlerts]
+    () => splitAlertsNewVsExisting(sortedFilteredAlerts),
+    [sortedFilteredAlerts]
   )
 
   const filters = useMemo(
@@ -933,6 +996,35 @@ export function TransportDashboard() {
             </Button>
           </div>
         )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm">
+            <label htmlFor="alert-sort">מיון:</label>
+            <select
+              id="alert-sort"
+              className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+            >
+              <option value="discoveryDate">לפי תאריך גילוי</option>
+              <option value="alertDate">לפי תאריך התראה</option>
+              <option value="agency">לפי סוכנות</option>
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["busnearby", "אגד", "דן", "קווים", "מטרופולין"] as FilterType[]).map(
+              (f) => (
+                <Button
+                  key={`open-all-${f}`}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenAllAgencyLinks(f)}
+                >
+                  פתח כל הקישורים: {filterTabLabel(lang, f)}
+                </Button>
+              )
+            )}
+          </div>
+        </div>
 
         <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
           <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap">
@@ -958,7 +1050,7 @@ export function TransportDashboard() {
           <TabsContent value={activeFilter} className="mt-4">
             {loading && alerts.length === 0 ? (
               <p className="py-12 text-center text-muted-foreground">{ui.loading}</p>
-            ) : filteredAlerts.length === 0 ? (
+            ) : sortedFilteredAlerts.length === 0 ? (
               <EmptyState ui={ui} />
             ) : (
               <div className="space-y-8">

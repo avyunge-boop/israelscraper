@@ -23,13 +23,27 @@ function escapeCsvField(value: string): string {
   return t
 }
 
+function toMs(v?: string): number {
+  if (!v) return 0
+  const t = Date.parse(v)
+  return Number.isFinite(t) ? t : 0
+}
+
 /** CSV עם BOM (UTF-8) לפתיחה תקינה ב-Excel בעברית */
 export function transportAlertsToCsvString(rows: TransportAlert[]): string {
+  const sorted = [...rows].sort((a, b) => {
+    const agencyA = (a.agencyGroupLabel ?? a.provider ?? "").trim()
+    const agencyB = (b.agencyGroupLabel ?? b.provider ?? "").trim()
+    const byAgency = agencyA.localeCompare(agencyB, "he")
+    if (byAgency !== 0) return byAgency
+    return toMs(b.alertDate) - toMs(a.alertDate)
+  })
   const header =
-    "מפעיל,מקור נתונים,כותרת,קווים,תאריך התחלה,תאריך סיום,קישור,תיאור מלא (טקסט),תוכן מלא (כפול ל-Excel),כותרת ותוכן מאוחד,סיכום AI"
-  const lines = rows.map((a) => {
+    "מפעיל,מקור נתונים,כותרת,קווים,תאריך התחלה,תאריך סיום,תאריך גילוי,תאריך התראה,סוכנות,קישור,תיאור מלא (טקסט),תוכן מלא (כפול ל-Excel),כותרת ותוכן מאוחד,סיכום AI"
+  const lines = sorted.map((a) => {
     const full = String(a.fullContent ?? "").trim() || String(a.title ?? "").trim()
     const titleBody = `${String(a.title ?? "").trim()}\n\n${full}`.trim()
+    const agency = (a.agencyGroupLabel ?? a.busnearbyAgencyLabels?.join(" / ") ?? a.provider).trim()
     return [
       a.provider,
       a.dataSource,
@@ -37,6 +51,9 @@ export function transportAlertsToCsvString(rows: TransportAlert[]): string {
       a.lineNumbers.join(", "),
       a.dateRange.start,
       a.dateRange.end,
+      a.discoveryDate ?? a.firstSeenAt ?? a.sourceScrapedAt ?? "",
+      a.alertDate ?? "",
+      agency,
       a.link,
       full,
       full,

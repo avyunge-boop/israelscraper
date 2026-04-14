@@ -32,4 +32,12 @@ export interface TransportAlert {
   scanSourceId?: string
   /** כותרת קבוצה במייל / תצוגה */
   agencyGroupLabel?: string
+  /** Bus Nearby: agencyFilter IDs from route refs */
+  busnearbyAgencyIds?: string[]
+  /** Bus Nearby: human labels from agencies-registry.json */
+  busnearbyAgencyLabels?: string[]
+  /** ISO-ish discovery timestamp used for sorting/export */
+  discoveryDate?: string
+  /** ISO-ish alert start timestamp used for sorting/export */
+  alertDate?: string
 }

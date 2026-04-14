@@ -91,6 +91,31 @@ export interface MergeTransportResult {
 }
 
 export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResult> {
+  const agencyRegistryRaw = await resolveJsonFile("agencies-registry.json")
+  const agencyLabelById = new Map<string, string>()
+  if (agencyRegistryRaw && typeof agencyRegistryRaw === "object") {
+    const agencies = (agencyRegistryRaw as { agencies?: unknown }).agencies
+    if (Array.isArray(agencies)) {
+      for (const row of agencies) {
+        if (!row || typeof row !== "object") continue
+        const id = String((row as { id?: unknown }).id ?? "").trim()
+        const label = String((row as { label?: unknown }).label ?? "").trim()
+        if (id && label) agencyLabelById.set(id, label)
+      }
+    }
+  }
+
+  const enrichBusnearbyAgencyLabels = (rows: TransportAlert[]) => {
+    for (const a of rows) {
+      if (a.dataSource !== "busnearby") continue
+      const ids = Array.isArray(a.busnearbyAgencyIds) ? a.busnearbyAgencyIds : []
+      if (ids.length === 0) continue
+      const labels = ids.map((id) => agencyLabelById.get(id) ?? `agencyFilter=${id}`)
+      a.busnearbyAgencyLabels = labels
+      a.agencyGroupLabel = labels.join(" / ")
+    }
+  }
+
   /** קנון: SCRAPER_DATA_DIR או repo/data */
   const canonicalScanExport = path.join(
     resolveCanonicalDataDir(),
@@ -101,6 +126,7 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
     if (rawRemote) {
       const fromScan = alertsFromScanExportJson(rawRemote)
       if (fromScan.length > 0) {
+        enrichBusnearbyAgencyLabels(fromScan)
         let lastUpdated = (rawRemote as { scrapedAt?: string }).scrapedAt ?? ""
         for (const a of fromScan) {
           if (a.sourceScrapedAt) lastUpdated = maxIso(lastUpdated, a.sourceScrapedAt)
@@ -130,6 +156,7 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
     if (!raw) continue
     const fromScan = alertsFromScanExportJson(raw)
     if (fromScan.length > 0) {
+      enrichBusnearbyAgencyLabels(fromScan)
       let lastUpdated = (raw as { scrapedAt?: string }).scrapedAt ?? ""
       for (const a of fromScan) {
         if (a.sourceScrapedAt) lastUpdated = maxIso(lastUpdated, a.sourceScrapedAt)
@@ -170,6 +197,14 @@ export async function mergeTransportAlertsFromDisk(): Promise<MergeTransportResu
   }
 
   for (const a of merged) {
+    if (a.dataSource === "busnearby") {
+      const ids = Array.isArray(a.busnearbyAgencyIds) ? a.busnearbyAgencyIds : []
+      if (ids.length > 0) {
+        const labels = ids.map((id) => agencyLabelById.get(id) ?? `agencyFilter=${id}`)
+        a.busnearbyAgencyLabels = labels
+        a.agencyGroupLabel = labels.join(" / ")
+      }
+    }
     if (a.sourceScrapedAt) lastUpdated = maxIso(lastUpdated, a.sourceScrapedAt)
   }
 

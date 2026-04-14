@@ -208,6 +208,12 @@ export function AlertCard({ alert, ui }: AlertCardProps) {
                   Bus Nearby
                 </Badge>
               )}
+              {alert.dataSource === "busnearby" &&
+                (alert.agencyGroupLabel || alert.busnearbyAgencyLabels?.length) && (
+                  <Badge variant="outline" className="font-medium">
+                    {alert.agencyGroupLabel ?? alert.busnearbyAgencyLabels?.join(" / ")}
+                  </Badge>
+                )}
             </div>
             {/* Line / route tags (lineNumbers + routes ממיזוג scan-export) */}
             <div className="flex w-full min-w-0 flex-wrap gap-2">
