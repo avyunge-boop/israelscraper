@@ -134,15 +134,34 @@ function buildHtmlEmail(slice: TransportAlert[], filter: FilterPayload): string 
 <h2 style="margin:0 0 8px;font-size:20px;">${escapeHtml(title)}</h2>
 <p style="margin:0 0 16px;color:#555;font-size:14px;">סה״כ ${slice.length} התראות</p>
 ${sections}
+<hr style="border:none;border-top:1px solid #e6e6e6;margin:18px 0"/>
+<p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">
+נשלח ממערכת ניטור תחבורה. אם אינך מעוניין/ת לקבל עדכונים אלה, ניתן להסיר מנוי דרך קישור הביטול או במייל חוזר.
+</p>
 </div>
 </body>
 </html>`
 }
 
+function filterLabelForSubject(filter: FilterPayload): string {
+  if (filter === "all") return "כלל הסוכנויות"
+  if (filter === "busnearby") return "Bus Nearby"
+  return filter
+}
+
+function buildDeliverableSubject(
+  filter: FilterPayload,
+  dateIsoLike: string
+): string {
+  const date = dateIsoLike.slice(0, 10) || new Date().toISOString().slice(0, 10)
+  return `עדכון התראות תחבורה - ${filterLabelForSubject(filter)} - ${date}`
+}
+
 export async function POST(request: Request) {
   console.log("[send-alerts-email] POST start")
   const smtpEnv = readBusAlertsSmtpEnv()
-  const { host, from } = smtpEnv
+  const { host } = smtpEnv
+  const fromAddress = "מערכת ניטור תחבורה <avy.unge@gmail.com>"
   const envTo = process.env.BUS_ALERTS_EMAIL_TO?.trim()
   const isLocalDev = process.env.NODE_ENV === "development"
 
@@ -241,7 +260,7 @@ export async function POST(request: Request) {
     `secure=${secure}`,
     `authUser=${user ? "(set)" : "(none)"}`,
     `passLen=${pass.length}`,
-    `from=${from}`,
+    `from=${fromAddress}`,
     `to=${recipient}`
   )
 
@@ -269,6 +288,10 @@ export async function POST(request: Request) {
       return `${agencyLabelForAlert(a)}\n${a.lineNumbers.join(", ")}\n${a.title}\n\n${a.fullContent}\n\nסיכום: ${sum}\n${a.link}\n`
     })
     .join("\n---\n")
+  const textWithFooter = `${text}\n\n---\nנשלח ממערכת ניטור תחבורה.\nלביטול: mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe`
+  const subject = buildDeliverableSubject(filter, lastUpdated)
+  const listUnsub =
+    "<mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe>"
 
   try {
     console.log(
@@ -278,11 +301,16 @@ export async function POST(request: Request) {
       slice.length
     )
     const info = await transporter.sendMail({
-      from,
+      from: fromAddress,
       to: recipient,
-      subject: `[תחבורה] דוח התראות (${slice.length}) · ${filter} · ${lastUpdated.slice(0, 10)}`,
-      text,
+      replyTo: fromAddress,
+      subject,
+      text: textWithFooter,
       html,
+      headers: {
+        "List-Unsubscribe": listUnsub,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
     })
     console.log(
       "[send-alerts-email] sendMail resolved, messageId=",

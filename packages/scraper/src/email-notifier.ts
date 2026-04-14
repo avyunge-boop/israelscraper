@@ -552,6 +552,8 @@ export async function sendBusAlertsSummaryEmail(
     secure,
     ...(user ? { auth: { user, pass } } : {}),
   });
+  const fromAddress = "מערכת ניטור תחבורה <avy.unge@gmail.com>";
+  const listUnsub = "<mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe>";
 
   let { html, text } = buildHtmlBody(opts, sendOpts);
   const hasDiff = opts.added.length > 0 || opts.removed.length > 0;
@@ -567,6 +569,11 @@ export async function sendBusAlertsSummaryEmail(
         : fullMerged
           ? `אוטובוסים: דוח מלא מאוחד לפי מפעיל (${opts.allAlerts.length})`
           : `אוטובוסים: דוח התראות (${opts.allAlerts.length})`);
+  const subjectClean =
+    sendOpts?.subjectOverride?.trim() ||
+    `עדכון התראות תחבורה - ${
+      subject.replace(/^אוטובוסים:\s*/u, "").trim() || "כלל הסוכנויות"
+    } - ${dateStampFromScrapedAt(opts.scrapedAt)}`;
 
   const allSliceForCsv =
     !hasDiff && !hasCatalog ? [] : opts.allAlerts.slice(0, BUS_ALERTS_EMAIL_CATALOG_CAP);
@@ -583,11 +590,16 @@ export async function sendBusAlertsSummaryEmail(
   console.log(`Sending email with ${opts.allAlerts.length} alerts (CSV: ${allSliceForCsv.length} rows + header)`);
 
   await transporter.sendMail({
-    from,
+    from: fromAddress || from,
     to,
-    subject,
+    replyTo: fromAddress,
+    subject: subjectClean,
     text,
     html,
+    headers: {
+      "List-Unsubscribe": listUnsub,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
     attachments: [
       {
         filename: csvFilename,
@@ -695,11 +707,16 @@ ${CSV_ATTACHMENT_NOTE_HTML}
   console.log(`Sending Kavim email with ${options.alerts.length} alerts`);
 
   await transporter.sendMail({
-    from,
+    from: fromAddress || from,
     to,
+    replyTo: fromAddress,
     subject: KAVIM_EMAIL_SUBJECT,
     text,
     html,
+    headers: {
+      "List-Unsubscribe": listUnsub,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
     attachments: [
       {
         filename: csvFilename,
