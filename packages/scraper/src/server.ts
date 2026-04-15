@@ -90,6 +90,20 @@ function scrapeLabel(body: RunScrapeBody): string {
   return body?.refresh === true ? "all (refresh)" : "all";
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForScrapeIdle(maxWaitMs: number): Promise<boolean> {
+  if (!scrapeJob.running) return true;
+  const startedAt = Date.now();
+  while (scrapeJob.running) {
+    if (Date.now() - startedAt >= maxWaitMs) return false;
+    await sleep(500);
+  }
+  return true;
+}
+
 type LastScrapeResult = {
   exitCode: number;
   gcsUploaded: string[];
@@ -366,6 +380,21 @@ app.get("/data/:name", async (req, res) => {
 
 app.post("/run-scrape", async (req, res) => {
   const body = (req.body ?? {}) as RunScrapeBody;
+  const waitForIdleMsRaw = Number(req.query["waitForIdleMs"] ?? 0);
+  const waitForIdleMs =
+    Number.isFinite(waitForIdleMsRaw) && waitForIdleMsRaw > 0
+      ? Math.min(Math.floor(waitForIdleMsRaw), 120_000)
+      : 0;
+  if (scrapeJob.running && waitForIdleMs > 0) {
+    const idle = await waitForScrapeIdle(waitForIdleMs);
+    if (!idle) {
+      return res.status(409).json({
+        ok: false,
+        error: "scrape already running",
+        agency: scrapeJob.agency,
+      });
+    }
+  }
   if (scrapeJob.running) {
     return res.status(409).json({
       ok: false,

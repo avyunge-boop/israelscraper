@@ -1121,29 +1121,55 @@ async function tryAutoContinueBusnearbyBatch(
 ): Promise<void> {
   const base =
     process.env.SCRAPER_API_URL?.trim() || "http://localhost:8080";
-  await sleep(5000);
+  const runScrapeUrl = `${base.replace(/\/+$/, "")}/run-scrape?waitForIdleMs=45000`;
+  await sleep(15_000);
   console.log(
     `[busnearby] auto-continuing: ${remainingRoutes} routes remaining, triggering next batch via ${base.replace(
       /\/+$/,
       ""
     )}/run-scrape...`
   );
-  try {
-    const res = await fetch(`${base.replace(/\/+$/, "")}/run-scrape`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const txt = await res.text();
-    if (!res.ok) {
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      console.log(`[busnearby] auto-continue retry ${attempt}/${maxRetries}...`);
+      await sleep(10_000);
+    }
+    try {
+      const res = await fetch(runScrapeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const txt = await res.text();
+      if (res.ok) {
+        console.log(`[busnearby] auto-continue accepted: ${txt.slice(0, 300)}`);
+        return;
+      }
+      if (res.status === 409 && attempt < maxRetries) {
+        console.warn(
+          `[busnearby] auto-continue got HTTP 409 (scrape still running), will retry... ${txt.slice(
+            0,
+            300
+          )}`
+        );
+        continue;
+      }
       console.error(
         `[busnearby] auto-continue failed: HTTP ${res.status} ${txt.slice(0, 300)}`
       );
       return;
+    } catch (e) {
+      if (attempt < maxRetries) {
+        console.warn(
+          "[busnearby] auto-continue request failed (will retry):",
+          e
+        );
+        continue;
+      }
+      console.error("[busnearby] auto-continue request failed:", e);
+      return;
     }
-    console.log(`[busnearby] auto-continue accepted: ${txt.slice(0, 300)}`);
-  } catch (e) {
-    console.error("[busnearby] auto-continue request failed:", e);
   }
 }
 
