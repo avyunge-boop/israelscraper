@@ -73,7 +73,7 @@ steps:
       - --concurrency=10
       - --cpu=2
       - --memory=4Gi
-      - --update-env-vars=BUS_ALERTS_CHROME_EXECUTABLE=/usr/bin/google-chrome-stable
+      - --update-env-vars=BUS_ALERTS_CHROME_EXECUTABLE=/usr/bin/google-chrome-stable,SCRAPER_API_URL=https://scraper-api-522107007688.me-west1.run.app
       - --quiet
     waitFor:
       - push-scraper
