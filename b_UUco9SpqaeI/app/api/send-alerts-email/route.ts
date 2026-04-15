@@ -159,200 +159,215 @@ function buildDeliverableSubject(
 
 export async function POST(request: Request) {
   console.log("[send-alerts-email] POST start")
-  const smtpEnv = readBusAlertsSmtpEnv()
-  const { host } = smtpEnv
-  const fromAddress = "מערכת ניטור תחבורה <avy.unge@gmail.com>"
-  const envTo = process.env.BUS_ALERTS_EMAIL_TO?.trim()
-  const isLocalDev = process.env.NODE_ENV === "development"
-
   let filter: FilterPayload = "all"
-  let bodyTo: string | undefined
   try {
-    const b = (await request.json()) as {
-      filter?: FilterPayload
-      to?: string
-    }
-    if (b?.filter) filter = b.filter
-    if (typeof b?.to === "string") bodyTo = b.to.trim() || undefined
-  } catch {
-    /* גוף ריק */
-  }
+    const smtpEnv = readBusAlertsSmtpEnv()
+    const { host } = smtpEnv
+    const fromAddress = "מערכת ניטור תחבורה <avy.unge@gmail.com>"
+    const envTo = process.env.BUS_ALERTS_EMAIL_TO?.trim()
+    const isLocalDev = process.env.NODE_ENV === "development"
 
-  if (!host || !from) {
-    if (isLocalDev) {
+    let bodyTo: string | undefined
+    try {
+      const b = (await request.json()) as {
+        filter?: FilterPayload
+        to?: string
+      }
+      if (b?.filter) filter = b.filter
+      if (typeof b?.to === "string") bodyTo = b.to.trim() || undefined
+    } catch {
+      /* גוף ריק */
+    }
+
+    if (!host || !fromAddress) {
+      if (isLocalDev) {
+        return NextResponse.json({
+          ok: true,
+          sent: 0,
+          emailSkipped: true,
+          skipReason: "smtp_not_configured",
+          filter,
+        })
+      }
+      return NextResponse.json(
+        {
+          error:
+            "SMTP לא מוגדר: נדרשים BUS_ALERTS_SMTP_HOST ו-BUS_ALERTS_EMAIL_FROM ב-.env",
+        },
+        { status: 503 }
+      )
+    }
+
+    const settings = await readAppSettings()
+    const recipient = bodyTo || settings.recipientEmail || envTo
+    if (!recipient) {
+      return NextResponse.json(
+        {
+          error:
+            "אין נמען: הגדר כתובת בדשבורד (הגדרות) או BUS_ALERTS_EMAIL_TO ב-.env",
+        },
+        { status: 400 }
+      )
+    }
+
+    const { alerts, lastUpdated } = await mergeTransportAlertsFromDisk()
+    console.log(
+      "[send-alerts-email] merged alerts from disk, count=",
+      alerts.length
+    )
+    const structuredById = buildStructuredMapForAlerts(alerts)
+    const groqKey = process.env.GROQ_API_KEY?.trim()
+    /**
+     * לא קוראים ל-Groq לכל התראה חסרת סיכום — זה עלול לקחת שעות ולחרוג מ-timeout (המייל לא נשלח).
+     * משתמשים במטמון ובסיכומים שכבר קיימים על הדיסק (כמו GET /api/transport-alerts ללא generateMissing).
+     */
+    try {
+      await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
+        generateMissing: false,
+        generateEggedMissing: false,
+      })
+      console.log("[send-alerts-email] attachAiSummaries (cache-only) done")
+    } catch (e) {
+      console.error(
+        "[send-alerts-email] attachAiSummaries failed; sending with raw fields:",
+        e
+      )
+    }
+
+    const slice = filterAlerts(alerts, filter)
+    if (slice.length === 0) {
+      console.log(
+        "[send-alerts-email] skip send: no alerts for filter",
+        filter,
+        "totalAlerts=",
+        alerts.length
+      )
       return NextResponse.json({
         ok: true,
         sent: 0,
         emailSkipped: true,
-        skipReason: "smtp_not_configured",
+        skipReason: "no_alerts_for_filter",
         filter,
+        totalAlerts: alerts.length,
       })
     }
-    return NextResponse.json(
-      {
-        error:
-          "SMTP לא מוגדר: נדרשים BUS_ALERTS_SMTP_HOST ו-BUS_ALERTS_EMAIL_FROM ב-.env",
-      },
-      { status: 503 }
-    )
-  }
 
-  const settings = await readAppSettings()
-  const recipient = bodyTo || settings.recipientEmail || envTo
-  if (!recipient) {
-    return NextResponse.json(
-      {
-        error:
-          "אין נמען: הגדר כתובת בדשבורד (הגדרות) או BUS_ALERTS_EMAIL_TO ב-.env",
-      },
-      { status: 400 }
-    )
-  }
+    const { port, secure, user, pass } = smtpEnv
 
-  const { alerts, lastUpdated } = await mergeTransportAlertsFromDisk()
-  console.log(
-    "[send-alerts-email] merged alerts from disk, count=",
-    alerts.length
-  )
-  const structuredById = buildStructuredMapForAlerts(alerts)
-  const groqKey = process.env.GROQ_API_KEY?.trim()
-  /**
-   * לא קוראים ל-Groq לכל התראה חסרת סיכום — זה עלול לקחת שעות ולחרוג מ-timeout (המייל לא נשלח).
-   * משתמשים במטמון ובסיכומים שכבר קיימים על הדיסק (כמו GET /api/transport-alerts ללא generateMissing).
-   */
-  try {
-    await attachAiSummariesToAlerts(alerts, groqKey, structuredById, {
-      generateMissing: false,
-      generateEggedMissing: false,
-    })
-    console.log("[send-alerts-email] attachAiSummaries (cache-only) done")
-  } catch (e) {
-    console.error(
-      "[send-alerts-email] attachAiSummaries failed; sending with raw fields:",
-      e
-    )
-  }
-
-  const slice = filterAlerts(alerts, filter)
-  if (slice.length === 0) {
     console.log(
-      "[send-alerts-email] skip send: no alerts for filter",
-      filter,
-      "totalAlerts=",
-      alerts.length
+      "[send-alerts-email] SMTP:",
+      `host=${host}`,
+      `port=${port}`,
+      `secure=${secure}`,
+      `authUser=${user ? "(set)" : "(none)"}`,
+      `passLen=${pass.length}`,
+      `from=${fromAddress}`,
+      `to=${recipient}`
     )
+
+    let transporter: ReturnType<typeof nodemailer.createTransport>
+    try {
+      transporter = createBusAlertsTransport()
+    } catch (e) {
+      console.error("[send-alerts-email] createTransport failed:", e)
+      return NextResponse.json(
+        {
+          error:
+            e instanceof Error
+              ? e.message
+              : "יצירת SMTP transport נכשלה (בדוק BUS_ALERTS_SMTP_HOST).",
+        },
+        { status: 503 }
+      )
+    }
+
+    const html = buildHtmlEmail(slice, filter)
+    const text = slice
+      .map((a) => {
+        const sum =
+          sanitizeAiSummaryOutput(a.aiSummary ?? "").trim() || "מעבד סיכום..."
+        return `${agencyLabelForAlert(a)}\n${a.lineNumbers.join(", ")}\n${a.title}\n\n${a.fullContent}\n\nסיכום: ${sum}\n${a.link}\n`
+      })
+      .join("\n---\n")
+    const textWithFooter = `${text}\n\n---\nנשלח ממערכת ניטור תחבורה.\nלביטול: mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe`
+    const subject = buildDeliverableSubject(filter, lastUpdated)
+    const listUnsub =
+      "<mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe>"
+
+    try {
+      console.log(
+        "[send-alerts-email] invoking sendMail to=",
+        recipient,
+        "subject slice=",
+        slice.length
+      )
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        to: recipient,
+        replyTo: fromAddress,
+        subject,
+        text: textWithFooter,
+        html,
+        headers: {
+          "List-Unsubscribe": listUnsub,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      })
+      console.log(
+        "[send-alerts-email] sendMail resolved, messageId=",
+        info?.messageId ?? "(none)"
+      )
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException & {
+        responseCode?: string
+        command?: string
+      }
+      console.error("[send-alerts-email] sendMail failed:", e)
+      console.error(
+        "[send-alerts-email] nodemailer detail:",
+        "message=",
+        err?.message,
+        "code=",
+        err?.code,
+        "errno=",
+        err?.errno,
+        "syscall=",
+        err?.syscall,
+        "responseCode=",
+        err?.responseCode,
+        "command=",
+        err?.command,
+        "stack=",
+        e instanceof Error ? e.stack : undefined
+      )
+      return NextResponse.json(
+        {
+          error:
+            e instanceof Error
+              ? e.message
+              : "שליחת המייל נכשלה (SMTP). בדוק BUS_ALERTS_SMTP_* ו-BUS_ALERTS_EMAIL_FROM/TO.",
+        },
+        { status: 502 }
+      )
+    }
+
+    console.log(`[send-alerts-email] ✅ מייל נשלח ל: ${recipient}`)
+
     return NextResponse.json({
       ok: true,
-      sent: 0,
-      emailSkipped: true,
-      skipReason: "no_alerts_for_filter",
-      filter,
-      totalAlerts: alerts.length,
-    })
-  }
-
-  const { port, secure, user, pass } = smtpEnv
-
-  console.log(
-    "[send-alerts-email] SMTP:",
-    `host=${host}`,
-    `port=${port}`,
-    `secure=${secure}`,
-    `authUser=${user ? "(set)" : "(none)"}`,
-    `passLen=${pass.length}`,
-    `from=${fromAddress}`,
-    `to=${recipient}`
-  )
-
-  let transporter: ReturnType<typeof nodemailer.createTransport>
-  try {
-    transporter = createBusAlertsTransport()
-  } catch (e) {
-    console.error("[send-alerts-email] createTransport failed:", e)
-    return NextResponse.json(
-      {
-        error:
-          e instanceof Error
-            ? e.message
-            : "יצירת SMTP transport נכשלה (בדוק BUS_ALERTS_SMTP_HOST).",
-      },
-      { status: 503 }
-    )
-  }
-
-  const html = buildHtmlEmail(slice, filter)
-  const text = slice
-    .map((a) => {
-      const sum =
-        sanitizeAiSummaryOutput(a.aiSummary ?? "").trim() || "מעבד סיכום..."
-      return `${agencyLabelForAlert(a)}\n${a.lineNumbers.join(", ")}\n${a.title}\n\n${a.fullContent}\n\nסיכום: ${sum}\n${a.link}\n`
-    })
-    .join("\n---\n")
-  const textWithFooter = `${text}\n\n---\nנשלח ממערכת ניטור תחבורה.\nלביטול: mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe`
-  const subject = buildDeliverableSubject(filter, lastUpdated)
-  const listUnsub =
-    "<mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe>"
-
-  try {
-    console.log(
-      "[send-alerts-email] invoking sendMail to=",
-      recipient,
-      "subject slice=",
-      slice.length
-    )
-    const info = await transporter.sendMail({
-      from: fromAddress,
+      sent: slice.length,
       to: recipient,
-      replyTo: fromAddress,
-      subject,
-      text: textWithFooter,
-      html,
-      headers: {
-        "List-Unsubscribe": listUnsub,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
+      filter,
     })
-    console.log(
-      "[send-alerts-email] sendMail resolved, messageId=",
-      info?.messageId ?? "(none)"
-    )
   } catch (e) {
-    const err = e as NodeJS.ErrnoException & { responseCode?: string; command?: string }
-    console.error("[send-alerts-email] sendMail failed:", e)
-    console.error(
-      "[send-alerts-email] nodemailer detail:",
-      "message=",
-      err?.message,
-      "code=",
-      err?.code,
-      "errno=",
-      err?.errno,
-      "syscall=",
-      err?.syscall,
-      "responseCode=",
-      err?.responseCode,
-      "command=",
-      err?.command,
-      "stack=",
-      e instanceof Error ? e.stack : undefined
-    )
+    console.error("[send-alerts-email] unexpected POST failure:", e)
     return NextResponse.json(
       {
-        error:
-          e instanceof Error
-            ? e.message
-            : "שליחת המייל נכשלה (SMTP). בדוק BUS_ALERTS_SMTP_* ו-BUS_ALERTS_EMAIL_FROM/TO.",
+        error: "שגיאה פנימית בשליחת מייל.",
+        details: e instanceof Error ? e.message : String(e),
+        filter,
       },
-      { status: 502 }
+      { status: 500 }
     )
   }
-
-  console.log(`[send-alerts-email] ✅ מייל נשלח ל: ${recipient}`)
-
-  return NextResponse.json({
-    ok: true,
-    sent: slice.length,
-    to: recipient,
-    filter,
-  })
 }

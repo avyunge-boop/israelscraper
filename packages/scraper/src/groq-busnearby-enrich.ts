@@ -15,6 +15,7 @@ const TRANSLATE_SYSTEM =
 
 const DELAY_MS_BETWEEN_GROQ_ALERTS = 2000;
 const PER_ALERT_TIMEOUT_MS = 30_000;
+const MAX_GROQ_ALERT_CONTENT_CHARS = 400;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -43,6 +44,12 @@ function logTitleSnippet(title: string, maxLen = 72): string {
   const t = title.replace(/\s+/g, " ").trim();
   if (t.length <= maxLen) return t || "(no title)";
   return `${t.slice(0, maxLen)}…`;
+}
+
+function truncateGroqContent(content: string): string {
+  const compact = content.replace(/\s+/g, " ").trim();
+  if (compact.length <= MAX_GROQ_ALERT_CONTENT_CHARS) return compact;
+  return `${compact.slice(0, MAX_GROQ_ALERT_CONTENT_CHARS)}…`;
 }
 
 async function groqText(
@@ -117,7 +124,8 @@ export async function enrichBusnearbyAlertsWithGroq(
       `[groq] enriching alert ${idx}/${n}: ${logTitleSnippet(a.title)}`
     );
 
-    const raw = `${a.title}\n\n${a.content}`.trim();
+    const truncatedContent = truncateGroqContent(String(a.content ?? ""));
+    const raw = `${a.title}\n\n${truncatedContent}`.trim();
     try {
       const { he, en } = await withTimeout(
         (async () => {

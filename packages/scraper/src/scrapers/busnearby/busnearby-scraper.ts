@@ -1119,16 +1119,14 @@ async function tryAutoContinueBusnearbyBatch(
   body: AutoContinueRunBody,
   remainingRoutes: number
 ): Promise<void> {
-  const base = process.env.SCRAPER_API_URL?.trim();
-  if (!base) {
-    console.log(
-      "[busnearby] auto-continue skipped: SCRAPER_API_URL is not set"
-    );
-    return;
-  }
+  const base =
+    process.env.SCRAPER_API_URL?.trim() || "http://localhost:8080";
   await sleep(5000);
   console.log(
-    `[busnearby] auto-continuing: ${remainingRoutes} routes remaining, triggering next batch...`
+    `[busnearby] auto-continuing: ${remainingRoutes} routes remaining, triggering next batch via ${base.replace(
+      /\/+$/,
+      ""
+    )}/run-scrape...`
   );
   try {
     const res = await fetch(`${base.replace(/\/+$/, "")}/run-scrape`, {
