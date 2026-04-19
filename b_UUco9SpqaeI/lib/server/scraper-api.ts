@@ -1,3 +1,5 @@
+import { fetchWithRetry } from "@/lib/server/fetch-with-retry"
+
 /**
  * כאשר הדשבורד רץ בנפרד מהסקרייפר (למשל Cloud Run), מגדירים SCRAPER_API_URL
  * לבסיס ה-HTTP של שירות הסקרייפר (ללא סלאש בסוף).
@@ -24,7 +26,7 @@ export async function fetchScraperDataFileText(
   if (!base) return null
   const url = `${base}/data/${encodeURIComponent(fileName)}`
   try {
-    const res = await fetch(url, { cache: "no-store" })
+    const res = await fetchWithRetry(url, { cache: "no-store" }, { maxRetries: 5 })
     if (!res.ok) return null
     return await res.text()
   } catch {

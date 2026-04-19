@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { fetchWithRetry } from "@/lib/server/fetch-with-retry"
 import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
 
 export const dynamic = "force-dynamic"
@@ -20,9 +21,11 @@ export async function GET(
   if (!name || name.includes("..") || name.includes("/")) {
     return NextResponse.json({ error: "invalid name" }, { status: 400 })
   }
-  const res = await fetch(`${base}/data/${encodeURIComponent(name)}`, {
-    cache: "no-store",
-  })
+  const res = await fetchWithRetry(
+    `${base}/data/${encodeURIComponent(name)}`,
+    { cache: "no-store" },
+    { maxRetries: 5 }
+  )
   const text = await res.text()
   return new NextResponse(text, {
     status: res.status,

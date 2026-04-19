@@ -3,6 +3,7 @@ import { existsSync } from "fs"
 import path from "path"
 import { NextResponse } from "next/server"
 
+import { fetchWithRetry } from "@/lib/server/fetch-with-retry"
 import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
 import { resolveOrchestratorRepoRoot } from "@/lib/server/workspace-paths"
 
@@ -135,7 +136,7 @@ async function runOrchestratorViaScraperApi(
   if (cap != null) payload.maxRoutes = cap
   if (body?.fullScan === true) payload.fullScan = true
 
-  const res = await fetch(`${base}/run-scrape`, {
+  const res = await fetchWithRetry(`${base}/run-scrape`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -169,7 +170,9 @@ async function runOrchestratorViaScraperApi(
     const pollMs = 3000
     for (;;) {
       await sleep(pollMs)
-      const stRes = await fetch(`${base}/status`, { cache: "no-store" })
+      const stRes = await fetchWithRetry(`${base}/status`, {
+        cache: "no-store",
+      })
       const stText = await stRes.text()
       let st: { running?: boolean }
       try {
@@ -179,7 +182,9 @@ async function runOrchestratorViaScraperApi(
       }
       if (!st.running) break
     }
-    const lrRes = await fetch(`${base}/last-result`, { cache: "no-store" })
+    const lrRes = await fetchWithRetry(`${base}/last-result`, {
+      cache: "no-store",
+    })
     const lrText = await lrRes.text()
     let lr: {
       exitCode?: number

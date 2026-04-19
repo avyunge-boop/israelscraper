@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { fetchWithRetry } from "@/lib/server/fetch-with-retry"
 import { getScraperApiBaseUrl } from "@/lib/server/scraper-api"
 
 export const dynamic = "force-dynamic"
@@ -14,15 +15,19 @@ export async function POST(request: Request) {
     )
   }
   const bodyText = await request.text()
-  const upstream = await fetch(`${base}/run-scrape?stream=1`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream",
+  const upstream = await fetchWithRetry(
+    `${base}/run-scrape?stream=1`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: bodyText || "{}",
+      cache: "no-store",
     },
-    body: bodyText || "{}",
-    cache: "no-store",
-  })
+    { maxRetries: 6 }
+  )
   if (!upstream.ok) {
     const t = await upstream.text()
     return new NextResponse(t, {
