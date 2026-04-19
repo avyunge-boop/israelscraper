@@ -125,6 +125,17 @@ export async function mergeAndSaveAgencyAlertsFile(
   console.log(
     `[agency-alerts] ${fileName} → ${merged.length} alert(s) (latest scan only; stale removed)`
   );
+  if (process.env.SCRAPER_STORAGE === "gcs") {
+    const { uploadDataJsonFileToGcs } = await import("../gcs-sync.js");
+    try {
+      const url = await uploadDataJsonFileToGcs(fileName);
+      if (url) {
+        console.log(`[agency-alerts/gcs] ${fileName}: ${url}`);
+      }
+    } catch (e) {
+      console.error(`[agency-alerts/gcs] upload ${fileName} failed:`, e);
+    }
+  }
 }
 
 export async function listAgencyAlertFilenamesInDataDir(): Promise<string[]> {

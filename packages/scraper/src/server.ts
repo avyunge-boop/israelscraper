@@ -37,6 +37,8 @@ type RunScrapeBody = {
   maxRoutes?: number;
   /** Bus Nearby only: maps to --full-scan (ignore staleness window, queue all DB routes up to maxRoutes) */
   fullScan?: boolean;
+  /** When true with scrapeJob.running, clears stuck state then starts (same as force-reset + run). */
+  forceRestart?: boolean;
 };
 
 /** Orchestrator prints JSON summaries per agent; at least one `"ok": true` means partial success. */
@@ -416,6 +418,31 @@ app.get("/data/:name", async (req, res) => {
 
 app.post("/run-scrape", async (req, res) => {
   const body = (req.body ?? {}) as RunScrapeBody;
+  const forceRestart =
+    String(req.query["forceRestart"] ?? "") === "1" ||
+    String(req.query["force"] ?? "") === "1" ||
+    body.forceRestart === true;
+  if (scrapeJob.running && forceRestart) {
+    console.warn(
+      "[server] forceRestart: clearing scrapeJob + scraper-status before new run"
+    );
+    scrapeJob.stopRequested = true;
+    void tryStopRunningScrape("api:/run-scrape?forceRestart=1");
+    scrapeJob.running = false;
+    scrapeJob.agency = "";
+    scrapeJob.startedAt = null;
+    scrapeJob.stopRequested = false;
+    try {
+      await writeScraperStatusFile({
+        running: false,
+        progress: 0,
+        agency: "",
+        startedAt: null,
+      });
+    } catch (e) {
+      console.error("[server] forceRestart scraper-status write:", e);
+    }
+  }
   const waitForIdleMsRaw = Number(req.query["waitForIdleMs"] ?? 0);
   const waitForIdleMs =
     Number.isFinite(waitForIdleMsRaw) && waitForIdleMsRaw > 0

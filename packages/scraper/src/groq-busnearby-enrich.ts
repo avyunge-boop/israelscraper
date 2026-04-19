@@ -1,5 +1,6 @@
 /**
  * סיכום + תרגום לאנגלית לכל התראת Bus Nearby לפני כתיבה ל-scan-export (אותו מודל כמו הדשבורד).
+ * מנות קטנות + checkpoint אופציונלי (GCS) אחרי כל מנה.
  */
 import Groq, { RateLimitError } from "groq-sdk";
 
@@ -16,6 +17,15 @@ const TRANSLATE_SYSTEM =
 const DELAY_MS_BETWEEN_GROQ_ALERTS = 2000;
 const PER_ALERT_TIMEOUT_MS = 30_000;
 const MAX_GROQ_ALERT_CONTENT_CHARS = 400;
+const GROQ_PROGRESS_LOG_EVERY = 50;
+
+function resolveGroqBatchSize(): number {
+  const raw = process.env.GROQ_ENRICH_BATCH_SIZE?.trim();
+  if (raw === "" || raw === undefined) return 5;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 5;
+  return Math.max(1, Math.min(20, Math.floor(n)));
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -92,7 +102,8 @@ async function groqTextWithRetry(
       if (!isGroqRateLimit(e) || attempt === max - 1) {
         throw e;
       }
-      const waitMs = Math.min(4000 * 2 ** attempt, 45_000) + Math.floor(Math.random() * 800);
+      const waitMs =
+        Math.min(4000 * 2 ** attempt, 45_000) + Math.floor(Math.random() * 800);
       console.warn(
         `[groq] ${label}: HTTP 429 / rate limit, retry ${attempt + 1}/${max - 1} in ${waitMs}ms`
       );
@@ -113,32 +124,105 @@ function hasCompleteGroqMeta(a: NormalizedAlert): boolean {
   return he.length > 0 && en.length > 0;
 }
 
+export type GroqBatchCheckpointArgs = {
+  batchIndex: number;
+  batchCount: number;
+  mergedSoFar: NormalizedAlert[];
+};
+
+function logGroqMilestone(doneNeedingApi: number, totalNeedingApi: number): void {
+  if (totalNeedingApi === 0) return;
+  const hit =
+    doneNeedingApi % GROQ_PROGRESS_LOG_EVERY === 0 ||
+    doneNeedingApi === totalNeedingApi;
+  if (!hit) return;
+  const pct = ((doneNeedingApi / totalNeedingApi) * 100).toFixed(1);
+  console.log(
+    `[${doneNeedingApi}/${totalNeedingApi}] (${pct}%) | Phase: Groq | batch progress`
+  );
+}
+
+async function enrichOneAlert(
+  key: string,
+  a: NormalizedAlert,
+  idx: number,
+  n: number
+): Promise<NormalizedAlert> {
+  console.log(`[groq] enriching alert ${idx}/${n}: ${logTitleSnippet(a.title)}`);
+
+  const truncatedContent = truncateGroqContent(String(a.content ?? ""));
+  const raw = `${a.title}\n\n${truncatedContent}`.trim();
+  try {
+    const { he, en } = await withTimeout(
+      (async () => {
+        const heOut = await groqTextWithRetry(
+          key,
+          DISPATCHER_SYSTEM,
+          `Raw alert:\n${raw}`,
+          "dispatcher"
+        );
+        let enOut = "";
+        if (heOut) {
+          try {
+            enOut = await groqTextWithRetry(
+              key,
+              TRANSLATE_SYSTEM,
+              heOut,
+              "translate"
+            );
+          } catch (e2) {
+            console.warn(
+              `[groq] alert ${idx}/${n}: Hebrew OK, English translate failed — keeping HE only:`,
+              e2 instanceof Error ? e2.message : String(e2)
+            );
+          }
+        }
+        return { he: heOut, en: enOut };
+      })(),
+      PER_ALERT_TIMEOUT_MS,
+      "Groq enrich alert"
+    );
+    return {
+      ...a,
+      meta: {
+        ...a.meta,
+        dispatcherSummaryHe: he || undefined,
+        summaryEn: en || undefined,
+        fullDescription: he || a.content,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[groq] alert ${idx}/${n} skipped after error/timeout: ${msg}`);
+    return a;
+  }
+}
+
 /**
  * מעשיר התראות ב-meta.dispatcherSummaryHe ו-meta.summaryEn.
- * רצף אחד-אחד, השהייה בין קריאות, timeout לכל התראה, מדלג על כאלה שכבר ב-cache (מ־routes-database).
+ * מנות (ברירת מחדל 5), timeout 30s לכל התראה, checkpoint אחרי כל מנה.
  */
 export async function enrichBusnearbyAlertsWithGroq(
-  alerts: NormalizedAlert[]
+  alerts: NormalizedAlert[],
+  opts?: {
+    batchSize?: number;
+    onBatchCheckpoint?: (args: GroqBatchCheckpointArgs) => Promise<void>;
+  }
 ): Promise<NormalizedAlert[]> {
   loadRootEnv();
   const key = process.env.GROQ_API_KEY?.trim();
   if (!key || alerts.length === 0) return alerts;
 
-  const needGroq = alerts.filter((a) => !hasCompleteGroqMeta(a)).length;
-  console.log(
-    `[groq] Groq enrich starting for ${alerts.length} alerts (${needGroq} need API, ${alerts.length - needGroq} cached in routes DB)`
-  );
-
-  const out: NormalizedAlert[] = [];
+  const batchSize = opts?.batchSize ?? resolveGroqBatchSize();
+  const n = alerts.length;
+  const result: NormalizedAlert[] = alerts.map((a) => ({ ...a }));
   let skipped = 0;
-  for (let i = 0; i < alerts.length; i++) {
-    const a = alerts[i]!;
-    const n = alerts.length;
-    const idx = i + 1;
 
+  for (let i = 0; i < n; i++) {
+    const a = result[i]!;
     if (hasCompleteGroqMeta(a)) {
       const he = String(a.meta?.dispatcherSummaryHe ?? "").trim();
-      out.push({
+      result[i] = {
         ...a,
         meta: {
           ...a.meta,
@@ -146,74 +230,63 @@ export async function enrichBusnearbyAlertsWithGroq(
           summaryEn: String(a.meta?.summaryEn ?? "").trim(),
           fullDescription: he || a.content,
         },
-      });
+      };
       skipped++;
-      continue;
-    }
-
-    console.log(
-      `[groq] enriching alert ${idx}/${n}: ${logTitleSnippet(a.title)}`
-    );
-
-    const truncatedContent = truncateGroqContent(String(a.content ?? ""));
-    const raw = `${a.title}\n\n${truncatedContent}`.trim();
-    try {
-      const { he, en } = await withTimeout(
-        (async () => {
-          const heOut = await groqTextWithRetry(
-            key,
-            DISPATCHER_SYSTEM,
-            `Raw alert:\n${raw}`,
-            "dispatcher"
-          );
-          let enOut = "";
-          if (heOut) {
-            try {
-              enOut = await groqTextWithRetry(
-                key,
-                TRANSLATE_SYSTEM,
-                heOut,
-                "translate"
-              );
-            } catch (e2) {
-              console.warn(
-                `[groq] alert ${idx}/${n}: Hebrew OK, English translate failed — keeping HE only:`,
-                e2 instanceof Error ? e2.message : String(e2)
-              );
-            }
-          }
-          return { he: heOut, en: enOut };
-        })(),
-        PER_ALERT_TIMEOUT_MS,
-        "Groq enrich alert"
-      );
-      out.push({
-        ...a,
-        meta: {
-          ...a.meta,
-          dispatcherSummaryHe: he || undefined,
-          summaryEn: en || undefined,
-          fullDescription: he || a.content,
-        },
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.warn(
-        `[groq] alert ${idx}/${n} skipped after error/timeout: ${msg}`
-      );
-      out.push(a);
-    }
-
-    if (idx < n) {
-      await sleep(DELAY_MS_BETWEEN_GROQ_ALERTS);
     }
   }
+
+  const needIdx: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (!hasCompleteGroqMeta(result[i]!)) needIdx.push(i);
+  }
+
+  const needGroq = needIdx.length;
+  console.log(
+    `[groq] Groq enrich starting for ${n} alerts (${needGroq} need API, ${skipped} cached in routes DB); batchSize=${batchSize}`
+  );
+
+  if (needGroq === 0) {
+    console.log(`[groq] done: used cache for ${skipped}/${n}`);
+    return result;
+  }
+
+  const batchCount = Math.ceil(needGroq / batchSize);
+  let doneNeedingApi = 0;
+
+  for (let b = 0; b < needIdx.length; b += batchSize) {
+    const chunk = needIdx.slice(b, b + batchSize)!;
+    const batchIndex = Math.floor(b / batchSize);
+
+    for (let c = 0; c < chunk.length; c++) {
+      const i = chunk[c]!;
+      result[i] = await enrichOneAlert(key, result[i]!, i + 1, n);
+      doneNeedingApi++;
+      logGroqMilestone(doneNeedingApi, needGroq);
+      const isLastOverall = doneNeedingApi >= needGroq;
+      if (!isLastOverall) {
+        await sleep(DELAY_MS_BETWEEN_GROQ_ALERTS);
+      }
+    }
+
+    if (opts?.onBatchCheckpoint) {
+      try {
+        await opts.onBatchCheckpoint({
+          batchIndex,
+          batchCount,
+          mergedSoFar: [...result],
+        });
+      } catch (e) {
+        console.error(`[groq] onBatchCheckpoint batch ${batchIndex} failed:`, e);
+      }
+    }
+  }
+
   if (skipped > 0) {
     console.log(
-      `[groq] done: used cache for ${skipped}/${alerts.length}; attempted Groq for ${alerts.length - skipped}`
+      `[groq] done: used cache for ${skipped}/${n}; attempted Groq for ${needGroq}`
     );
   } else {
-    console.log(`[groq] done: processed ${alerts.length} alert(s)`);
+    console.log(`[groq] done: processed ${n} alert(s)`);
   }
-  return out;
+  return result;
 }

@@ -1398,7 +1398,7 @@ async function runBusnearbyInternal(
         dest.length > 96 ? `${dest.slice(0, 96)}…` : dest;
       const detail = `Line [${lineNo}] (${agencyHuman}) to ${destShort}`;
       console.log(
-        `[${queueCompleted}/${queueTotal}] (${pct}%) | Scanning: ${detail}`
+        `[${queueCompleted}/${queueTotal}] (${pct}%) | Phase: Scrape | ${detail}`
       );
       logScraperProgressLine({
         agency: "busnearby",
@@ -1439,6 +1439,9 @@ async function runBusnearbyInternal(
         );
 
   await dbPersist.flush();
+  await browser.close().catch((e) => {
+    console.error("[busnearby] browser.close after route queue failed:", e);
+  });
   await saveRoutesDatabase(routesByPattern);
   if (scanQueue.length > 0) {
     await tryUploadJsonToGcs(
@@ -1453,8 +1456,6 @@ async function runBusnearbyInternal(
   console.log(
     `  Queue finished: ${scanQueue.length} route(s) attempted, ok=${okCount}, fail=${failCount}`
   );
-
-  await browser.close();
 
   const rawAlerts: RawScrapedAlert[] = [];
   for (const rec of routeList) {
@@ -1580,7 +1581,29 @@ async function runBusnearbyInternal(
 
   let normalizedAlerts = dedupedToNormalized(deduped);
   try {
-    normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts);
+    normalizedAlerts = await enrichBusnearbyAlertsWithGroq(normalizedAlerts, {
+      onBatchCheckpoint: async ({ mergedSoFar, batchIndex }) => {
+        console.log(
+          `[groq] checkpoint batch ${batchIndex + 1}: persisting ${mergedSoFar.length} alert(s) → agency file + collector + GCS`
+        );
+        applyGroqEnrichmentToRouteRecords(routesByPattern, mergedSoFar);
+        await saveRoutesDatabase(routesByPattern);
+        await mergeAndSaveAgencyAlertsFile(
+          {
+            sourceId: "busnearby",
+            displayName: BUSNEARBY_DISPLAY,
+            success: true,
+            scrapedAt,
+            alerts: mergedSoFar,
+          },
+          { lastContentIds: contentIds }
+        );
+        await rebuildScanExportAndMasterBusAlerts();
+        await tryUploadAllArtifactsToGcs(
+          `groq checkpoint batch ${batchIndex + 1} (bus-alerts + scan-export + agency)`
+        );
+      },
+    });
   } catch (e) {
     console.error(
       "[busnearby/groq] enrichment failed; continuing with alerts as-is:",

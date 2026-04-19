@@ -651,6 +651,9 @@ export async function sendKavimTrafficEmail(options: {
     ...(user ? { auth: { user, pass } } : {}),
   });
 
+  const fromAddress = "מערכת ניטור תחבורה <avy.unge@gmail.com>";
+  const listUnsub = "<mailto:avy.unge+unsubscribe@gmail.com?subject=unsubscribe>";
+
   const tableRows = options.alerts
     .map((a, i) => {
       const lines = Array.isArray(a.meta?.lineNumbers)
