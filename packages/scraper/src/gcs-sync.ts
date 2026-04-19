@@ -23,6 +23,7 @@ const SYNC_FILES = [
   "ai-summaries.json",
   "settings.json",
   "alert-activity.json",
+  "scraper-status.json",
 ] as const;
 
 function normalizePrefix(p: string): string {

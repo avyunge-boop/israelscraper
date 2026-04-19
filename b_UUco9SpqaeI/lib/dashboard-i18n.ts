@@ -75,6 +75,10 @@ export type DashboardUiStrings = {
   routesDbMissingDescription: string
   routesDbOpenOperations: string
   routesDbOpenAlertsControls: string
+  /** איפוס מצב סריקה ב-GCS (scraper-status.json) כשהדשבורד נתקע */
+  forceResetScraperStatus: string
+  forceResetScraperStatusHint: string
+  forceResetScraperStatusDone: string
 }
 
 const HE: DashboardUiStrings = {
@@ -156,6 +160,10 @@ const HE: DashboardUiStrings = {
     "קובץ data/routes-database.json נדרש ל־Bus Nearby. אתחל מסלולים מהכרטיסייה התראות, או עבור למבצעי כדי לראות יומן סריקה אחרי רענון.",
   routesDbOpenOperations: "מעבר למבצעי (יומן)",
   routesDbOpenAlertsControls: "מעבר להתראות (אתחול מסד)",
+  forceResetScraperStatus: "איפוס מצב סריקה (GCS)",
+  forceResetScraperStatusHint:
+    "מעדכן scraper-status.json — running: false, progress: 0 — בדיסק וב-GCS; מאפס גם מצב בזיכרון בשרת הסקרייפר",
+  forceResetScraperStatusDone: "מצב הסריקה אופס (קובץ + GCS). ניתן להריץ סריקה מחדש.",
 }
 
 const EN: DashboardUiStrings = {
@@ -238,6 +246,11 @@ const EN: DashboardUiStrings = {
     "data/routes-database.json is required for Bus Nearby. Initialize routes from the Alerts tab, or open Operations to watch the live scan log after a refresh.",
   routesDbOpenOperations: "Open Operations (log)",
   routesDbOpenAlertsControls: "Open Alerts (initialize DB)",
+  forceResetScraperStatus: "Reset scraper status (GCS)",
+  forceResetScraperStatusHint:
+    "Writes scraper-status.json with running: false, progress: 0 to disk and GCS; clears in-memory scraper state",
+  forceResetScraperStatusDone:
+    "Scraper status reset (file + GCS). You can start a new scan.",
 }
 
 export function getDashboardUiStrings(lang: DashboardLang): DashboardUiStrings {

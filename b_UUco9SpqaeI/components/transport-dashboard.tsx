@@ -743,6 +743,39 @@ export function TransportDashboard() {
     }
   }, [appendScanLog, lang, showEphemeralBanner])
 
+  const handleForceResetScraperStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/scraper-bridge/force-reset-scraper-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      })
+      if (!res.ok) {
+        const t = await res.text()
+        let msg = t || `HTTP ${res.status}`
+        try {
+          const j = JSON.parse(t) as { error?: string }
+          if (j.error) msg = j.error
+        } catch {
+          /* */
+        }
+        throw new Error(msg)
+      }
+      setScanningKeys([])
+      setScanProgress(null)
+      setScanPhasesByAgency({})
+      appendScanLog(
+        "♻️ scraper-status.json → running=false, progress=0 (disk + GCS); in-memory state cleared on scraper"
+      )
+      showEphemeralBanner(ui.forceResetScraperStatusDone)
+    } catch (e) {
+      showEphemeralBanner(
+        e instanceof Error ? e.message : scanOrEmailError(lang),
+        "destructive"
+      )
+    }
+  }, [appendScanLog, lang, showEphemeralBanner, ui.forceResetScraperStatusDone])
+
   const handleExport = useCallback(() => {
     const csv = transportAlertsToCsvString(exportSlice)
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
@@ -964,6 +997,17 @@ export function TransportDashboard() {
               title={ui.logConsoleTitle}
               emptyHint={ui.logConsoleEmpty}
             />
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleForceResetScraperStatus}
+                title={ui.forceResetScraperStatusHint}
+                className="w-full sm:w-auto text-xs"
+              >
+                {ui.forceResetScraperStatus}
+              </Button>
+            </div>
           </TabsContent>
           <TabsContent value="alerts" className="mt-4 space-y-6">
         <StatsBar {...stats} ui={ui} />

@@ -18,6 +18,7 @@ import {
   uploadDataArtifactsToGcs,
 } from "./gcs-sync.js";
 import { DATA_DIR, loadRootEnv, REPO_ROOT } from "./repo-paths.js";
+import { writeScraperStatusFile } from "./scraper-status-file.js";
 
 loadRootEnv();
 
@@ -297,6 +298,7 @@ const DATA_FILE_NAMES = new Set([
   "alert-activity.json",
   "agencies-registry.json",
   "busnearby-agency-exclusions.json",
+  "scraper-status.json",
 ]);
 
 /** כשאין קובץ ב-GCS ובדיסק — מחזירים JSON תקין כדי שהדשבורד לא יקבל 404 (אין קבצים אלה בקונטיינר). */
@@ -304,6 +306,8 @@ const EMPTY_JSON_STUBS: Record<string, string> = {
   "ai-summaries.json": '{"byId":{}}',
   "settings.json": "{}",
   "alert-activity.json": '{"byId":{}}',
+  "scraper-status.json":
+    '{"running":false,"progress":0,"agency":"","startedAt":null,"updatedAt":""}',
 };
 
 const app = express();
@@ -332,6 +336,38 @@ app.post("/stop-scrape", (_req, res) => {
   scrapeJob.stopRequested = true;
   void tryStopRunningScrape("api:/stop-scrape");
   return res.status(200).json({ ok: true, stopped: true });
+});
+
+/** Optional: set SCRAPER_FORCE_RESET_SECRET; client sends Authorization: Bearer <secret> or X-Force-Reset-Token. */
+function authorizeForceReset(req: express.Request): boolean {
+  const secret = process.env.SCRAPER_FORCE_RESET_SECRET?.trim();
+  if (!secret) return true;
+  const auth = req.get("authorization")?.trim();
+  const token = req.get("x-force-reset-token")?.trim();
+  return auth === `Bearer ${secret}` || token === secret;
+}
+
+app.post("/force-reset-scraper-status", async (req, res) => {
+  if (!authorizeForceReset(req)) {
+    return res.status(403).json({ ok: false, error: "forbidden" });
+  }
+  scrapeJob.stopRequested = true;
+  void tryStopRunningScrape("api:/force-reset-scraper-status");
+  scrapeJob.running = false;
+  scrapeJob.agency = "";
+  scrapeJob.startedAt = null;
+  scrapeJob.stopRequested = false;
+  try {
+    const status = await writeScraperStatusFile({
+      running: false,
+      progress: 0,
+      agency: "",
+      startedAt: null,
+    });
+    return res.status(200).json({ ok: true, status });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
+  }
 });
 
 app.get("/last-result", (_req, res) => {
@@ -419,6 +455,16 @@ app.post("/run-scrape", async (req, res) => {
     scrapeJob.running = true;
     scrapeJob.agency = label;
     scrapeJob.startedAt = new Date().toISOString();
+    try {
+      await writeScraperStatusFile({
+        running: true,
+        progress: 0,
+        agency: label,
+        startedAt: scrapeJob.startedAt,
+      });
+    } catch (e) {
+      console.error("[server] scraper-status.json (start) failed:", e);
+    }
 
     res.status(200);
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
@@ -514,6 +560,16 @@ app.post("/run-scrape", async (req, res) => {
       scrapeJob.startedAt = null;
       scrapeJob.agency = "";
       scrapeJob.stopRequested = false;
+      try {
+        await writeScraperStatusFile({
+          running: false,
+          progress: 0,
+          agency: "",
+          startedAt: null,
+        });
+      } catch (e) {
+        console.error("[server] scraper-status.json (idle) failed:", e);
+      }
       res.end();
     }
     return;
@@ -522,6 +578,16 @@ app.post("/run-scrape", async (req, res) => {
   scrapeJob.running = true;
   scrapeJob.agency = label;
   scrapeJob.startedAt = new Date().toISOString();
+  try {
+    await writeScraperStatusFile({
+      running: true,
+      progress: 0,
+      agency: label,
+      startedAt: scrapeJob.startedAt,
+    });
+  } catch (e) {
+    console.error("[server] scraper-status.json (start) failed:", e);
+  }
 
   void (async () => {
     try {
@@ -542,6 +608,16 @@ app.post("/run-scrape", async (req, res) => {
       scrapeJob.startedAt = null;
       scrapeJob.agency = "";
       scrapeJob.stopRequested = false;
+      try {
+        await writeScraperStatusFile({
+          running: false,
+          progress: 0,
+          agency: "",
+          startedAt: null,
+        });
+      } catch (e) {
+        console.error("[server] scraper-status.json (idle) failed:", e);
+      }
     }
   })();
 
