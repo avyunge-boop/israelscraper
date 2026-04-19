@@ -1,7 +1,7 @@
 /**
  * סיכום + תרגום לאנגלית לכל התראת Bus Nearby לפני כתיבה ל-scan-export (אותו מודל כמו הדשבורד).
  */
-import Groq from "groq-sdk";
+import Groq, { RateLimitError } from "groq-sdk";
 
 import type { NormalizedAlert } from "./scrapers/types";
 import { loadRootEnv } from "./repo-paths";
@@ -52,6 +52,12 @@ function truncateGroqContent(content: string): string {
   return `${compact.slice(0, MAX_GROQ_ALERT_CONTENT_CHARS)}…`;
 }
 
+function isGroqRateLimit(e: unknown): boolean {
+  if (e instanceof RateLimitError) return true;
+  const msg = e instanceof Error ? e.message : String(e);
+  return /429|Too Many Requests|rate limit/i.test(msg);
+}
+
 async function groqText(
   apiKey: string,
   system: string,
@@ -69,6 +75,31 @@ async function groqText(
     ],
   });
   return String(completion.choices[0]?.message?.content ?? "").trim();
+}
+
+/** Retries transient Groq 429s (common on long busnearby runs). */
+async function groqTextWithRetry(
+  apiKey: string,
+  system: string,
+  user: string,
+  label: string
+): Promise<string> {
+  const max = 5;
+  for (let attempt = 0; attempt < max; attempt++) {
+    try {
+      return await groqText(apiKey, system, user);
+    } catch (e) {
+      if (!isGroqRateLimit(e) || attempt === max - 1) {
+        throw e;
+      }
+      const waitMs = Math.min(4000 * 2 ** attempt, 45_000) + Math.floor(Math.random() * 800);
+      console.warn(
+        `[groq] ${label}: HTTP 429 / rate limit, retry ${attempt + 1}/${max - 1} in ${waitMs}ms`
+      );
+      await sleep(waitMs);
+    }
+  }
+  throw new Error("groqTextWithRetry: exhausted retries");
 }
 
 /** True when routes-database.json (via dedupe meta) already has full Groq output */
@@ -129,14 +160,28 @@ export async function enrichBusnearbyAlertsWithGroq(
     try {
       const { he, en } = await withTimeout(
         (async () => {
-          const heOut = await groqText(
+          const heOut = await groqTextWithRetry(
             key,
             DISPATCHER_SYSTEM,
-            `Raw alert:\n${raw}`
+            `Raw alert:\n${raw}`,
+            "dispatcher"
           );
-          const enOut = heOut
-            ? await groqText(key, TRANSLATE_SYSTEM, heOut)
-            : "";
+          let enOut = "";
+          if (heOut) {
+            try {
+              enOut = await groqTextWithRetry(
+                key,
+                TRANSLATE_SYSTEM,
+                heOut,
+                "translate"
+              );
+            } catch (e2) {
+              console.warn(
+                `[groq] alert ${idx}/${n}: Hebrew OK, English translate failed — keeping HE only:`,
+                e2 instanceof Error ? e2.message : String(e2)
+              );
+            }
+          }
           return { he: heOut, en: enOut };
         })(),
         PER_ALERT_TIMEOUT_MS,

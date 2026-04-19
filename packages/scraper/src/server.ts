@@ -432,6 +432,32 @@ app.post("/run-scrape", async (req, res) => {
       res.write(`data: ${JSON.stringify(obj)}\n\n`);
     };
 
+    send({
+      type: "log",
+      channel: "stdout",
+      text: `[server] scrape stream started (${label})\n`,
+    });
+
+    const heartbeatRaw = Number(process.env.SCRAPER_SSE_HEARTBEAT_MS ?? 45_000);
+    const heartbeatMs =
+      Number.isFinite(heartbeatRaw) && heartbeatRaw > 0
+        ? Math.min(Math.floor(heartbeatRaw), 300_000)
+        : 0;
+    const heartbeat =
+      heartbeatMs > 0
+        ? setInterval(() => {
+            try {
+              send({
+                type: "log",
+                channel: "stdout",
+                text: `[server] … still running (${label}) — if the log was quiet, the orchestrator may be in a long step (e.g. Groq / Chrome)\n`,
+              });
+            } catch {
+              /* client disconnected */
+            }
+          }, heartbeatMs)
+        : null;
+
     let stdoutLineCarry = "";
     const onStdoutChunk = (chunk: string) => {
       const merged = stdoutLineCarry + chunk;
@@ -483,6 +509,7 @@ app.post("/run-scrape", async (req, res) => {
       console.error(`[server] scrape failed: ${msg}`);
       send({ type: "error", message: msg });
     } finally {
+      if (heartbeat) clearInterval(heartbeat);
       scrapeJob.running = false;
       scrapeJob.startedAt = null;
       scrapeJob.agency = "";

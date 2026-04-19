@@ -82,6 +82,7 @@ export async function attachAiSummariesToAlerts(
   const key = apiKey?.trim()
   const maxGen = resolveMaxGeneratePerRequest(options)
   let generated = 0
+  let loggedMaxGenCap = false
 
   const cache = await readAiSummariesCache()
 
@@ -120,6 +121,12 @@ export async function attachAiSummariesToAlerts(
     }
 
     if (maxGen > 0 && generated >= maxGen) {
+      if (!loggedMaxGenCap) {
+        loggedMaxGenCap = true
+        console.log(
+          `[AI] reached max Groq summaries for this request (${maxGen}, from GROQ_MAX_SUMMARIES_PER_REQUEST or default). Remaining alerts keep raw text until next load/mail.`
+        )
+      }
       continue
     }
 
