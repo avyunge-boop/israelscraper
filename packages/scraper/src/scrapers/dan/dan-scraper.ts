@@ -38,6 +38,7 @@ const SETTLE_MS = 2200;
 const PAGINATION_CLICK_MS = 2000;
 const MAX_PAGES = 60;
 const DETAIL_TIMEOUT_MS = 60_000;
+const LOAD_MORE_GROWTH_WAIT_MS = 14_000;
 
 const DAN_LIST_EXTRACT_SCRIPT = `(function () {
   function text(el) {
@@ -150,34 +151,72 @@ async function extractListRows(page: Page): Promise<DanListRow[]> {
 
 async function paginationNextAvailable(page: Page): Promise<boolean> {
   return page.evaluate(() => {
-    const el = document.querySelector("a.w-pagination-next");
-    if (!el) return false;
-    if (!(el instanceof HTMLElement)) return false;
-    if (el.offsetParent === null) return false;
-    const style = window.getComputedStyle(el);
-    if (style.display === "none" || style.visibility === "hidden") return false;
-    if (el.classList.contains("w--disabled")) return false;
-    if (el.getAttribute("aria-disabled") === "true") return false;
-    if (el.classList.contains("filled")) return false;
-    const label = (el.textContent || "").replace(/\s+/g, " ").trim();
-    if (label.indexOf("הבא") === -1) return false;
-    return true;
+    const candidates = Array.from(
+      document.querySelectorAll(
+        [
+          "a.w-pagination-next",
+          "button.w-pagination-next",
+          '[fs-cmsload-element="next"]',
+          '[fs-list-element="pagination-next"]',
+          "button[aria-label*='next' i]",
+          "a[aria-label*='next' i]",
+          "button[aria-label*='הבא']",
+          "a[aria-label*='הבא']",
+        ].join(",")
+      )
+    );
+    for (const node of candidates) {
+      if (!(node instanceof HTMLElement)) continue;
+      if (node.offsetParent === null) continue;
+      const style = window.getComputedStyle(node);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      if (node.classList.contains("w--disabled")) continue;
+      if (node.getAttribute("aria-disabled") === "true") continue;
+      if ((node as HTMLButtonElement).disabled === true) continue;
+      return true;
+    }
+    return false;
   });
 }
 
 async function clickPaginationNext(page: Page): Promise<void> {
-  const before = await page.$$eval(
-    "div.home-updates_item-wrapper",
-    (els) => els.length
-  );
-  const nextSel = "a.w-pagination-next";
-  await page.waitForSelector(nextSel, { timeout: 10_000 });
-  await page.click(nextSel);
+  const before = await page.$$eval("div.home-updates_item-wrapper", (els) => els.length);
+  const clicked = await page.evaluate(() => {
+    const candidates = Array.from(
+      document.querySelectorAll(
+        [
+          "a.w-pagination-next",
+          "button.w-pagination-next",
+          '[fs-cmsload-element="next"]',
+          '[fs-list-element="pagination-next"]',
+          "button[aria-label*='next' i]",
+          "a[aria-label*='next' i]",
+          "button[aria-label*='הבא']",
+          "a[aria-label*='הבא']",
+        ].join(",")
+      )
+    );
+    for (const node of candidates) {
+      if (!(node instanceof HTMLElement)) continue;
+      if (node.offsetParent === null) continue;
+      const style = window.getComputedStyle(node);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      if (node.classList.contains("w--disabled")) continue;
+      if (node.getAttribute("aria-disabled") === "true") continue;
+      if ((node as HTMLButtonElement).disabled === true) continue;
+      node.click();
+      return true;
+    }
+    return false;
+  });
+  if (!clicked) {
+    throw new Error("dan pagination: next/load-more control not clickable");
+  }
   try {
     await page.waitForFunction(
       (n: number) =>
         document.querySelectorAll("div.home-updates_item-wrapper").length !== n,
-      { timeout: 12_000 },
+      { timeout: LOAD_MORE_GROWTH_WAIT_MS },
       before
     );
   } catch {
@@ -234,6 +273,9 @@ export async function runScan(context?: ScraperRunContext): Promise<SourceScanRe
 
     for (let pageIdx = 0; pageIdx < MAX_PAGES; pageIdx++) {
       const batch = await extractListRows(listPage);
+      console.log(
+        `Dan [list] page ${pageIdx + 1}: extracted ${batch.length} card(s), unique so far=${bySlug.size}`
+      );
       for (const row of batch) {
         const slug = danSlugFromHref(row.href);
         if (!slug || bySlug.has(slug)) continue;
